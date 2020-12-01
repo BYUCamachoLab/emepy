@@ -9,7 +9,7 @@ setup(
     author_email="ihammond@byu.edu",
     license="MIT",
     packages=["emepy"],
-    install_requires=["simphony", "numpy", "matplotlib", "pickle", "random", "ElectroMagneticPython"],
+    install_requires=["simphony", "ElectroMagneticPython"],
     zip_safe=False,
 )
 
