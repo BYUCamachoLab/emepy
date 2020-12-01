@@ -3,8 +3,8 @@ import pandas as pd
 from scipy.interpolate import interp1d
 import os
 
-from mode import Mode
-import tools
+from emepy.mode import Mode
+from emepy import tools
 
 import sys
 import EMpy
@@ -288,5 +288,4 @@ class ModeSolver_Pickle(object):
     def getMode(self, mode_num=0):
 
         return self.mode
-
 

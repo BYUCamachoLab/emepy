@@ -1,4 +1,4 @@
-from mode import Mode
+from emepy.mode import Mode
 
 from simphony.elements import Model
 from simphony.tools import interpolate
@@ -139,14 +139,19 @@ class PeriodicEME(object):
 
         self.layers = layers
         self.num_periods = num_periods
-        self.interface = InterfacePaper
 
-    def propogate(self):
+    def propagate(self):
+
+        if not len(self.layers):
+            raise Exception("Must place layers before propagating")
+
+        num_modes = max([l.num_modes for l in self.layers])
+        self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
 
         eme_runner = EMERunner(True)
         for layer in self.layers:
             eme_runner.add_layer(layer)
-        eme_runner.propogate()
+        eme_runner.propagate()
         self.single_period = eme_runner.get_s_params()
 
         left = eme_runner.mode_set1
@@ -217,7 +222,6 @@ class PeriodicEME(object):
 
 class EMERunner(object):
     def __init__(self, keep_modeset=False):
-        self.Interface = InterfaceLum
         self.layers = []
         self.interfaces = []
         self.wavelength = None
@@ -228,13 +232,19 @@ class EMERunner(object):
         if not self.wavelength:
             self.wavelength = layer.wavelength
 
-    def propogate(self):
+    def propagate(self):
+
+        if not len(self.layers):
+            raise Exception("Must place layers before propagating")
+
+        num_modes = max([l.num_modes for l in self.layers])
+        self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
 
         self.layers[0].activate_layer()
         self.mode_set1 = self.layers[0].get_activated_layer() if self.keep_modeset else None
         self.layers[1].activate_layer()
         current = Current(self.wavelength, self.layers[0].get_activated_layer())
-        interface = self.Interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
+        interface = self.interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
         interface.solve()
         self.layers[0].clear()
         current.update_s(self.cascade(current, interface), interface)
@@ -249,7 +259,7 @@ class EMERunner(object):
             layer1 = layer1_.get_activated_layer()
             layer2 = layer2_.get_activated_layer()
 
-            interface = self.Interface(layer1, layer2)
+            interface = self.interface(layer1, layer2)
             interface.solve()
 
             current.update_s(self.cascade(current, layer1), layer1)
@@ -313,7 +323,7 @@ class EMERunner(object):
         return self.s_matrix
 
 
-class InterfaceLum(Model):
+class InterfaceSingleMode(Model):
     def __init__(self, layer1, layer2, num_modes=1):
         self.layer1 = layer1
         self.layer2 = layer2
@@ -371,7 +381,7 @@ class InterfaceLum(Model):
         self.s = None
 
 
-class InterfacePaper(Model):
+class InterfaceMultiMode(Model):
     def __init__(self, layer1, layer2):
         self.layer1 = layer1
         self.layer2 = layer2

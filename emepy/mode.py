@@ -3,13 +3,14 @@ from matplotlib import pyplot as plt
 import pickle
 import random
 import EMpy
-import tools
+from emepy import tools
 from EMpy.modesolvers.FD import stretchmesh
 
 
 class Mode(object):
     """Object that holds the field profiles and effective index for an eigenmode
     """
+
     def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez):
         """Constructor for Mode Object
             :param x (ndarray float): array of grid points in x direction (propogation in z)
@@ -231,7 +232,9 @@ class Mode(object):
 
         core_index = tools.Si(self.wl * 1e6)
         cladding_index = tools.SiO2(self.wl * 1e6)
-        self.epsfunc = tools.get_epsfunc(width, thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6))
+        self.epsfunc = tools.get_epsfunc(
+            width, thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+        )
 
         wl = self.wl
         x = np.array(self.x)
