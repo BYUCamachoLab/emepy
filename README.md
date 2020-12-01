@@ -10,10 +10,10 @@ Install the development version of emepy using pip:
     
 ## BibTeX citation
 
-@misc{hammond_emepy_2020,
-    title={emepy},
-    author={Ian M. Hammond},
-    year={2020},
-    publisher={GitHub},
-    howpublished={{https://github.com/BYUCamachoLab/emepy}}
-}
+    @misc{hammond_emepy_2020,
+        title={emepy},
+        author={Ian M. Hammond},
+        year={2020},
+        publisher={GitHub},
+        howpublished={{https://github.com/BYUCamachoLab/emepy}}
+    }
