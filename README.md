@@ -1,4 +1,4 @@
-# EMEpy: Eigenmode Expansion Tool for Python v0.1
+# EMEpy v0.1: Eigenmode Expansion Tool for Python 
 
 ### An open source tool for simulating EM fields in python using the Eigenmode Expansion Method (EME).
 
