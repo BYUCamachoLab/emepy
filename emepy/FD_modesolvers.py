@@ -96,7 +96,7 @@ class ModeSolver_Lumerical(object):
             mode.run
 
             mode.set("number of trial modes", num_modes)
-            mode.set("wl", self.wl)
+            mode.set("wavelength", self.wl)
             mode.findmodes()
             field = []
             gridx = mode.getresult("FDE::data::mode1", "y")

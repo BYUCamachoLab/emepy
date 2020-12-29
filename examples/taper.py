@@ -10,14 +10,14 @@ import pylab
 
 # Cross sectional parameters (computational complexity determined here)
 ModeSolver = ModeSolver_EMpy  # Choose a modesolver object that will calculate the 2D field profile
-mesh = 300  # Mesh density of 2D field profiles
+mesh = 256  # Mesh density of 2D field profiles
 num_modes = 2
 
 # Geometric parameters
 width1 = 0.6e-6  # Width of left waveguide
 thickness1 = 0.4e-6  # Thickness of left waveguide
-width2 = 0.3e-6  # Width of right waveguide
-thickness2 = 0.2e-6  # Thickness of right waveguide
+width2 = 0.5e-6  # Width of right waveguide
+thickness2 = 0.3e-6  # Thickness of right waveguide
 wavelength = 1.55e-6  # Wavelength of light (m)
 length = 10e-6  # Length of the waveguides
 taper_density = 10  # How many divisions in the taper where eigenmodes will be calculated
@@ -59,4 +59,4 @@ eme.add_layer(straight2)
 
 eme.propagate()  # Run the eme
 
-print(eme.get_s_params())  # Extract s_parameters
+print(np.abs(eme.get_s_params()))  # Extract s_parameters
