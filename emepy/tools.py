@@ -25,7 +25,7 @@ def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index
             * (np.abs(yy.T - cladding_thickness * 0.5) <= thickness * 0.5),
             core_index ** 2 + 0j,
             cladding_index ** 2 + 0j,
-        )
+        ).T
 
         return n
 
