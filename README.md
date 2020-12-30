@@ -7,6 +7,10 @@
 Install the development version of emepy using pip:
 
     pip install -e .
+
+## Docs
+
+Read the docs [here](https://emepy.readthedocs.io/en/latest/).
     
 ## BibTeX citation
 
