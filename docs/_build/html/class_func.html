@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>&lt;no title&gt; &mdash; EMEpy 1.0 documentation</title>
+  <title>EMEpy Complete User Library &mdash; EMEpy 1.0 documentation</title>
   
 
   
@@ -80,7 +80,13 @@
             
             
               <!-- Local TOC -->
-              <div class="local-toc"><ul class="simple">
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">EMEpy Complete User Library</a><ul>
+<li><a class="reference internal" href="#tools">Tools</a></li>
+<li><a class="reference internal" href="#modesolvers">Modesolvers</a></li>
+<li><a class="reference internal" href="#eme-simulation">EME Simulation</a></li>
+</ul>
+</li>
 </ul>
 </div>
             
@@ -127,7 +133,7 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>&lt;no title&gt;</li>
+      <li>EMEpy Complete User Library</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -146,7 +152,220 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  
+  <div class="section" id="emepy-complete-user-library">
+<h1>EMEpy Complete User Library<a class="headerlink" href="#emepy-complete-user-library" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="tools">
+<h2>Tools<a class="headerlink" href="#tools" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_epsfunc</span><span class="p">(</span>
+    <span class="n">width</span><span class="p">,</span> 
+    <span class="n">thickness</span><span class="p">,</span> 
+    <span class="n">cladding_width</span><span class="p">,</span> 
+    <span class="n">cladding_thickness</span><span class="p">,</span> 
+    <span class="n">core_index</span><span class="p">,</span> 
+    <span class="n">cladding_index</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> []</strong></p></li>
+</ul>
+<hr class="docutils" />
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">Si</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> []</strong></p></li>
+</ul>
+<hr class="docutils" />
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">SiO2</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> []</strong></p></li>
+</ul>
+</div>
+<div class="section" id="modesolvers">
+<h2>Modesolvers<a class="headerlink" href="#modesolvers" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">ModeSolver_EMpy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>ModeSolver_EMpy is based on the electromagnetic python module. It’s open-source and fairly easy to use. This is the recommended class for users who want to use a finite difference solver.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">wl</span><span class="p">,</span>
+    <span class="n">width</span><span class="p">,</span>
+    <span class="n">thickness</span><span class="p">,</span>
+    <span class="n">num_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">cladding_width</span><span class="o">=</span><span class="mf">2.5e-6</span><span class="p">,</span>
+    <span class="n">cladding_thickness</span><span class="o">=</span><span class="mf">2.5e-6</span><span class="p">,</span>
+    <span class="n">core_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">cladding_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">mesh</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="n">accuracy</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+    <span class="n">boundary</span><span class="o">=</span><span class="s2">&quot;0000&quot;</span><span class="p">,</span>
+    <span class="n">epsfunc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wl</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">x</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">y</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">mesh</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">accuracy</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">boundary</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">epsfunc</span></code> []</strong></p></li>
+</ul>
+<hr class="docutils" />
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">ModeSolver_Lumerical</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>ModeSolver_Lumerical requires the Lumerical API. Licensing for such is not free. Therefore users are encouraged to use the other classes which work just as well.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">wl</span><span class="p">,</span>
+    <span class="n">width</span><span class="p">,</span>
+    <span class="n">thickness</span><span class="p">,</span>
+    <span class="n">num_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">cladding_width</span><span class="o">=</span><span class="mf">5e-6</span><span class="p">,</span>
+    <span class="n">cladding_thickness</span><span class="o">=</span><span class="mf">5e-6</span><span class="p">,</span>
+    <span class="n">core_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">cladding_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">mesh</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="n">lumapi_location</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wl</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">mesh</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">lumapi_location</span></code> []</strong></p></li>
+</ul>
+<hr class="docutils" />
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">ModeSolver_Pickle</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>ModeSolver_Pickle simply uses the pickle library to open files with presaved field profiles and effective indices. This requires no mode solving during the EME process, however requires saved fields beforehand.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> 
+    <span class="n">filename</span><span class="p">,</span> 
+    <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+    <span class="n">width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+    <span class="n">thickness</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">filename</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">index</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
+</ul>
+<hr class="docutils" />
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">ModeSolver_ANN</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>ModeSolver_ANN is an example class for what users may design if they chose to use neural networks to generate modes. This is computationally the fasted of the solvers themselves, but requires a pretrained network.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">wavelength</span><span class="p">,</span>
+    <span class="n">width</span><span class="p">,</span>
+    <span class="n">thickness</span><span class="p">,</span>
+    <span class="n">sklearn_save</span><span class="p">,</span>
+    <span class="n">torch_save_x</span><span class="p">,</span>
+    <span class="n">torch_save_y</span><span class="p">,</span>
+    <span class="n">num_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">cladding_width</span><span class="o">=</span><span class="mf">5e-6</span><span class="p">,</span>
+    <span class="n">cladding_thickness</span><span class="o">=</span><span class="mf">5e-6</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">sklearn_save</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">torch_save_x</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">torch_save_y</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">x</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">y</span></code> []</strong></p></li>
+</ul>
+</div>
+<div class="section" id="eme-simulation">
+<h2>EME Simulation<a class="headerlink" href="#eme-simulation" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">EME</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> 
+    <span class="n">keep_modeset</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">keep_modeset</span></code> []</strong></p></li>
+</ul>
+<hr class="docutils" />
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">PeriodicEME</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> 
+    <span class="n">layers</span><span class="p">,</span> 
+    <span class="n">num_periods</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">layers</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_periods</span></code> []</strong></p></li>
+</ul>
+<hr class="docutils" />
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">Layer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> 
+    <span class="n">mode_solvers</span><span class="p">,</span> 
+    <span class="n">num_modes</span><span class="p">,</span> 
+    <span class="n">wavelength</span><span class="p">,</span> 
+    <span class="n">length</span>
+<span class="p">)</span>   
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">mode_solvers</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">length</span></code> []</strong></p></li>
+</ul>
+<hr class="docutils" />
+</div>
+</div>
+
 
            </div>
            

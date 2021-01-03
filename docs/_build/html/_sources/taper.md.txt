@@ -61,7 +61,7 @@ We can visualize a rough approximation of our geometry.
     
     eme.draw() 
 
-<!-- ![]()  -->
+![](images/taper1.png) 
 
 The next piece of our structure is the taper itself. We defined a taper_density to represent the number of discrete steps for our taper approximation. The higher this value, the more accurately our model represents a continuous taper. However, higher densities require more calls to our modesolver, which is the bulk of our computational expense. Let's create arrays to represent the widths and thicknesses of each discrete step of the taper, and also the length of each step. If our density is 0, we have a step between the waveguides with no taper between. 
 
@@ -80,7 +80,7 @@ Again let's see what our geometry looks like now with our taper.
     
     eme.draw() 
 
-<!-- ![]()  -->
+![](images/taper2.png) 
 
 Finally we create another waveguide section just like before. 
 
@@ -92,7 +92,7 @@ Let's take a look at our final geometry.
     
     eme.draw() 
 
-<!-- ![]()  -->
+![](images/taper3.png) 
 
 We're happy with our design, so now it's time to let the eme solver propagate. This will call our modesolver objects and solve for the modes, calculate mode overlaps at each interfact, and cascade the results together. 
 

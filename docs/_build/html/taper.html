@@ -209,7 +209,8 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eme</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span> 
 </pre></div>
 </div>
-<!-- ![]()  --><p>The next piece of our structure is the taper itself. We defined a taper_density to represent the number of discrete steps for our taper approximation. The higher this value, the more accurately our model represents a continuous taper. However, higher densities require more calls to our modesolver, which is the bulk of our computational expense. Let’s create arrays to represent the widths and thicknesses of each discrete step of the taper, and also the length of each step. If our density is 0, we have a step between the waveguides with no taper between.</p>
+<p><img alt="_images/taper1.png" src="_images/taper1.png" /></p>
+<p>The next piece of our structure is the taper itself. We defined a taper_density to represent the number of discrete steps for our taper approximation. The higher this value, the more accurately our model represents a continuous taper. However, higher densities require more calls to our modesolver, which is the bulk of our computational expense. Let’s create arrays to represent the widths and thicknesses of each discrete step of the taper, and also the length of each step. If our density is 0, we have a step between the waveguides with no taper between.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">widths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">width1</span><span class="p">,</span> <span class="n">width2</span><span class="p">,</span> <span class="n">taper_density</span><span class="p">)</span>
 <span class="n">thicknesses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">thickness1</span><span class="p">,</span> <span class="n">thickness2</span><span class="p">,</span> <span class="n">taper_density</span><span class="p">)</span>
 <span class="n">taper_length_per</span> <span class="o">=</span> <span class="n">taper_length</span> <span class="o">/</span> <span class="n">taper_density</span> <span class="k">if</span> <span class="n">taper_density</span> <span class="k">else</span> <span class="kc">None</span>
@@ -226,7 +227,8 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eme</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span> 
 </pre></div>
 </div>
-<!-- ![]()  --><p>Finally we create another waveguide section just like before.</p>
+<p><img alt="_images/taper2.png" src="_images/taper2.png" /></p>
+<p>Finally we create another waveguide section just like before.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mode2</span> <span class="o">=</span> <span class="n">ModeSolver</span><span class="p">(</span><span class="n">wl</span><span class="o">=</span><span class="n">wavelength</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width2</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="n">thickness2</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">num_modes</span><span class="o">=</span><span class="n">num_modes</span><span class="p">)</span>
 <span class="n">straight2</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">mode2</span><span class="p">,</span> <span class="n">num_modes</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">wg_length</span><span class="p">)</span>
 <span class="n">eme</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">straight2</span><span class="p">)</span>
@@ -236,7 +238,8 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eme</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span> 
 </pre></div>
 </div>
-<!-- ![]()  --><p>We’re happy with our design, so now it’s time to let the eme solver propagate. This will call our modesolver objects and solve for the modes, calculate mode overlaps at each interfact, and cascade the results together.</p>
+<p><img alt="_images/taper3.png" src="_images/taper3.png" /></p>
+<p>We’re happy with our design, so now it’s time to let the eme solver propagate. This will call our modesolver objects and solve for the modes, calculate mode overlaps at each interfact, and cascade the results together.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eme</span><span class="o">.</span><span class="n">propagate</span><span class="p">()</span>  
 </pre></div>
 </div>

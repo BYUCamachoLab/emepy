@@ -39,6 +39,8 @@ mode1 = ModeSolver(
 straight1 = Layer(mode1, num_modes, wavelength, wg_length)
 eme.add_layer(straight1)
 
+eme.draw()
+
 # create the discrete taper with a fine enough taper density to approximate a continuous linear taper
 widths = np.linspace(width1, width2, taper_density)
 thicknesses = np.linspace(thickness1, thickness2, taper_density)
@@ -50,10 +52,14 @@ for i in range(taper_density):
     taper_layer = Layer(solver, num_modes, wavelength, taper_length_per)
     eme.add_layer(taper_layer)
 
+eme.draw()
+
 # last layer is a straight waveguide of smaller geometry
 mode2 = ModeSolver(wl=wavelength, width=width2, thickness=thickness2, mesh=mesh, num_modes=num_modes)
 straight2 = Layer(mode2, num_modes, wavelength, wg_length)
 eme.add_layer(straight2)
+
+eme.draw()
 
 # eme.draw()  # Look at our simulation geometry
 
