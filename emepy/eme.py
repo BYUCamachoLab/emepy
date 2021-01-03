@@ -148,14 +148,14 @@ class PeriodicEME(object):
         num_modes = max([l.num_modes for l in self.layers])
         self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
 
-        eme_runner = EMERunner(True)
+        eme = EME(True)
         for layer in self.layers:
-            eme_runner.add_layer(layer)
-        eme_runner.propagate()
-        self.single_period = eme_runner.get_s_params()
+            eme.add_layer(layer)
+        eme.propagate()
+        self.single_period = eme.get_s_params()
 
-        left = eme_runner.mode_set1
-        right = eme_runner.mode_set2
+        left = eme.mode_set1
+        right = eme.mode_set2
 
         period_layer = PeriodicLayer(left.modes, right.modes, self.single_period)
         current_layer = PeriodicLayer(left.modes, right.modes, self.single_period)
@@ -220,7 +220,7 @@ class PeriodicEME(object):
         plt.show()
 
 
-class EMERunner(object):
+class EME(object):
     def __init__(self, keep_modeset=False):
         self.layers = []
         self.interfaces = []

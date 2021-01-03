@@ -1,7 +1,7 @@
 import emepy
 from emepy.FD_modesolvers import ModeSolver_Lumerical  # Requires Lumerical API
 from emepy.FD_modesolvers import ModeSolver_EMpy  # Open source
-from emepy.eme import Layer, EMERunner, PeriodicEME
+from emepy.eme import Layer, PeriodicEME
 from emepy.mode import Mode
 
 import numpy as np

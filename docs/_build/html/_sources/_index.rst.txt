@@ -10,6 +10,5 @@ EMEpy
    :maxdepth: 2
    :caption: Contents:
 
-.. include:: _index.md
 
    
