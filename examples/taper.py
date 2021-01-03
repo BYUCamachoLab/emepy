@@ -1,7 +1,7 @@
 import emepy
 from emepy.FD_modesolvers import ModeSolver_Lumerical  # Requires Lumerical API
 from emepy.FD_modesolvers import ModeSolver_EMpy  # Open source
-from emepy.eme import Layer, EMERunner
+from emepy.eme import Layer, EME
 from emepy.mode import Mode
 
 import numpy as np
@@ -25,7 +25,7 @@ taper_length = 2e-6  # The length of the taper
 
 wg_length = 0.5 * (length - taper_length)  # Length of each division in the taper
 
-eme = EMERunner()  # Choose either a normal eme or a periodic eme (PeriodicEME())
+eme = EME()  # Choose either a normal eme or a periodic eme (PeriodicEME())
 
 # first layer is a straight waveguide
 mode1 = ModeSolver(
