@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>&lt;no title&gt; &mdash; EMEpy 1.0 documentation</title>
+  <title>Example: Bragg Grating &mdash; EMEpy 1.0 documentation</title>
   
 
   
@@ -80,7 +80,8 @@
             
             
               <!-- Local TOC -->
-              <div class="local-toc"><ul class="simple">
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Example: Bragg Grating</a></li>
 </ul>
 </div>
             
@@ -127,7 +128,7 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>&lt;no title&gt;</li>
+      <li>Example: Bragg Grating</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -146,7 +147,81 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  
+  <div class="section" id="example-bragg-grating">
+<h1>Example: Bragg Grating<a class="headerlink" href="#example-bragg-grating" title="Permalink to this headline">¶</a></h1>
+<p>This example shows the capabilities of the PeriodicEME object by designing a Bragg Grating. We begin by importing the similar classes and libraries as the <a class="reference internal" href="index.html"><span class="doc">last example</span></a>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">emepy</span>
+<span class="kn">from</span> <span class="nn">emepy.FD_modesolvers</span> <span class="kn">import</span> <span class="n">ModeSolver_EMpy</span>  
+<span class="kn">from</span> <span class="nn">emepy.eme</span> <span class="kn">import</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">PeriodicEME</span>
+<span class="kn">from</span> <span class="nn">emepy.mode</span> <span class="kn">import</span> <span class="n">Mode</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+</pre></div>
+</div>
+<p>Next we’ll define parameters for our device. In this example, we will sweep over a set of wavelengths and visualize the transfer function.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">num_periods</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># Number of Periods for Bragg Grating</span>
+<span class="n">length</span> <span class="o">=</span> <span class="mf">0.16</span>  <span class="c1"># Length of each segment of BG, Period = Length * 2</span>
+<span class="n">num_wavelengths</span> <span class="o">=</span> <span class="mi">50</span>  <span class="c1"># Number of wavelengths to sweep</span>
+<span class="n">wl_lower</span> <span class="o">=</span> <span class="mf">1.5</span>  <span class="c1"># Lower wavelength bound</span>
+<span class="n">wl_upper</span> <span class="o">=</span> <span class="mf">1.6</span>  <span class="c1"># Upper wavelength bound</span>
+<span class="n">num_modes</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Number of Modes</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="n">modesolver</span> <span class="o">=</span> <span class="n">ModeSolver_EMpy</span>
+</pre></div>
+</div>
+<p>This example utilizes the ability to calculate transmission values from the resulting s-matrix. Because EMEpy operates only in the frequency domain, we will run a simulation for each wavelength we care about. Let’s begin by creating an array to hold our transmission values.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="p">[]</span>  
+</pre></div>
+</div>
+<p>We will now sweep over our set of wavelengths and create modesolvers and layers for both steps of the bragg grating period.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">wavelength</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">wl_lower</span><span class="p">,</span> <span class="n">wl_upper</span><span class="p">,</span> <span class="n">num_wavelengths</span><span class="p">):</span>
+
+    <span class="n">mode_solver1</span> <span class="o">=</span> <span class="n">modesolver</span><span class="p">(</span>
+        <span class="n">wavelength</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span>
+        <span class="mf">0.46e-6</span><span class="p">,</span>
+        <span class="mf">0.22e-6</span><span class="p">,</span>
+        <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+        <span class="n">num_modes</span><span class="o">=</span><span class="n">num_modes</span><span class="p">,</span>
+    <span class="p">)</span>  <span class="c1"># First half of bragg grating</span>
+
+    <span class="n">mode_solver2</span> <span class="o">=</span> <span class="n">modesolver</span><span class="p">(</span>
+        <span class="n">wavelength</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span>
+        <span class="mf">0.54e-6</span><span class="p">,</span>
+        <span class="mf">0.22e-6</span><span class="p">,</span>
+        <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+        <span class="n">num_modes</span><span class="o">=</span><span class="n">num_modes</span><span class="p">,</span>
+    <span class="p">)</span>  <span class="c1"># Second half of bragg grating</span>
+
+    <span class="n">layer1</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">mode_solver1</span><span class="p">,</span> <span class="n">num_modes</span><span class="p">,</span> <span class="n">wavelength</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">length</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">)</span>  <span class="c1"># First half of bragg grating</span>
+    <span class="n">layer2</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">mode_solver2</span><span class="p">,</span> <span class="n">num_modes</span><span class="p">,</span> <span class="n">wavelength</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">length</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">)</span>  <span class="c1"># Second half of bragg grating</span>
+</pre></div>
+</div>
+<p>Still in our loop, we will create a PeriodicEME object and assign a number of periods. The solver will utilize this by only solving for the modes of one period, and will cascade the resulting s-parameters together a number of times matching the period count.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">eme</span> <span class="o">=</span> <span class="n">PeriodicEME</span><span class="p">([</span><span class="n">layer1</span><span class="p">,</span> <span class="n">layer2</span><span class="p">],</span> <span class="n">num_periods</span><span class="p">)</span> 
+</pre></div>
+</div>
+<p>Let’s draw our structure just once and make sure we designed it correctly.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">if</span> <span class="n">wavelength</span> <span class="o">==</span> <span class="n">wl_lower</span><span class="p">:</span>
+        <span class="n">eme</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span> 
+</pre></div>
+</div>
+<p>Finally, let’s propagate our results and grab the absolute value of the tranmission value and append to our list.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">eme</span><span class="o">.</span><span class="n">propagate</span><span class="p">()</span>  <span class="c1"># propagate at given wavelength</span>
+
+    <span class="n">t</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">eme</span><span class="o">.</span><span class="n">s_parameters</span><span class="p">())[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">num_modes</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># Grab the transmission coefficient</span>
+</pre></div>
+</div>
+<p>Once the solver finishes for each wavelength of concern, we can plot our transfer function.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">wl_lower</span><span class="p">,</span> <span class="n">wl_upper</span><span class="p">,</span> <span class="n">num_wavelengths</span><span class="p">),</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;BG Bode Plot Periods=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">num_periods</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Wavelength (microns)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;dB&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+
 
            </div>
            
