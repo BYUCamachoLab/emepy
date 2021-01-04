@@ -184,7 +184,7 @@ class Network(nn.Module):
 class ModeSolver_Network(object):
     def __init__(
         self,
-        wavelength,
+        wl,
         width,
         thickness,
         sklearn_save,
@@ -197,7 +197,7 @@ class ModeSolver_Network(object):
         y=None,
     ):
 
-        self.wavelength = wavelength
+        self.wl = wl
         self.width = width
         self.thickness = thickness
         self.num_modes = num_modes
@@ -220,30 +220,30 @@ class ModeSolver_Network(object):
 
         for i in range(self.num_modes):
             Hx, Hy, neff = self.data(
-                i, self.width, self.thickness, self.wavelength, self.sklearn_save, self.torch_save_x, self.torch_save_y
+                i, self.width, self.thickness, self.wl, self.sklearn_save, self.torch_save_x, self.torch_save_y
             )
             self.modes.append((Hx, Hy, neff))
 
-    def data(self, mode_num, width, thickness, wavelength, sklearn_save, torch_save_x, torch_save_y):
+    def data(self, mode_num, width, thickness, wl, sklearn_save, torch_save_x, torch_save_y):
 
-        neff = self.neff_regression(mode_num, width, thickness, wavelength, sklearn_save)
-        Hx = self.Hx_network(mode_num, width, thickness, wavelength, torch_save_x)
-        Hy = self.Hy_network(mode_num, width, thickness, wavelength, torch_save_y)
+        neff = self.neff_regression(mode_num, width, thickness, wl, sklearn_save)
+        Hx = self.Hx_network(mode_num, width, thickness, wl, torch_save_x)
+        Hy = self.Hy_network(mode_num, width, thickness, wl, torch_save_y)
 
         return Hx, Hy, neff
 
-    def neff_regression(self, mode_num, width, thickness, wavelength, sklearn_save):
+    def neff_regression(self, mode_num, width, thickness, wl, sklearn_save):
 
         with open(sklearn_save, "rb") as f:
             model = pickle.load(f)
 
         poly = PolynomialFeatures(degree=8)
-        X = poly.fit_transform([[width * 1e6, thickness * 1e6, wavelength * 1e6]])
+        X = poly.fit_transform([[width * 1e6, thickness * 1e6, wl * 1e6]])
         neff = model.predict(X)
 
         return neff[0]
 
-    def Hx_network(self, mode_num, width, thickness, wavelength, torch_save):
+    def Hx_network(self, mode_num, width, thickness, wl, torch_save):
 
         with open(torch_save, "rb") as f:
             model = Network(3, 5, "Hx")
@@ -263,13 +263,13 @@ class ModeSolver_Network(object):
             model.eval()
 
         with torch.no_grad():
-            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wavelength * 1e6]]])
+            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
             output, _ = model(parameters)
             output = deNormalizeHx(output)
 
         return output
 
-    def Hy_network(self, mode_num, width, thickness, wavelength, torch_save):
+    def Hy_network(self, mode_num, width, thickness, wl, torch_save):
 
         with open(torch_save, "rb") as f:
             model = Network(3, 15, "Hy")
@@ -289,7 +289,7 @@ class ModeSolver_Network(object):
             model.eval()
 
         with torch.no_grad():
-            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wavelength * 1e6]]])
+            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
             output, _ = model(parameters)
             output = deNormalizeHy(output)
 
@@ -298,10 +298,10 @@ class ModeSolver_Network(object):
     def clear(self):
         self.modes = []
 
-    def getMode(self, mode_num=0):
+    def get_mode(self, mode_num=0):
 
         Hx, Hy, neff = self.modes[mode_num]
-        m = Mode(self.x, self.y, self.wavelength, neff, Hx, Hy, None, None, None, None)
+        m = Mode(self.x, self.y, self.wl, neff, Hx, Hy, None, None, None, None)
         m.compute_other_fields(self.width, self.thickness)
 
         return m

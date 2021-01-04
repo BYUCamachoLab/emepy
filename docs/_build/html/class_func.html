@@ -83,6 +83,7 @@
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">EMEpy Complete User Library</a><ul>
 <li><a class="reference internal" href="#tools">Tools</a></li>
+<li><a class="reference internal" href="#mode">Mode</a></li>
 <li><a class="reference internal" href="#modesolvers">Modesolvers</a></li>
 <li><a class="reference internal" href="#eme-simulation">EME Simulation</a></li>
 </ul>
@@ -211,6 +212,20 @@
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> [number]</strong> The wavelength of light propagating through silicon (µm).</p></li>
 </ul>
 <p>The Si function provides an index of refraction in silicon given a specific wavelength. The function uses a regression on a dataset and is thus only valid for a range of wavelengths: (1.2µm - 14µm).</p>
+<p><strong>Example</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">emepy.tools</span> <span class="kn">import</span> <span class="n">Si</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="mf">1.6</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">index_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">Si</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lambdas</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">index_array</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Output</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mf">3.4799</span><span class="p">,</span> <span class="mf">3.478966666666667</span><span class="p">,</span> <span class="mf">3.4780333333333333</span><span class="p">,</span> <span class="mf">3.4771</span><span class="p">,</span> <span class="mf">3.4761666666666664</span><span class="p">,</span> <span class="mf">3.4752777777777775</span><span class="p">,</span> <span class="mf">3.4744333333333333</span><span class="p">,</span> <span class="mf">3.473588888888889</span><span class="p">,</span> <span class="mf">3.4727444444444444</span><span class="p">,</span> <span class="mf">3.4719</span><span class="p">]</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">SiO2</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span>
 </pre></div>
@@ -219,6 +234,26 @@
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> [number]</strong> The wavelength of light propagating through silicon dioxide (glass) (µm).</p></li>
 </ul>
 <p>The SiO2 function provides an index of refraction in silicon given a specific wavelength. The function uses a regression on a dataset and is thus only valid for a range of wavelengths: (0.21µm - 6.7µm).</p>
+<p><strong>Example</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">emepy.tools</span> <span class="kn">import</span> <span class="n">SiO2</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="mf">1.6</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">index_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">SiO2</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lambdas</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">index_array</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Output</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mf">1.4446167941939</span><span class="p">,</span> <span class="mf">1.4444864184114001</span><span class="p">,</span> <span class="mf">1.4443539800979162</span><span class="p">,</span> <span class="mf">1.444221362433912</span><span class="p">,</span> <span class="mf">1.4440887447699078</span><span class="p">,</span> <span class="mf">1.4439561271059036</span><span class="p">,</span> <span class="mf">1.4438231150141243</span><span class="p">,</span> <span class="mf">1.4436878678316192</span><span class="p">,</span> <span class="mf">1.4435526206491143</span><span class="p">,</span> <span class="mf">1.4434173734666091</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mode">
+<h2>Mode<a class="headerlink" href="#mode" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="modesolvers">
 <h2>Modesolvers<a class="headerlink" href="#modesolvers" title="Permalink to this headline">¶</a></h2>
@@ -246,21 +281,42 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">wl</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">x</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">y</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">mesh</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">accuracy</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">boundary</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">epsfunc</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wl</span></code> [number]</strong> Wavelength of eigenmode to solve for (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> [number]</strong> Width of the core in the rectangular cross section (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> [number]</strong> Thickness of the core in the rectangular cross section (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> [int]</strong> Number of modes to solve for. [default: 1]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> [number]</strong> Width of the cladding in the rectangular cross section (m). [default: 2.5e-6]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> [number]</strong> Thickness of the cladding in the rectangular cross section (m). [default: 2.5e-6]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> [number]</strong> Index of refraction of the cross sectional core. [default: Si(wl*1e6)]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> [number]</strong> Index of refraction of the cross sectional cladding. [default: SiO2(wl*1e6)]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">x</span></code> [array [numbers]]</strong> Array of positions in the x direction. [default: np.linspace(0,cladding_width,mesh)]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">y</span></code> [array [numbers]]</strong> Array of positions in the y direction. [default: np.linspace(0,cladding_thickess,mesh)]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">mesh</span></code> [int]</strong> If provided, provides an equally spaced x,y grid with <code class="docutils literal notranslate"><span class="pre">mesh</span></code> number of points.  [default: 300]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">accuracy</span></code> [number]</strong> Accuracy of the EMpy solver, smaller <code class="docutils literal notranslate"><span class="pre">accuracy</span></code> is more accurate. [default: 1e-8]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">boundary</span></code> [string]</strong> EMpy boundary type “NESW”. Users should only change if they’ve read the EMpy documentation for boundaries. [default: “0000”]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">epsfunc</span></code> [function]</strong> Function that provides a mapping of the index of refraction based on a given grid. See <code class="docutils literal notranslate"><span class="pre">get_epsfunc</span></code>. [default: get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index, cladding_index)]</p></li>
 </ul>
+<p><strong>Example</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">emepy.FD_modesolvers</span> <span class="kn">import</span> <span class="n">ModeSolver_EMpy</span>
+<span class="kn">from</span> <span class="nn">emepy.mode</span> <span class="kn">import</span> <span class="n">Mode</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+<span class="n">modesolver</span> <span class="o">=</span> <span class="n">ModeSolver_EMpy</span><span class="p">(</span>
+    <span class="n">wl</span><span class="o">=</span><span class="mf">1.55e-6</span><span class="p">,</span>
+    <span class="n">width</span><span class="o">=.</span><span class="mf">5e-6</span><span class="p">,</span>
+    <span class="n">thickness</span><span class="o">=.</span><span class="mf">22e-6</span><span class="p">,</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="mi">128</span>
+<span class="p">)</span>
+
+<span class="n">modesolver</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="n">mode</span> <span class="o">=</span> <span class="n">modesolver</span><span class="o">.</span><span class="n">get_mode</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">mode</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><img alt="_images/plot_mode.png" src="_images/plot_mode.png" /></p>
 <hr class="docutils" />
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">ModeSolver_Lumerical</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 </pre></div>
@@ -281,18 +337,35 @@
 <span class="p">)</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">wl</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">mesh</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">lumapi_location</span></code> []</strong></p></li>
+<ul>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wl</span></code> [number]</strong> Wavelength of eigenmode to solve for (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> [number]</strong> Width of the core in the rectangular cross section (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> [number]</strong> Thickness of the core in the rectangular cross section (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> [int]</strong> Number of modes to solve for. [default: 1]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> [number]</strong> Width of the cladding in the rectangular cross section (m). [default: 2.5e-6]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> [number]</strong> Thickness of the cladding in the rectangular cross section (m). [default: 2.5e-6]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> [number]</strong> Index of refraction of the cross sectional core. [default: Si(wl*1e6)]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> [number]</strong> Index of refraction of the cross sectional cladding. [default: SiO2(wl*1e6)]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">mesh</span></code> [int]</strong> If provided, provides an equally spaced x,y grid with <code class="docutils literal notranslate"><span class="pre">mesh</span></code> number of points.  [default: 300]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">lumapi_location</span></code> [string]</strong> If the Lumerical Python API is not already in the user’s path, they may add the path here. [default: None]. Ubuntu example: “/opt/lumerical/v202/api/python” .</p>
+<p>from emepy.FD_modesolvers import ModeSolver_Lumerical
+from emepy.mode import Mode
+from matplotlib import pyplot as plt</p>
+<p>modesolver = ModeSolver_Lumerical(
+wl=1.55e-6,
+width=.5e-6,
+thickness=.22e-6,
+mesh = 128,
+lumapi_location = “/opt/lumerical/v202/api/python”
+)</p>
+<p>modesolver.solve()
+mode = modesolver.get_mode()</p>
+<p>plt.figure()
+mode.plot(value_type=”abs^2”, colorbar=False)
+plt.show()</p>
+</li>
 </ul>
+<p><img alt="_images/plot_lumapi.png" src="_images/plot_lumapi.png" /></p>
 <hr class="docutils" />
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">ModeSolver_Pickle</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 </pre></div>
@@ -308,16 +381,41 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">filename</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">index</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">filename</span></code> [string]</strong> Location of where the pickled file is located.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">index</span></code> [int]</strong> If the pickle file has an array of Modes saved as opposed to the default singular Mode saved, provide an index of the array for which Mode the user wants.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> [number]</strong> Width of the core in the rectangular cross section (m). Only used for drawing EME geometry. Optional.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> [number]</strong> Thickness of the core in the rectangular cross section (m). Only used for drawing EME geometry. Optional.</p></li>
 </ul>
+<p><strong>Example</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">emepy.FD_modesolvers</span> <span class="kn">import</span> <span class="n">ModeSolver_EMpy</span>
+<span class="kn">from</span> <span class="nn">emepy.FD_modesolvers</span> <span class="kn">import</span> <span class="n">ModeSolver_Pickle</span>
+<span class="kn">from</span> <span class="nn">emepy.mode</span> <span class="kn">import</span> <span class="n">Mode</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">pickle</span> <span class="k">as</span> <span class="nn">pk</span>
+
+<span class="n">modesolver</span> <span class="o">=</span> <span class="n">ModeSolver_EMpy</span><span class="p">(</span><span class="n">wl</span><span class="o">=</span><span class="mf">1.55e-6</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.5e-6</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mf">0.22e-6</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+<span class="n">modesolver</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="n">mode</span> <span class="o">=</span> <span class="n">modesolver</span><span class="o">.</span><span class="n">get_mode</span><span class="p">()</span>
+<span class="n">pk</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;./example_file.pk&quot;</span><span class="p">,</span> <span class="s2">&quot;wb+&quot;</span><span class="p">))</span>
+
+<span class="c1"># Separate instance</span>
+
+<span class="n">modesolver</span> <span class="o">=</span> <span class="n">ModeSolver_Pickle</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;./example_file.pk&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.5e-6</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mf">0.22e-6</span><span class="p">)</span>
+
+<span class="n">modesolver</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="n">mode</span> <span class="o">=</span> <span class="n">modesolver</span><span class="o">.</span><span class="n">get_mode</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">mode</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">value_type</span><span class="o">=</span><span class="s2">&quot;Imaginary&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><img alt="_images/plot_pickle.png" src="_images/plot_pickle.png" /></p>
 <hr class="docutils" />
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">class</span> <span class="nc">ModeSolver_ANN</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 </pre></div>
 </div>
-<p>ModeSolver_ANN is an example class for what users may design if they chose to use neural networks to generate modes. This is computationally the fasted of the solvers themselves, but requires a pretrained network.</p>
+<p>ModeSolver_ANN is an example class for what users may design if they chose to use neural networks to generate modes. This is computationally the fasted of the solvers themselves, but requires a pretrained network. **Currently being finished, users should use the other ModeSolvers for now. **</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">wavelength</span><span class="p">,</span>
@@ -335,17 +433,17 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">sklearn_save</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">torch_save_x</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">torch_save_y</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">x</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">y</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wl</span></code> [number]</strong> Wavelength of eigenmode to solve for (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> [number]</strong> Width of the core in the rectangular cross section (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> [number]</strong> Thickness of the core in the rectangular cross section (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">sklearn_save</span></code> [string]</strong> Sklearn save location for the effective index polynomial regression. [default: ?]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">torch_save_x</span></code> [string]</strong> Pytorch save location for the Hx field neural network. [default: ?]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">torch_save_y</span></code> [string]</strong> Pytorch save location for the HY field neural network. [default: ?]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">num_modes</span></code> [int]</strong> Number of modes to solve for. (Don’t change for this specific set of networks.) [default: 1]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> [number]</strong> Width of the cladding in the rectangular cross section (m). (Don’t change for this specific set of networks.) [default: 2.5e-6]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> [number]</strong> Thickness of the cladding in the rectangular cross section (m). (Don’t change for this specific set of networks.) [default: 2.5e-6]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">x</span></code> [array [numbers]]</strong> Array of positions in the x direction. [default: np.linspace(0,cladding_width,mesh)]</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">y</span></code> [array [numbers]]</strong> Array of positions in the y direction. [default: np.linspace(0,cladding_thickess,mesh)]</p></li>
 </ul>
 </div>
 <div class="section" id="eme-simulation">

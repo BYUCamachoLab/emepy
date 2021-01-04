@@ -1,24 +1,21 @@
-from emepy.tools import get_epsfunc
+from emepy.FD_modesolvers import ModeSolver_EMpy
+from emepy.FD_modesolvers import ModeSolver_Pickle
+from emepy.mode import Mode
 from matplotlib import pyplot as plt
-import numpy as np
+import pickle as pk
 
-index_func = get_epsfunc(
-    width=0.5e-6,
-    thickness=0.22e-6,
-    cladding_width=5e-6,
-    cladding_thickness=5e-6,
-    core_index=np.sqrt(3.5),
-    cladding_index=np.sqrt(1.4),
-)
+modesolver = ModeSolver_EMpy(wl=1.55e-6, width=0.5e-6, thickness=0.22e-6, mesh=128)
+modesolver.solve()
+mode = modesolver.get_mode()
+pk.dump(mode, open("./example_file.pk", "wb+"))
 
-x = np.linspace(0, 5e-6, 128)
-y = np.linspace(0, 5e-6, 128)
+# Separate instance
 
-index = index_func(x, y)
+modesolver = ModeSolver_Pickle(filename="./example_file.pk", width=0.5e-6, thickness=0.22e-6)
 
-plt.imshow(np.real(index), extent=[0, 5, 0, 5])
-plt.colorbar()
-plt.xlabel("x (um)")
-plt.ylabel("y (um)")
-plt.title("index")
+modesolver.solve()
+mode = modesolver.get_mode()
+
+plt.figure()
+mode.plot(value_type="Imaginary")
 plt.show()

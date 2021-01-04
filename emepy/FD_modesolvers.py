@@ -51,7 +51,9 @@ class ModeSolver_Lumerical(object):
         mesh = self.mesh
         num_modes = self.num_modes
 
-        sys.path.append(self.lumapi_location)
+        if self.lumapi_location:
+            sys.path.append(self.lumapi_location)
+
         import lumapi as lm
 
         with lm.MODE(hide=True) as mode:
@@ -174,7 +176,7 @@ class ModeSolver_Lumerical(object):
         self.neffs = None
         self.fields = None
 
-    def getMode(self, mode_num=0):
+    def get_mode(self, mode_num=0):
 
         field = self.fields[mode_num]
         Ex = field[3]
@@ -250,7 +252,7 @@ class ModeSolver_EMpy(object):
 
         self.solver = None
 
-    def getMode(self, mode_num=0):
+    def get_mode(self, mode_num=0):
 
         Ex = self.solver.modes[mode_num].get_field("Ex", self.x, self.y)
         Ey = self.solver.modes[mode_num].get_field("Ey", self.x, self.y)
@@ -276,8 +278,8 @@ class ModeSolver_Pickle(object):
         with open(self.filename, "rb") as f:
             self.mode = pickle.load(f)[self.index] if self.index != None else pickle.load(f)
 
-        self.x = self.mode.gridX
-        self.y = self.mode.gridY
+        self.x = self.mode.x
+        self.y = self.mode.y
 
     def clear(self):
 
@@ -285,7 +287,7 @@ class ModeSolver_Pickle(object):
         self.y = None
         self.mode = None
 
-    def getMode(self, mode_num=0):
+    def get_mode(self, mode_num=0):
 
         return self.mode
 

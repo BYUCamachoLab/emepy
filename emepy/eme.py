@@ -87,13 +87,13 @@ class Layer(object):
         if type(self.mode_solvers) != list:
             self.mode_solvers.solve()
             for mode in range(self.num_modes):
-                modes.append(self.mode_solvers.getMode(mode))
+                modes.append(self.mode_solvers.get_mode(mode))
 
         else:
             for index in range(len(self.mode_solvers)):
                 self.mode_solvers[index][0].solve()
                 for mode in range(self.mode_solvers[index][1]):
-                    modes.append(self.mode_solvers[index][0].getMode(mode))
+                    modes.append(self.mode_solvers[index][0].get_mode(mode))
 
         self.activated_layer = ActivatedLayer(modes, self.wavelength, self.length)
 
