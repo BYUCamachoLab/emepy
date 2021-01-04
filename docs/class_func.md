@@ -190,6 +190,8 @@ ModeSolver_Lumerical requires the Lumerical API. Licensing for such is not free.
 - **`mesh` [int]** If provided, provides an equally spaced x,y grid with `mesh` number of points.  [default: 300]
 - **`lumapi_location` [string]** If the Lumerical Python API is not already in the user's path, they may add the path here. [default: None]. Ubuntu example: "/opt/lumerical/v202/api/python" .
 
+**Example**
+
     from emepy.FD_modesolvers import ModeSolver_Lumerical
     from emepy.mode import Mode
     from matplotlib import pyplot as plt
