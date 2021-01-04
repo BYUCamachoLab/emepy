@@ -36,76 +36,134 @@ class Mode(object):
         self.Ey = np.array(Ey)
         self.Ez = np.array(Ez)
 
-    def plot(self, imag=False, save=None):
+    def plot(self, value_type="Real", colorbar=True):
 
-        if imag:
+        self /= max([np.abs(np.real(np.amax(i))) for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]])
+
+        if value_type == "Imaginary":
             Hx = np.imag(self.Hx).T
             Hy = np.imag(self.Hy).T
             Hz = np.imag(self.Hz).T
             Ex = np.imag(self.Ex).T
             Ey = np.imag(self.Ey).T
             Ez = np.imag(self.Ez).T
-        else:
+        elif value_type == "Abs":
+            Hx = np.abs(self.Hx).T
+            Hy = np.abs(self.Hy).T
+            Hz = np.abs(self.Hz).T
+            Ex = np.abs(self.Ex).T
+            Ey = np.abs(self.Ey).T
+            Ez = np.abs(self.Ez).T
+        elif value_type == "Abs^2":
+            Hx = np.abs(self.Hx).T ** 2
+            Hy = np.abs(self.Hy).T ** 2
+            Hz = np.abs(self.Hz).T ** 2
+            Ex = np.abs(self.Ex).T ** 2
+            Ey = np.abs(self.Ey).T ** 2
+            Ez = np.abs(self.Ez).T ** 2
+        elif value_type == "Real":
             Hx = np.real(self.Hx).T
             Hy = np.real(self.Hy).T
             Hz = np.real(self.Hz).T
             Ex = np.real(self.Ex).T
             Ey = np.real(self.Ey).T
             Ez = np.real(self.Ez).T
-
-        plt.figure()
+        else:
+            raise Exception("Invalid value_type entered. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real')")
 
         plt.subplot(2, 3, 4, adjustable="box", aspect=Ex.shape[0] / Ex.shape[1])
         v = max(abs(Ex.min()), abs(Ex.max()))
-        plt.imshow(Ex, cmap="RdBu", vmin=-v, vmax=v)
-        plt.title("Ex")
-        plt.xlabel("x1e-6")
-        plt.ylabel("x1e-6")
+        plt.imshow(
+            Ex,
+            cmap="RdBu",
+            vmin=-v,
+            vmax=v,
+            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+        )
+        plt.title(value_type + "(Ex)")
+        if colorbar:
+            plt.colorbar(fraction=0.046, pad=0.04)
+        plt.xlabel("x µm")
+        plt.ylabel("y µm")
 
         plt.subplot(2, 3, 5, adjustable="box", aspect=Ey.shape[0] / Ey.shape[1])
         v = max(abs(Ey.min()), abs(Ey.max()))
-        plt.imshow(Ey, cmap="RdBu", vmin=-v, vmax=v)
-        plt.title("Ey")
-        plt.xlabel("x1e-6")
-        plt.ylabel("x1e-6")
+        plt.imshow(
+            Ey,
+            cmap="RdBu",
+            vmin=-v,
+            vmax=v,
+            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+        )
+        plt.title(value_type + "(Ey)")
+        if colorbar:
+            plt.colorbar(fraction=0.046, pad=0.04)
+        plt.xlabel("x µm")
+        plt.ylabel("y µm")
 
         plt.subplot(2, 3, 6, adjustable="box", aspect=Ez.shape[0] / Ez.shape[1])
         v = max(abs(Ez.min()), abs(Ez.max()))
-        plt.imshow(Ez, cmap="RdBu", vmin=-v, vmax=v)
-        plt.title("Ez")
-        plt.xlabel("x1e-6")
-        plt.ylabel("x1e-6")
+        plt.imshow(
+            Ez,
+            cmap="RdBu",
+            vmin=-v,
+            vmax=v,
+            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+        )
+        plt.title(value_type + "(Ez)")
+        if colorbar:
+            plt.colorbar(fraction=0.046, pad=0.04)
+        plt.xlabel("x µm")
+        plt.ylabel("y µm")
 
         plt.subplot(2, 3, 1, adjustable="box", aspect=Hx.shape[0] / Hx.shape[1])
         v = max(abs(Hx.min()), abs(Hx.max()))
-        plt.imshow(Hx, cmap="RdBu", vmin=-v, vmax=v)
-        plt.title("Hx")
-        plt.xlabel("x1e-6")
-        plt.ylabel("x1e-6")
+        plt.imshow(
+            Hx,
+            cmap="RdBu",
+            vmin=-v,
+            vmax=v,
+            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+        )
+        plt.title(value_type + "(Hx)")
+        if colorbar:
+            plt.colorbar(fraction=0.046, pad=0.04)
+        plt.xlabel("x µm")
+        plt.ylabel("y µm")
 
         plt.subplot(2, 3, 2, adjustable="box", aspect=Hy.shape[0] / Hy.shape[1])
         v = max(abs(Hy.min()), abs(Hy.max()))
-        plt.imshow(Hy, cmap="RdBu", vmin=-v, vmax=v)
-        plt.title("Hy")
-        plt.xlabel("x1e-6")
-        plt.ylabel("x1e-6")
+        plt.imshow(
+            Hy,
+            cmap="RdBu",
+            vmin=-v,
+            vmax=v,
+            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+        )
+        plt.title(value_type + "(Hy)")
+        if colorbar:
+            plt.colorbar(fraction=0.046, pad=0.04)
+        plt.xlabel("x µm")
+        plt.ylabel("y µm")
 
         plt.subplot(2, 3, 3, adjustable="box", aspect=Hz.shape[0] / Hz.shape[1])
         v = max(abs(Hz.min()), abs(Hz.max()))
-        plt.imshow(Hz, cmap="RdBu", vmin=-v, vmax=v)
-        plt.title("Hz")
-        plt.xlabel("x1e-6")
-        plt.ylabel("x1e-6")
+        plt.imshow(
+            Hz,
+            cmap="RdBu",
+            vmin=-v,
+            vmax=v,
+            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+        )
+        plt.title(value_type + "(Hz)")
+        if colorbar:
+            plt.colorbar(fraction=0.046, pad=0.04)
+        plt.xlabel("x µm")
+        plt.ylabel("y µm")
 
         plt.tight_layout()
 
-        if not save:
-            plt.show()
-
-        else:
-            plt.savefig(save)
-
-    def _innerProduct(self, mode1, mode2):
+    def _inner_product(self, mode1, mode2):
 
         res = mode1.Ex.shape[0] * mode1.Ex.shape[1]
         Ex = mode1.Ex.reshape(1, res)
@@ -125,9 +183,9 @@ class Mode(object):
 
         return 0.5 * np.trapz(np.trapz(cross, mode1.x), mode1.y)
 
-    def innerProduct(self, mode2):
-        return self._innerProduct(self, mode2)
-        # return self._innerProduct(self, mode2) * self._innerProduct(mode2, self) / self._innerProduct(self, self)
+    def inner_product(self, mode2):
+        return self._inner_product(self, mode2)
+        # return self._inner_product(self, mode2) * self._inner_product(mode2, self) / self._inner_product(self, self)
 
     def __str__(self):
 
@@ -179,7 +237,7 @@ class Mode(object):
 
     def normalize(self):
 
-        factor = self.innerProduct(self)
+        factor = self.inner_product(self)
         self /= np.sqrt(factor)
 
     def zero_phase(self):
@@ -190,23 +248,23 @@ class Mode(object):
         if (np.sum(np.real(self.Hy))) < 0:
             self *= -1
 
-    def getFields(self):
+    def get_fields(self):
 
         return [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez]
 
-    def getH(self):
+    def get_H(self):
 
         return [self.Hx, self.Hy, self.Hz]
 
-    def getE(self):
+    def get_E(self):
 
         return [self.Ex, self.Ey, self.Ez]
 
-    def getNeff(self):
+    def get_neff(self):
 
         return self.neff
 
-    def getWavelength(self):
+    def get_wavelength(self):
 
         return self.wl
 
