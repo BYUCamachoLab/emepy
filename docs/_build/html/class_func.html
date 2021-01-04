@@ -167,27 +167,58 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> []</strong></p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">width</span></code> [number]</strong> The width of the cross sectional core (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">thickness</span></code> [number]</strong> The thickness of the cross sectional core (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_width</span></code> [number]</strong> The width of the cross sectional cladding (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_thickness</span></code> [number]</strong> The thickness of the cross sectional cladding (m).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">core_index</span></code> [number]</strong> Index of refraction of the cross sectional core.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">cladding_index</span></code> [number]</strong> Index of refraction of the cross sectional cladding.</p></li>
 </ul>
+<p>The get_epsfunc function takes in a geometry and index of refraction for core and cladding of a simple rectangular waveguide and outputs another function. This new function can be used to extract the cross sectional square of the index of refraction for a given x,y space. This is only necessary for the EMpy modesolver, which is handled in the backend. Therefore users do not need to use this function, but can if they wish.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">emepy.tools</span> <span class="kn">import</span> <span class="n">get_epsfunc</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">index_func</span> <span class="o">=</span> <span class="n">get_epsfunc</span><span class="p">(</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="o">.</span><span class="mf">5e-6</span><span class="p">,</span> 
+    <span class="n">thickness</span> <span class="o">=</span> <span class="o">.</span><span class="mf">22e-6</span><span class="p">,</span> 
+    <span class="n">cladding_width</span> <span class="o">=</span> <span class="mf">5e-6</span><span class="p">,</span> 
+    <span class="n">cladding_thickness</span> <span class="o">=</span> <span class="mf">5e-6</span><span class="p">,</span> 
+    <span class="n">core_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.5</span><span class="p">),</span> 
+    <span class="n">cladding_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.4</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">5e-6</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">5e-6</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+
+<span class="n">index</span> <span class="o">=</span> <span class="n">index_func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">index</span><span class="p">),</span><span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x (um)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;y (um)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;index&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><img alt="_images/eps_func.png" src="_images/eps_func.png" /></p>
 <hr class="docutils" />
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">Si</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> [number]</strong> The wavelength of light propagating through silicon (µm).</p></li>
 </ul>
+<p>The Si function provides an index of refraction in silicon given a specific wavelength. The function uses a regression on a dataset and is thus only valid for a range of wavelengths: (1.2µm - 14µm).</p>
 <hr class="docutils" />
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">SiO2</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> []</strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wavelength</span></code> [number]</strong> The wavelength of light propagating through silicon dioxide (glass) (µm).</p></li>
 </ul>
+<p>The SiO2 function provides an index of refraction in silicon given a specific wavelength. The function uses a regression on a dataset and is thus only valid for a range of wavelengths: (0.21µm - 6.7µm).</p>
 </div>
 <div class="section" id="modesolvers">
 <h2>Modesolvers<a class="headerlink" href="#modesolvers" title="Permalink to this headline">¶</a></h2>

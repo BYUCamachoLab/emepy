@@ -11,24 +11,59 @@
         cladding_index
     )
 
-- **`width` []**
-- **`thickness` []**
-- **`cladding_width` []**
-- **`cladding_thickness` []**
-- **`core_index` []**
-- **`cladding_index` []**
+- **`width` [number]** The width of the cross sectional core (m).
+- **`thickness` [number]** The thickness of the cross sectional core (m).
+- **`cladding_width` [number]** The width of the cross sectional cladding (m).
+- **`cladding_thickness` [number]** The thickness of the cross sectional cladding (m).
+- **`core_index` [number]** Index of refraction of the cross sectional core.
+- **`cladding_index` [number]** Index of refraction of the cross sectional cladding.
+
+The get_epsfunc function takes in a geometry and index of refraction for core and cladding of a simple rectangular waveguide and outputs another function. This new function can be used to extract the cross sectional square of the index of refraction for a given x,y space. This is only necessary for the EMpy modesolver, which is handled in the backend. Therefore users do not need to use this function, but can if they wish. 
+
+**Example**
+
+    from emepy.tools import get_epsfunc
+    from matplotlib import pyplot as plt
+    import numpy as np
+
+    index_func = get_epsfunc(
+        width = .5e-6, 
+        thickness = .22e-6, 
+        cladding_width = 5e-6, 
+        cladding_thickness = 5e-6, 
+        core_index = np.sqrt(3.5), 
+        cladding_index = np.sqrt(1.4)
+    )
+
+    x = np.linspace(0, 5e-6, 128)
+    y = np.linspace(0, 5e-6, 128)
+
+    index = index_func(x,y)
+
+    plt.imshow(np.real(index),extent=[0, 5, 0, 5])
+    plt.colorbar()
+    plt.xlabel('x (um)')
+    plt.ylabel('y (um)')
+    plt.title('index')
+    plt.show()
+
+![](images/eps_func.png)
 
 ---
 
     def Si(wavelength)
 
-- **`wavelength` []**
+- **`wavelength` [number]** The wavelength of light propagating through silicon (µm).
+
+The Si function provides an index of refraction in silicon given a specific wavelength. The function uses a regression on a dataset and is thus only valid for a range of wavelengths: (1.2µm - 14µm).
 
 ---
 
     def SiO2(wavelength)
 
-- **`wavelength` []**
+- **`wavelength` [number]** The wavelength of light propagating through silicon dioxide (glass) (µm).
+
+The SiO2 function provides an index of refraction in silicon given a specific wavelength. The function uses a regression on a dataset and is thus only valid for a range of wavelengths: (0.21µm - 6.7µm).
 
 ## Modesolvers
 
