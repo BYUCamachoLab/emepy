@@ -151,7 +151,7 @@ class PeriodicEME(object):
         num_modes = max([l.num_modes for l in self.layers])
         self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
 
-        eme = EME(True)
+        eme = EME(keep_modeset=True)
         for layer in self.layers:
             eme.add_layer(layer)
         eme.propagate()

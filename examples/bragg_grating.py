@@ -7,13 +7,13 @@ from emepy.mode import Mode
 import numpy as np
 from matplotlib import pyplot as plt
 
-num_periods = 10  # Number of Periods for Bragg Grating
-length = 0.16  # Length of each segment of BG, Period = Length * 2
-num_wavelengths = 50  # Number of wavelengths to sweep
+num_periods = 50  # Number of Periods for Bragg Grating
+length = 0.155  # Length of each segment of BG, Period = Length * 2
+num_wavelengths = 2  # Number of wavelengths to sweep
 wl_lower = 1.5  # Lower wavelength bound
 wl_upper = 1.6  # Upper wavelength bound
 num_modes = 1  # Number of Modes
-mesh = 128
+mesh = 256
 modesolver = ModeSolver_Lumerical
 
 t = []  # Array that holds the transmission coefficients for different wavelengths
@@ -50,8 +50,8 @@ for wavelength in np.linspace(wl_lower, wl_upper, num_wavelengths):
     t.append(np.abs((eme.s_parameters())[0, 0, num_modes]) ** 2)  # Grab the transmission coefficient
 
 # Plot the results
-plt.plot(np.linspace(wl_lower, wl_upper, num_wavelengths), 20 * np.log(t))
+plt.plot(np.linspace(wl_lower, wl_upper, num_wavelengths), t)
 plt.title("BG Bode Plot Periods=" + str(num_periods))
 plt.xlabel("Wavelength (microns)")
-plt.ylabel("dB")
-plt.savefig("./p5_" + str(num_periods) + ".jpg")
+plt.ylabel("t")
+plt.savefig("./p50_" + str(num_periods) + ".jpg")
