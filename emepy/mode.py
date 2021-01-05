@@ -268,23 +268,15 @@ class Mode(object):
 
         return self.wl
 
-    def save(self, path=None, other=None):
-
-        data = (self.x, self.y, self.wl, self.neff, self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez, other)
+    def save(self, path=None):
 
         if path:
-            pickle.dump(data, open(path, "wb+"))
+            pickle.dump(self, open(path, "wb+"))
         else:
-            pickle.dump(data, open("ModeObject_" + str(random.random()) + ".pk", "wb+"))
-
-    def load(self, path):
-
-        self.x, self.y, self.wl, self.neff, self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez, self.other = pickle.load(
-            open(path, "rb")
-        )
+            pickle.dump(self, open("./ModeObject_" + str(random.random()) + ".pk", "wb+"))
 
     def compute_other_fields(self, width, thickness):
-        """Adapted from the EMpy library"""
+        """Adapted from the EMpy library LICENSED UNDER MIT LICENSE"""
 
         from scipy.sparse import coo_matrix
 
@@ -1444,6 +1436,7 @@ class Mode(object):
         self.Ez = Ezs[0]
 
     def _get_eps(self, xc, yc):
+        """Adapted from the EMpy library LICENSED UNDER MIT LICENSE"""
         tmp = self.epsfunc(xc, yc)
 
         def _reshape(tmp):
@@ -1454,12 +1447,12 @@ class Mode(object):
             tmp = np.r_[tmp[0:1, :], tmp, tmp[-1:, :]]
             return tmp
 
-        if tmp.ndim == 2:  # isotropic refractive index
+        if tmp.ndim == 2:
             tmp = _reshape(tmp)
             epsxx = epsyy = epszz = tmp
             epsxy = epsyx = np.zeros_like(epsxx)
 
-        elif tmp.ndim == 3:  # anisotropic refractive index
+        elif tmp.ndim == 3:
             assert tmp.shape[2] == 5, "eps must be NxMx5"
             epsxx = _reshape(tmp[:, :, 0])
             epsxy = _reshape(tmp[:, :, 1])

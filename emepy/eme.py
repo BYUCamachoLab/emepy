@@ -135,10 +135,13 @@ class PeriodicLayer(Model):
 
 
 class PeriodicEME(object):
-    def __init__(self, layers, num_periods):
+    def __init__(self, layers=[], num_periods=1):
 
         self.layers = layers
         self.num_periods = num_periods
+
+    def add_layer(self, layer):
+        self.layers.append(layer)
 
     def propagate(self):
 
@@ -221,8 +224,8 @@ class PeriodicEME(object):
 
 
 class EME(object):
-    def __init__(self, keep_modeset=False):
-        self.layers = []
+    def __init__(self, layers=[], keep_modeset=False):
+        self.layers = layers
         self.interfaces = []
         self.wavelength = None
         self.keep_modeset = keep_modeset

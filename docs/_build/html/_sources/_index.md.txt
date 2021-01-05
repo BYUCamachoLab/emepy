@@ -7,7 +7,10 @@
 EMEpy is an open-source eigenmode expansion solver implemented in Python. 
 
 **Key Features**
-
+- Free and open-source
+- Easy to use, great for educators
+- Computationally enhancing, great for designers
+- Complete design capabilities in Python
 
 # Eigenmode Expansion
 
@@ -23,6 +26,9 @@ For the latest version, the source code can be found on [GitHub](https://github.
 
 # Tutorials
 
+- [Complete Library](class_func.md)
+- [Simple Example: Tapered Waveguide](taper.md)
+- [Example: Bragg Grating](bragg.md)
 
 # Acknowledgements
 
