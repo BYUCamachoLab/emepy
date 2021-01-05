@@ -34,7 +34,8 @@
 
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="EMEpy Complete User Library" href="class_func.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -79,15 +80,25 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">EMEpy</a></li>
-<li><a class="reference internal" href="#eigenmode-expansion">Eigenmode Expansion</a></li>
-<li><a class="reference internal" href="#installation">Installation</a></li>
-<li><a class="reference internal" href="#tutorials">Tutorials</a></li>
-<li><a class="reference internal" href="#acknowledgements">Acknowledgements</a></li>
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">EMEpy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of Contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="class_func.html">EMEpy Complete User Library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="taper.html">Example: Taper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bragg.html">Example: Bragg Grating</a></li>
 </ul>
-</div>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#eigenmode-expansion">Eigenmode Expansion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tutorials">Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#acknowledgements">Acknowledgements</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="class_func.html">EMEpy Complete User Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="taper.html">Example: Taper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bragg.html">Example: Bragg Grating</a></li>
+</ul>
+
             
           
         </div>
@@ -138,7 +149,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -153,9 +164,30 @@
             
   <div class="section" id="emepy">
 <h1>EMEpy<a class="headerlink" href="#emepy" title="Permalink to this headline">¶</a></h1>
-<!-- .. toctree::
-   :maxdepth: 2
-   :caption: Contents: --><p>EMEpy is an open-source eigenmode expansion solver implemented in Python.</p>
+<div class="section" id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">EMEpy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eigenmode-expansion">Eigenmode Expansion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tutorials">Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#acknowledgements">Acknowledgements</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="class_func.html">EMEpy Complete User Library</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="class_func.html#tools">Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class_func.html#mode">Mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class_func.html#modesolvers">ModeSolvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class_func.html#eme-simulation">EME Simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="taper.html">Example: Taper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bragg.html">Example: Bragg Grating</a></li>
+</ul>
+</div>
+<p>EMEpy is an open-source eigenmode expansion solver implemented in Python.</p>
 <p><strong>Key Features</strong></p>
 <ul class="simple">
 <li><p>Free and open-source</p></li>
@@ -165,29 +197,30 @@
 </ul>
 </div>
 <div class="section" id="eigenmode-expansion">
-<h1>Eigenmode Expansion<a class="headerlink" href="#eigenmode-expansion" title="Permalink to this headline">¶</a></h1>
+<h2>Eigenmode Expansion<a class="headerlink" href="#eigenmode-expansion" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>EMEpy can be found on pip.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">emepy</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">emepy</span>
 </pre></div>
 </div>
 <p>For the latest version, the source code can be found on <a class="reference external" href="https://github.com/BYUCamachoLab/emepy">GitHub</a>. Clone the directory onto your local desktop.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="tutorials">
-<h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this headline">¶</a></h1>
+<h2>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="class_func.html"><span class="doc">Complete Library</span></a></p></li>
-<li><p><a class="reference internal" href="taper.html"><span class="doc">Simple Example: Tapered Waveguide</span></a></p></li>
+<li><p><a class="reference internal" href="class_func.html"><span class="doc">EMEpy Complete User Library</span></a></p></li>
+<li><p><a class="reference internal" href="taper.html"><span class="doc">Example: Taper</span></a></p></li>
 <li><p><a class="reference internal" href="bragg.html"><span class="doc">Example: Bragg Grating</span></a></p></li>
 </ul>
 </div>
 <div class="section" id="acknowledgements">
-<h1>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h1>
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h2>
+</div>
 </div>
 
 
@@ -195,6 +228,13 @@
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="class_func.html" class="btn btn-neutral float-right" title="EMEpy Complete User Library" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
   
 
   <hr/>
