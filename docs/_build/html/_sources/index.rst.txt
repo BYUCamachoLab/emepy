@@ -1,8 +1,3 @@
-.. EMEpy documentation master file, created by
-   sphinx-quickstart on Wed Dec 30 12:07:41 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 EMEpy
 =====
 
@@ -29,6 +24,12 @@ EMEpy is an open-source eigenmode expansion solver implemented in Python.
 Eigenmode Expansion
 -------------------
 
+Eigenmode Expansion (EME) is a method of simulating light through optical structures that operates in the frequency domain. The algorithm works by utilizing some useful properties of light. First, light exists as a superposition of eigenmodes that satisfy Maxwell's equations inside the structure. The eigenmodes are composed of a field pattern and an eigenvalue, $\beta$ proportional to the effective index of refraction of the structure. As these eigenmodes propagate through a structure that changes shape or material along the direction of propagation, the effective index and field patterns change. However, if the structure does not change in this direction, the eigenmodes remain the same except for the phase. Along these structures, the phase changes according to $e^{j\beta z} where z is the distance travelled. 
+
+The EME algorithm utilizes this property by taking geometric structures and representing them as a series of continuous structures in the direction of propagation. This way, each section of the geometry can contain an set of eigenmodes and phase changes. At each intersection between sections, the power of the input eigenmodes transfer into the power of the output eigenmodes. However, unless the to sets of modes are identical, reflection can also occur. 
+
+To calculate the proportion of power that transmits and reflects from any given mode to another, the overlap is calculated and a system of equations is solved. Together, the intersection mode overlap and phase propagation are cascaded and provide a set of s-parameters for the device. EMEpy can be used to calculate these values and produce s-parameters for users' geometry.
+
 Installation
 ------------
 
@@ -53,3 +54,4 @@ Tutorials
 
 Acknowledgements
 ----------------
+
