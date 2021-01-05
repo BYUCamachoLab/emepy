@@ -372,8 +372,8 @@ class InterfaceSingleMode(Model):
 
     def get_values(self, left, right):
 
-        a = 0.5 * left.innerProduct(right) + 0.5 * right.innerProduct(left)
-        b = 0.5 * left.innerProduct(right) - 0.5 * right.innerProduct(left)
+        a = 0.5 * left.inner_product(right) + 0.5 * right.inner_product(left)
+        b = 0.5 * left.inner_product(right) - 0.5 * right.inner_product(left)
 
         t = (a ** 2 - b ** 2) / a
         r = 1 - t / (a + b)
@@ -432,13 +432,13 @@ class InterfaceMultiMode(Model):
         A = np.array(
             [
                 [
-                    right.modes[k].innerProduct(left.modes[i]) + left.modes[i].innerProduct(right.modes[k])
+                    right.modes[k].inner_product(left.modes[i]) + left.modes[i].inner_product(right.modes[k])
                     for k in range(self.num_ports - curr_ports)
                 ]
                 for i in range(curr_ports)
             ]
         )
-        b = np.array([0 if i != p else 2 * left.modes[p].innerProduct(left.modes[p]) for i in range(curr_ports)])
+        b = np.array([0 if i != p else 2 * left.modes[p].inner_product(left.modes[p]) for i in range(curr_ports)])
         x = np.matmul(np.linalg.pinv(A), b)
 
         return x
@@ -449,11 +449,11 @@ class InterfaceMultiMode(Model):
             [
                 np.sum(
                     [
-                        (right.modes[k].innerProduct(left.modes[i]) - left.modes[i].innerProduct(right.modes[k])) * x[k]
+                        (right.modes[k].inner_product(left.modes[i]) - left.modes[i].inner_product(right.modes[k])) * x[k]
                         for k in range(self.num_ports - curr_ports)
                     ]
                 )
-                / (2 * left.modes[i].innerProduct(left.modes[i]))
+                / (2 * left.modes[i].inner_product(left.modes[i]))
                 for i in range(curr_ports)
             ]
         )
