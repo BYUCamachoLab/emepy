@@ -149,16 +149,15 @@ class PeriodicEME(object):
             raise Exception("Must place layers before propagating")
 
         num_modes = max([l.num_modes for l in self.layers])
-        self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
-
-        eme = EME(keep_modeset=True)
-        for layer in self.layers:
-            eme.add_layer(layer)
+        self.interface = InterfaceMultiMode if num_modes == 1 else InterfaceMultiMode
+        eme = EME(keep_modeset=True, layers=self.layers)
         eme.propagate()
         self.single_period = eme.get_s_params()
 
         left = eme.mode_set1
         right = eme.mode_set2
+
+        eme.clear()
 
         period_layer = PeriodicLayer(left.modes, right.modes, self.single_period)
         current_layer = PeriodicLayer(left.modes, right.modes, self.single_period)
@@ -227,7 +226,7 @@ class EME(object):
     def __init__(self, layers=[], keep_modeset=False):
         self.layers = layers
         self.interfaces = []
-        self.wavelength = None
+        self.wavelength = None if not len(self.layers) else layers[0].wavelength
         self.keep_modeset = keep_modeset
 
     def add_layer(self, layer):
@@ -321,6 +320,11 @@ class EME(object):
         result = simulation.simulate()
 
         return result.s
+
+    def clear(self):
+        self.layers = None
+        self.interfaces = []
+        self.wavelength = None
 
     def get_s_params(self):
         return self.s_matrix
@@ -449,7 +453,8 @@ class InterfaceMultiMode(Model):
             [
                 np.sum(
                     [
-                        (right.modes[k].inner_product(left.modes[i]) - left.modes[i].inner_product(right.modes[k])) * x[k]
+                        (right.modes[k].inner_product(left.modes[i]) - left.modes[i].inner_product(right.modes[k]))
+                        * x[k]
                         for k in range(self.num_ports - curr_ports)
                     ]
                 )

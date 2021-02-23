@@ -4,7 +4,7 @@ from scipy.interpolate import interp1d
 import os
 import time
 
-from mode import Mode
+from emepy.mode import Mode
 
 import pyMode as pm
 
@@ -28,30 +28,8 @@ from EMpy.utils import centered2d
 import EMpy
 
 
-FIELD_WIDTH = 500
+FIELD_WIDTH = 128
 FIELD_SIZE = FIELD_WIDTH ** 2
-
-
-def deNormalizeHx(field):
-
-    # field -= .5
-    field /= 250
-    field_return = np.zeros((500, 500))
-    field_return[200:300, 200:300] = field
-
-    return field_return
-
-
-def deNormalizeHy(field):
-
-    # field -= 1
-    # field *= 18
-    # field = 10 ** field
-    field /= 100
-    field_return = np.zeros((500, 500))
-    field_return[200:300, 200:300] = field
-
-    return field_return
 
 
 def getUpConvLayer(i_size, o_size, kernal, channels, first=False, last=False):
@@ -118,21 +96,20 @@ def getDownConvLayer(i_size, o_size, kernal, channels, first=False, last=False):
 
 
 class Network(nn.Module):
-    def __init__(self, code_size, channels, field_name):
+    def __init__(self, code_size, channels):
         super().__init__()
         self.channels = channels
-        self.field_name = field_name
 
-        self.linear_up_1 = nn.Linear(code_size, 5 ** 2)
-        self.linear_up_2 = nn.Linear(5 ** 2, 15 ** 2)
-        self.linear_up_3 = nn.Linear(15 ** 2, 25 ** 2)
-        self.linear_up_4 = nn.Linear(25 ** 2, 30 ** 2)
-        self.conv_up_1 = getUpConvLayer(30, 48, 3, channels, first=True)
-        self.conv_up_2 = getUpConvLayer(48, 64, 3, channels)
-        self.conv_up_3 = getUpConvLayer(64, 78, 3, channels)
-        self.conv_up_4 = getUpConvLayer(78, 90, 5, channels)
-        self.conv_up_5 = getUpConvLayer(90, 100, 5, channels, last=True)
-        self.linear_up_5 = nn.Linear(100 ** 2, 100 ** 2)
+        self.linear_up_1 = nn.Linear(code_size, int(FIELD_WIDTH / 20) ** 2)
+        self.linear_up_2 = nn.Linear(int(FIELD_WIDTH / 20) ** 2, int(FIELD_WIDTH / 7) ** 2)
+        self.linear_up_3 = nn.Linear(int(FIELD_WIDTH / 7) ** 2, int(FIELD_WIDTH / 4) ** 2)
+        self.linear_up_4 = nn.Linear(int(FIELD_WIDTH / 4) ** 2, int(FIELD_WIDTH / 3) ** 2)
+        self.conv_up_1 = getUpConvLayer(int(FIELD_WIDTH / 3), int(FIELD_WIDTH / 2), 3, channels, first=True)
+        self.conv_up_2 = getUpConvLayer(int(FIELD_WIDTH / 2), int(5 * FIELD_WIDTH / 8), 5, channels)
+        self.conv_up_3 = getUpConvLayer(int(5 * FIELD_WIDTH / 8), int(6 * FIELD_WIDTH / 8), 7, channels)
+        self.conv_up_4 = getUpConvLayer(int(6 * FIELD_WIDTH / 8), int(7 * FIELD_WIDTH / 8), 7, channels)
+        self.conv_up_5 = getUpConvLayer(int(7 * FIELD_WIDTH / 8), int(FIELD_WIDTH), 9, channels, last=True)
+        self.linear_up_5 = nn.Linear(FIELD_WIDTH ** 2, FIELD_WIDTH ** 2)
 
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
@@ -148,37 +125,20 @@ class Network(nn.Module):
 
     def forward(self, field):
 
-        if self.field_name == "Hx":
+        out = self.tanh(self.linear_up_1(field)).view(-1, 1, int(FIELD_WIDTH / 20) ** 2)
+        quit()
+        out = self.tanh(self.linear_up_2(out)).view(-1, 1, int(FIELD_WIDTH / 7) ** 2)
+        out = self.tanh(self.linear_up_3(out)).view(-1, 1, int(FIELD_WIDTH / 4) ** 2)
+        out = self.tanh(self.linear_up_4(out)).view(-1, 1, int(FIELD_WIDTH / 3), int(FIELD_WIDTH / 3))
+        out = self.tanh(self.conv_up_1(out)).view(-1, self.channels, int(FIELD_WIDTH / 2), int(FIELD_WIDTH / 2))
+        out = self.tanh(self.conv_up_2(out)).view(-1, self.channels, int(5 * FIELD_WIDTH / 8), int(5 * FIELD_WIDTH / 8))
+        out = self.tanh(self.conv_up_3(out)).view(-1, self.channels, int(6 * FIELD_WIDTH / 8), int(6 * FIELD_WIDTH / 8))
+        out = self.tanh(self.conv_up_4(out)).view(-1, self.channels, int(7 * FIELD_WIDTH / 8), int(7 * FIELD_WIDTH / 8))
+        out = self.tanh(self.conv_up_5(out)).view(-1, 1, FIELD_WIDTH ** 2)
 
-            out = self.tanh(self.linear_up_1(field)).view(-1, 1, 5 ** 2)
-            out = self.tanh(self.linear_up_2(out)).view(-1, 1, 15 ** 2)
-            out = self.tanh(self.linear_up_3(out)).view(-1, 1, 25 ** 2)
-            out = self.tanh(self.linear_up_4(out)).view(-1, 1, 30, 30)
-            out = self.tanh(self.conv_up_1(out)).view(-1, self.channels, 48, 48)
-            out = self.tanh(self.conv_up_2(out)).view(-1, self.channels, 64, 64)
-            out = self.tanh(self.conv_up_3(out)).view(-1, self.channels, 78, 78)
-            out = self.tanh(self.conv_up_4(out)).view(-1, self.channels, 90, 90)
-            out = self.tanh(self.conv_up_5(out)).view(-1, 1, 100 ** 2)
+        out = self.linear_up_5(out).view(-1, FIELD_WIDTH, FIELD_WIDTH)
 
-            out = self.linear_up_5(out).view(-1, 100, 100)
-
-            return out, field
-
-        else:
-
-            out = self.sigmoid(self.linear_up_1(field)).view(-1, 1, 5 ** 2)
-            out = self.sigmoid(self.linear_up_2(out)).view(-1, 1, 15 ** 2)
-            out = self.sigmoid(self.linear_up_3(out)).view(-1, 1, 25 ** 2)
-            out = self.sigmoid(self.linear_up_4(out)).view(-1, 1, 30, 30)
-            out = self.sigmoid(self.conv_up_1(out)).view(-1, self.channels, 48, 48)
-            out = self.sigmoid(self.conv_up_2(out)).view(-1, self.channels, 64, 64)
-            out = self.sigmoid(self.conv_up_3(out)).view(-1, self.channels, 78, 78)
-            out = self.sigmoid(self.conv_up_4(out)).view(-1, self.channels, 90, 90)
-            out = self.sigmoid(self.conv_up_5(out)).view(-1, 1, 100 ** 2)
-
-            out = self.linear_up_5(out).view(-1, 100, 100)
-
-            return out, field
+        return out, field
 
 
 class ModeSolver_Network(object):
@@ -246,7 +206,7 @@ class ModeSolver_Network(object):
     def Hx_network(self, mode_num, width, thickness, wl, torch_save):
 
         with open(torch_save, "rb") as f:
-            model = Network(3, 5, "Hx")
+            model = Network(3, 5)
 
             # original saved file with DataParallel
             state_dict = torch.load(f)
@@ -265,14 +225,14 @@ class ModeSolver_Network(object):
         with torch.no_grad():
             parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
             output, _ = model(parameters)
-            output = deNormalizeHx(output)
+            output = output.numpy()
 
         return output
 
     def Hy_network(self, mode_num, width, thickness, wl, torch_save):
 
         with open(torch_save, "rb") as f:
-            model = Network(3, 15, "Hy")
+            model = Network(3, 5)
 
             # original saved file with DataParallel
             state_dict = torch.load(f)
@@ -291,7 +251,7 @@ class ModeSolver_Network(object):
         with torch.no_grad():
             parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
             output, _ = model(parameters)
-            output = deNormalizeHy(output)
+            output = output.numpy()
 
         return output
 
