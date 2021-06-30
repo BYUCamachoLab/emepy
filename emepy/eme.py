@@ -51,16 +51,26 @@ class ActivatedLayer(Model):
             self.modes[mode].normalize()
 
     def get_s_params(self):
-        eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes]) / (self.wavelength)
+        eigenvalues1 = (
+            (2 * np.pi)
+            * np.array([mode.neff for mode in self.modes])
+            / (self.wavelength)
+        )
 
         propagation_matrix1 = np.diag(
-            np.exp(self.length * 1j * np.array(eigenvalues1.tolist() + eigenvalues1.tolist()))
+            np.exp(
+                self.length
+                * 1j
+                * np.array(eigenvalues1.tolist() + eigenvalues1.tolist())
+            )
         )
         num_cols = len(propagation_matrix1)
         rows = np.array(np.split(propagation_matrix1, num_cols))
         first_half = [rows[j + num_cols // 2][0] for j in range(num_cols // 2)]
         second_half = [rows[j][0] for j in range(num_cols // 2)]
-        propagation_matrix = np.array(first_half + second_half).reshape((1, 2 * self.num_modes, 2 * self.num_modes))
+        propagation_matrix = np.array(first_half + second_half).reshape(
+            (1, 2 * self.num_modes, 2 * self.num_modes)
+        )
 
         self.right_ports = self.num_modes
         self.left_ports = self.num_modes
@@ -196,7 +206,9 @@ class PeriodicEME(object):
         plt.figure()
         lengths = [0.0] + [i.length for i in self.layers]
         lengths = [sum(lengths[: i + 1]) for i in range(len(lengths))]
-        widths = [self.layers[0].mode_solvers.width] + [i.mode_solvers.width for i in self.layers]
+        widths = [self.layers[0].mode_solvers.width] + [
+            i.mode_solvers.width for i in self.layers
+        ]
 
         # lengths = lengths[:-1]
         # widths = widths[:-1]
@@ -243,10 +255,14 @@ class EME(object):
         self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
 
         self.layers[0].activate_layer()
-        self.mode_set1 = self.layers[0].get_activated_layer() if self.keep_modeset else None
+        self.mode_set1 = (
+            self.layers[0].get_activated_layer() if self.keep_modeset else None
+        )
         self.layers[1].activate_layer()
         current = Current(self.wavelength, self.layers[0].get_activated_layer())
-        interface = self.interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
+        interface = self.interface(
+            self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer()
+        )
         interface.solve()
         self.layers[0].clear()
         current.update_s(self.cascade(current, interface), interface)
@@ -270,10 +286,13 @@ class EME(object):
             interface.clear()
 
         current.update_s(
-            self.cascade(current, self.layers[-1].get_activated_layer()), self.layers[-1].get_activated_layer()
+            self.cascade(current, self.layers[-1].get_activated_layer()),
+            self.layers[-1].get_activated_layer(),
         )
 
-        self.mode_set2 = self.layers[-1].get_activated_layer() if self.keep_modeset else None
+        self.mode_set2 = (
+            self.layers[-1].get_activated_layer() if self.keep_modeset else None
+        )
 
         self.layers[-1].clear()
         self.s_matrix = current.s_params
@@ -283,7 +302,9 @@ class EME(object):
         plt.figure()
         lengths = [0.0] + [i.length for i in self.layers]
         lengths = [sum(lengths[: i + 1]) for i in range(len(lengths))]
-        widths = [self.layers[0].mode_solvers.width] + [i.mode_solvers.width for i in self.layers]
+        widths = [self.layers[0].mode_solvers.width] + [
+            i.mode_solvers.width for i in self.layers
+        ]
 
         # lengths = lengths[:-1]
         # widths = widths[:-1]
@@ -436,13 +457,19 @@ class InterfaceMultiMode(Model):
         A = np.array(
             [
                 [
-                    right.modes[k].inner_product(left.modes[i]) + left.modes[i].inner_product(right.modes[k])
+                    right.modes[k].inner_product(left.modes[i])
+                    + left.modes[i].inner_product(right.modes[k])
                     for k in range(self.num_ports - curr_ports)
                 ]
                 for i in range(curr_ports)
             ]
         )
-        b = np.array([0 if i != p else 2 * left.modes[p].inner_product(left.modes[p]) for i in range(curr_ports)])
+        b = np.array(
+            [
+                0 if i != p else 2 * left.modes[p].inner_product(left.modes[p])
+                for i in range(curr_ports)
+            ]
+        )
         x = np.matmul(np.linalg.pinv(A), b)
 
         return x
@@ -453,7 +480,10 @@ class InterfaceMultiMode(Model):
             [
                 np.sum(
                     [
-                        (right.modes[k].inner_product(left.modes[i]) - left.modes[i].inner_product(right.modes[k]))
+                        (
+                            right.modes[k].inner_product(left.modes[i])
+                            - left.modes[i].inner_product(right.modes[k])
+                        )
                         * x[k]
                         for k in range(self.num_ports - curr_ports)
                     ]
@@ -468,4 +498,3 @@ class InterfaceMultiMode(Model):
     def clear(self):
 
         self.s_params = None
-
