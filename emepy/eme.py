@@ -1,23 +1,28 @@
-from emepy.mode import Mode
-
-from simphony.elements import Model
-from simphony.tools import interpolate
-from simphony.netlist import Subcircuit
-from simphony.simulation import SweepSimulation, wl2freq
-import simphony
-
-import numpy as np
 from matplotlib import pyplot as plt
+import numpy as np
+from simphony import Model
+from simphony.pins import Pin
+from simphony.tools import wl2freq
 
 
 class Current(Model):
     freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
 
-    def __init__(self, wavelength, s):
+    def __init__(self, wavelength, s, **kwargs):
+
         self.left_ports = s.left_ports
         self.left_pins = s.left_pins
         self.update_s(s.s_params, s)
         self.wavelength = wavelength
+
+        # create the pins for the model
+        pins = []
+        for name in self.left_pins:
+            pins.append(Pin(self, name))
+        for name in self.right_pins:
+            pins.append(Pin(self, name))
+
+        super().__init__(**kwargs, pins=pins)
 
     def update_s(self, s, layer):
 
@@ -25,16 +30,15 @@ class Current(Model):
         self.right_ports = layer.right_ports
         self.num_ports = self.right_ports + self.left_ports
         self.right_pins = layer.right_pins
-        self.pins = tuple(self.left_pins + self.right_pins)
 
-    def s_parameters(self, freq):
+    def s_parameters(self, freqs):
         return self.s_params
 
 
 class ActivatedLayer(Model):
     freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
 
-    def __init__(self, modes, wavelength, length):
+    def __init__(self, modes, wavelength, length, **kwargs):
         self.num_modes = len(modes)
         self.modes = modes
         self.wavelength = wavelength
@@ -42,9 +46,16 @@ class ActivatedLayer(Model):
         self.normalize_fields()
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)]
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)]
-        self.pins = tuple(self.left_pins + self.right_pins)
         self.s_params = self.get_s_params()
-        self.freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
+
+        # create the pins for the model
+        pins = []
+        for name in self.left_pins:
+            pins.append(Pin(self, name))
+        for name in self.right_pins:
+            pins.append(Pin(self, name))
+
+        super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self):
         for mode in range(len(self.modes)):
@@ -78,7 +89,7 @@ class ActivatedLayer(Model):
 
         return propagation_matrix
 
-    def s_parameters(self, freq):
+    def s_parameters(self, freqs):
         return self.s_params
 
 
@@ -122,7 +133,7 @@ class Layer(object):
 class PeriodicLayer(Model):
     freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
 
-    def __init__(self, left_modes, right_modes, s_params):
+    def __init__(self, left_modes, right_modes, s_params, **kwargs):
         self.left_modes = left_modes
         self.right_modes = right_modes
         self.left_ports = len(self.left_modes)
@@ -130,9 +141,16 @@ class PeriodicLayer(Model):
         self.normalize_fields()
         self.left_pins = ["left" + str(i) for i in range(len(self.left_modes))]
         self.right_pins = ["right" + str(i) for i in range(len(self.right_modes))]
-        self.pins = tuple(self.left_pins + self.right_pins)
         self.s_params = s_params
-        self.freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
+
+        # create the pins for the model
+        pins = []
+        for name in self.left_pins:
+            pins.append(Pin(self, name))
+        for name in self.right_pins:
+            pins.append(Pin(self, name))
+
+        super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self):
         for mode in range(len(self.left_modes)):
@@ -140,7 +158,7 @@ class PeriodicLayer(Model):
         for mode in range(len(self.right_modes)):
             self.right_modes[mode].normalize()
 
-    def s_parameters(self, freq=1.55e-6):
+    def s_parameters(self, freqs):
         return self.s_params
 
 
@@ -185,17 +203,16 @@ class PeriodicEME(object):
         self.s_params = current_layer.s_params
 
     def cascade(self, first, second):
+        # make sure the components are completely disconnected
+        first.disconnect()
+        second.disconnect()
 
-        circuit = Subcircuit("Device")
-
-        circuit.add([(first, "first"), (second, "second")])
+        # connect the components
         for port in range(first.right_ports):
-            circuit.connect("first", "right" + str(port), "second", "left" + str(port))
+            first[f"right{port}"].connect(second[f"left{port}"])
 
-        simulation = SweepSimulation(circuit, 1.55e-6, 1.55e-6, num=1)
-        result = simulation.simulate()
-
-        return result.s
+        # get the scattering parameters
+        return first.circuit.s_parameters(np.array([1.55e-6]))
 
     def s_parameters(self):
 
@@ -330,17 +347,16 @@ class EME(object):
         plt.show()
 
     def cascade(self, first, second):
+        # make sure the components are completely disconnected
+        first.disconnect()
+        second.disconnect()
 
-        circuit = Subcircuit("Device")
-
-        circuit.add([(first, "first"), (second, "second")])
+        # connect the components
         for port in range(first.right_ports):
-            circuit.connect("first", "right" + str(port), "second", "left" + str(port))
+            first[f"right{port}"].connect(second[f"left{port}"])
 
-        simulation = SweepSimulation(circuit, self.wavelength, self.wavelength, num=1)
-        result = simulation.simulate()
-
-        return result.s
+        # get the scattering parameters
+        return first.circuit.s_parameters(np.array([self.wavelength]))
 
     def clear(self):
         self.layers = None
@@ -352,7 +368,9 @@ class EME(object):
 
 
 class InterfaceSingleMode(Model):
-    def __init__(self, layer1, layer2, num_modes=1):
+    freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
+
+    def __init__(self, layer1, layer2, num_modes=1, **kwargs):
         self.layer1 = layer1
         self.layer2 = layer2
         self.num_modes = num_modes
@@ -361,10 +379,17 @@ class InterfaceSingleMode(Model):
         self.num_ports = self.left_ports + self.right_ports
         self.left_pins = ["left" + str(i) for i in range(self.left_ports)]
         self.right_pins = ["right" + str(i) for i in range(self.right_ports)]
-        self.pins = tuple(self.left_pins + self.right_pins)
-        self.freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
 
-    def s_parameters(self, freq):
+        # create the pins for the model
+        pins = []
+        for name in self.left_pins:
+            pins.append(Pin(self, name))
+        for name in self.right_pins:
+            pins.append(Pin(self, name))
+
+        super().__init__(**kwargs, pins=pins)
+
+    def s_parameters(self, freqs):
         return self.s
 
     def solve(self):
@@ -410,7 +435,9 @@ class InterfaceSingleMode(Model):
 
 
 class InterfaceMultiMode(Model):
-    def __init__(self, layer1, layer2):
+    freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
+
+    def __init__(self, layer1, layer2, **kwargs):
         self.layer1 = layer1
         self.layer2 = layer2
         self.num_ports = layer1.right_ports + layer2.left_ports
@@ -419,10 +446,17 @@ class InterfaceMultiMode(Model):
 
         self.left_pins = ["left" + str(i) for i in range(self.left_ports)]
         self.right_pins = ["right" + str(i) for i in range(self.right_ports)]
-        self.pins = tuple(self.left_pins + self.right_pins)
-        self.freq_range = (wl2freq(2000e-9), wl2freq(1000e-9))
 
-    def s_parameters(self, freq):
+        # create the pins for the model
+        pins = []
+        for name in self.left_pins:
+            pins.append(Pin(self, name))
+        for name in self.right_pins:
+            pins.append(Pin(self, name))
+
+        super().__init__(**kwargs, pins=pins)
+
+    def s_parameters(self, freqs):
         return self.s
 
     def solve(self):
