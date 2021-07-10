@@ -1,2 +1,7 @@
 simphony
 ElectroMagneticPython
+numpy
+matplotlib
+scipy
+sklearn
+pandas

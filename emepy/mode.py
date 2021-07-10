@@ -36,6 +36,7 @@ class Mode(object):
         self.Ey = np.array(Ey)
         self.Ez = np.array(Ez)
 
+
     def plot(self, value_type="Real", colorbar=True):
 
         self /= max([np.abs(np.real(np.amax(i))) for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]])
@@ -237,6 +238,7 @@ class Mode(object):
 
     def normalize(self):
 
+        self.zero_phase()
         factor = self.inner_product(self)
         self /= np.sqrt(factor)
 
@@ -1430,10 +1432,14 @@ class Mode(object):
             Eys.append(Ey)
             Ezs.append(Ez)
 
-        self.Hz = Hzs[0]
+        self.Hx = Hx[1:,1:] + 0j
+        self.Hy = Hy[1:,1:] + 0j
+        self.Hz = Hzs[0][1:,1:]
         self.Ex = Exs[0]
         self.Ey = Eys[0]
         self.Ez = Ezs[0]
+        self.x = self.x[1:]
+        self.y = self.y[1:]
 
     def _get_eps(self, xc, yc):
         """Adapted from the EMpy library LICENSED UNDER MIT LICENSE"""
