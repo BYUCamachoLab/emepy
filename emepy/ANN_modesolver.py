@@ -5,9 +5,6 @@ import os
 import time
 
 from emepy.mode import Mode
-
-import pyMode as pm
-
 import sys
 
 import torch
@@ -100,21 +97,21 @@ class Network(nn.Module):
         super().__init__()
         self.channels = channels
 
-        self.linear_up_1 = nn.Linear(code_size, int(FIELD_WIDTH / 20) ** 2)
-        self.linear_up_2 = nn.Linear(int(FIELD_WIDTH / 20) ** 2, int(FIELD_WIDTH / 7) ** 2)
-        self.linear_up_3 = nn.Linear(int(FIELD_WIDTH / 7) ** 2, int(FIELD_WIDTH / 4) ** 2)
-        self.linear_up_4 = nn.Linear(int(FIELD_WIDTH / 4) ** 2, int(FIELD_WIDTH / 3) ** 2)
-        self.conv_up_1 = getUpConvLayer(int(FIELD_WIDTH / 3), int(FIELD_WIDTH / 2), 3, channels, first=True)
-        self.conv_up_2 = getUpConvLayer(int(FIELD_WIDTH / 2), int(5 * FIELD_WIDTH / 8), 5, channels)
-        self.conv_up_3 = getUpConvLayer(int(5 * FIELD_WIDTH / 8), int(6 * FIELD_WIDTH / 8), 7, channels)
-        self.conv_up_4 = getUpConvLayer(int(6 * FIELD_WIDTH / 8), int(7 * FIELD_WIDTH / 8), 7, channels)
-        self.conv_up_5 = getUpConvLayer(int(7 * FIELD_WIDTH / 8), int(FIELD_WIDTH), 9, channels, last=True)
-        self.linear_up_5 = nn.Linear(FIELD_WIDTH ** 2, FIELD_WIDTH ** 2)
+        self.linear_up_1 = nn.Linear(code_size, int(FIELD_WIDTH/20)**2)
+        self.linear_up_2 = nn.Linear(int(FIELD_WIDTH/20)**2, int(FIELD_WIDTH/7)**2)
+        self.linear_up_3 = nn.Linear(int(FIELD_WIDTH/7)**2, int(FIELD_WIDTH/4)**2)
+        self.linear_up_4 = nn.Linear(int(FIELD_WIDTH/4)**2, int(FIELD_WIDTH/3)**2)
+        self.conv_up_1 = getUpConvLayer(int(FIELD_WIDTH/3), int(FIELD_WIDTH/2), 3, channels, first=True)
+        self.conv_up_2 = getUpConvLayer(int(FIELD_WIDTH/2), int(5*FIELD_WIDTH/8), 5, channels)
+        self.conv_up_3 = getUpConvLayer(int(5*FIELD_WIDTH/8), int(6*FIELD_WIDTH/8), 7, channels)
+        self.conv_up_4 = getUpConvLayer(int(6*FIELD_WIDTH/8), int(7*FIELD_WIDTH/8), 7, channels)
+        self.conv_up_5 = getUpConvLayer(int(7*FIELD_WIDTH/8), int(FIELD_WIDTH), 9, channels,last=True)
+        self.linear_up_5 = nn.Linear(FIELD_WIDTH**2, FIELD_WIDTH**2)
 
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         self.sigmoid = nn.Sigmoid()
-
+        
         torch.nn.init.xavier_normal_(self.linear_up_1.weight)
         torch.nn.init.xavier_normal_(self.linear_up_2.weight)
         torch.nn.init.xavier_normal_(self.linear_up_3.weight)
@@ -125,18 +122,18 @@ class Network(nn.Module):
 
     def forward(self, field):
 
-        out = self.tanh(self.linear_up_1(field)).view(-1, 1, int(FIELD_WIDTH / 20) ** 2)
-        quit()
-        out = self.tanh(self.linear_up_2(out)).view(-1, 1, int(FIELD_WIDTH / 7) ** 2)
-        out = self.tanh(self.linear_up_3(out)).view(-1, 1, int(FIELD_WIDTH / 4) ** 2)
-        out = self.tanh(self.linear_up_4(out)).view(-1, 1, int(FIELD_WIDTH / 3), int(FIELD_WIDTH / 3))
-        out = self.tanh(self.conv_up_1(out)).view(-1, self.channels, int(FIELD_WIDTH / 2), int(FIELD_WIDTH / 2))
-        out = self.tanh(self.conv_up_2(out)).view(-1, self.channels, int(5 * FIELD_WIDTH / 8), int(5 * FIELD_WIDTH / 8))
-        out = self.tanh(self.conv_up_3(out)).view(-1, self.channels, int(6 * FIELD_WIDTH / 8), int(6 * FIELD_WIDTH / 8))
-        out = self.tanh(self.conv_up_4(out)).view(-1, self.channels, int(7 * FIELD_WIDTH / 8), int(7 * FIELD_WIDTH / 8))
-        out = self.tanh(self.conv_up_5(out)).view(-1, 1, FIELD_WIDTH ** 2)
 
-        out = self.linear_up_5(out).view(-1, FIELD_WIDTH, FIELD_WIDTH)
+        out = self.tanh(self.linear_up_1(field)).view(-1,1,int(FIELD_WIDTH/20)**2)
+        out = self.tanh(self.linear_up_2(out)).view(-1,1,int(FIELD_WIDTH/7)**2)
+        out = self.tanh(self.linear_up_3(out)).view(-1,1,int(FIELD_WIDTH/4)**2)
+        out = self.tanh(self.linear_up_4(out)).view(-1,1,int(FIELD_WIDTH/3),int(FIELD_WIDTH/3))
+        out = self.tanh(self.conv_up_1(out)).view(-1,self.channels,int(FIELD_WIDTH/2),int(FIELD_WIDTH/2))
+        out = self.tanh(self.conv_up_2(out)).view(-1,self.channels,int(5*FIELD_WIDTH/8),int(5*FIELD_WIDTH/8))
+        out = self.tanh(self.conv_up_3(out)).view(-1,self.channels,int(6*FIELD_WIDTH/8),int(6*FIELD_WIDTH/8))
+        out = self.tanh(self.conv_up_4(out)).view(-1,self.channels,int(7*FIELD_WIDTH/8),int(7*FIELD_WIDTH/8))
+        out = self.tanh(self.conv_up_5(out)).view(-1,1,FIELD_WIDTH**2)
+        
+        out = self.linear_up_5(out).view(-1,FIELD_WIDTH,FIELD_WIDTH)
 
         return out, field
 
@@ -144,9 +141,85 @@ class Network(nn.Module):
 class ModeSolver_Network(object):
     def __init__(
         self,
+        networkBaseObject,
         wl,
         width,
-        thickness,
+        thickness
+    ):
+
+        self.wl = wl
+        self.width = width
+        self.thickness = thickness
+        self.networkBaseObject = networkBaseObject
+        self.Hx_model = networkBaseObject.Hx_model
+        self.Hy_model = networkBaseObject.Hy_model
+        self.neff_model = networkBaseObject.neff_model
+        self.num_modes = 1
+        self.x = networkBaseObject.x
+        self.y = networkBaseObject.y
+
+
+    def solve(self):
+
+        self.modes = []
+
+        for i in range(self.num_modes):
+            Hx, Hy, neff = self.data(
+                i, self.width, self.thickness, self.wl
+            )
+            self.modes.append((Hx, Hy, neff))
+
+    def data(self, mode_num, width, thickness, wl):
+
+        neff = self.neff_regression(mode_num, width, thickness, wl, self.neff_model)
+        Hx = self.Hx_network(mode_num, width, thickness, wl, self.Hx_model)
+        Hy = self.Hy_network(mode_num, width, thickness, wl, self.Hy_model)
+
+        return Hx, Hy, neff
+
+    def neff_regression(self, mode_num, width, thickness, wl, model):
+
+        poly = PolynomialFeatures(degree=8)
+        X = poly.fit_transform([[width * 1e6, thickness * 1e6, wl * 1e6]])
+        neff = model.predict(X)
+
+        return neff[0]
+
+    def Hx_network(self, mode_num, width, thickness, wl, model):
+
+        with torch.no_grad():
+            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
+            output, _ = model(parameters)
+            output = output.numpy()
+            output = output.reshape(128,128)
+
+        return output
+
+    def Hy_network(self, mode_num, width, thickness, wl, model):
+
+        with torch.no_grad():
+            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
+            output, _ = model(parameters)
+            output = output.numpy()
+            output = output.reshape(128,128)
+
+        return output
+
+    def clear(self):
+        self.modes = []
+
+    def get_mode(self, mode_num=0):
+
+        Hx, Hy, neff = self.modes[mode_num]
+        m = Mode(self.x, self.y, self.wl, neff, Hx+0j, Hy+0j, None, None, None, None, pickle.load(open("/fslhome/ihammond/GitHub/ANNEME/ANN/Network/output/03_good/n_profile", "rb")))
+        m.compute_other_fields(self.width, self.thickness)
+
+        return m
+
+
+class NetworkBaseObject(object):
+    def __init__(
+        self,
         sklearn_save,
         torch_save_x,
         torch_save_y,
@@ -156,10 +229,6 @@ class ModeSolver_Network(object):
         x=None,
         y=None,
     ):
-
-        self.wl = wl
-        self.width = width
-        self.thickness = thickness
         self.num_modes = num_modes
         self.cladding_width = cladding_width
         self.cladding_thickness = cladding_thickness
@@ -174,39 +243,21 @@ class ModeSolver_Network(object):
         if y == None:
             self.y = np.linspace(0, cladding_width, FIELD_WIDTH)
 
-    def solve(self):
+        self.Hx_model = self.Hx_network()
+        self.Hy_model = self.Hy_network()
+        self.neff_model = self.neff_regression()
 
-        self.modes = []
+    def neff_regression(self):
 
-        for i in range(self.num_modes):
-            Hx, Hy, neff = self.data(
-                i, self.width, self.thickness, self.wl, self.sklearn_save, self.torch_save_x, self.torch_save_y
-            )
-            self.modes.append((Hx, Hy, neff))
-
-    def data(self, mode_num, width, thickness, wl, sklearn_save, torch_save_x, torch_save_y):
-
-        neff = self.neff_regression(mode_num, width, thickness, wl, sklearn_save)
-        Hx = self.Hx_network(mode_num, width, thickness, wl, torch_save_x)
-        Hy = self.Hy_network(mode_num, width, thickness, wl, torch_save_y)
-
-        return Hx, Hy, neff
-
-    def neff_regression(self, mode_num, width, thickness, wl, sklearn_save):
-
-        with open(sklearn_save, "rb") as f:
+        with open(self.sklearn_save, "rb") as f:
             model = pickle.load(f)
 
-        poly = PolynomialFeatures(degree=8)
-        X = poly.fit_transform([[width * 1e6, thickness * 1e6, wl * 1e6]])
-        neff = model.predict(X)
+        return model
 
-        return neff[0]
+    def Hx_network(self):
 
-    def Hx_network(self, mode_num, width, thickness, wl, torch_save):
-
-        with open(torch_save, "rb") as f:
-            model = Network(3, 5)
+        with open(self.torch_save_x, "rb") as f:
+            model = Network(3, 1)
 
             # original saved file with DataParallel
             state_dict = torch.load(f)
@@ -222,17 +273,12 @@ class ModeSolver_Network(object):
 
             model.eval()
 
-        with torch.no_grad():
-            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
-            output, _ = model(parameters)
-            output = output.numpy()
+        return model
 
-        return output
+    def Hy_network(self):
 
-    def Hy_network(self, mode_num, width, thickness, wl, torch_save):
-
-        with open(torch_save, "rb") as f:
-            model = Network(3, 5)
+        with open(self.torch_save_y, "rb") as f:
+            model = Network(3, 1)
 
             # original saved file with DataParallel
             state_dict = torch.load(f)
@@ -248,21 +294,4 @@ class ModeSolver_Network(object):
 
             model.eval()
 
-        with torch.no_grad():
-            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
-            output, _ = model(parameters)
-            output = output.numpy()
-
-        return output
-
-    def clear(self):
-        self.modes = []
-
-    def get_mode(self, mode_num=0):
-
-        Hx, Hy, neff = self.modes[mode_num]
-        m = Mode(self.x, self.y, self.wl, neff, Hx, Hy, None, None, None, None)
-        m.compute_other_fields(self.width, self.thickness)
-
-        return m
-
+        return model

@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from scipy.interpolate import interp1d
 import os
 
@@ -36,9 +35,9 @@ class ModeSolver_Lumerical(object):
         self.mesh = mesh - 1
         self.lumapi_location = lumapi_location
 
-        if core_index == None:
+        if core_index is None:
             self.core_index = tools.Si(wl * 1e6)
-        if cladding_index == None:
+        if cladding_index is None:
             self.cladding_index = tools.SiO2(wl * 1e6)
 
     def solve(self):
@@ -224,15 +223,15 @@ class ModeSolver_EMpy(object):
         self.boundary = boundary
         self.epsfunc = epsfunc
 
-        if core_index == None:
+        if core_index is None:
             self.core_index = tools.Si(wl * 1e6)
-        if cladding_index == None:
+        if cladding_index is None:
             self.cladding_index = tools.SiO2(wl * 1e6)
-        if x == None:
+        if x is None:
             self.x = np.linspace(0, cladding_width, mesh)
-        if y == None:
+        if y is None:
             self.y = np.linspace(0, cladding_width, mesh)
-        if epsfunc == None:
+        if epsfunc is None:
             self.epsfunc = tools.get_epsfunc(
                 self.width,
                 self.thickness,
@@ -243,7 +242,6 @@ class ModeSolver_EMpy(object):
             )
 
     def solve(self):
-
         self.solver = EMpy.modesolvers.FD.VFDModeSolver(self.wl, self.x, self.y, self.epsfunc, self.boundary).solve(
             self.num_modes, self.accuracy
         )
