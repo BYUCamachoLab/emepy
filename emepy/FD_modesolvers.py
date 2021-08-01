@@ -249,6 +249,8 @@ class ModeSolver_EMpy(object):
     def clear(self):
 
         self.solver = None
+        self.x = None
+        self.y = None
 
     def get_mode(self, mode_num=0):
 

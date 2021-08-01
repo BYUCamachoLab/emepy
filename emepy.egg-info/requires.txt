@@ -1,5 +1,4 @@
 simphony
-ElectroMagneticPython
 numpy
 matplotlib
 scipy
