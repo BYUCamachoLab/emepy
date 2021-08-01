@@ -2,6 +2,7 @@ import numpy as np
 from simphony import Model
 from simphony.pins import Pin
 from simphony.tools import wl2freq
+from simphony.models import Subcircuit
 
 
 class Layer(object):
@@ -40,6 +41,7 @@ class Layer(object):
             for index in range(len(self.mode_solvers)):
                 self.mode_solvers[index][0].clear()
 
+
 class EME(object):
     def __init__(self, layers=[], num_periods=1):
 
@@ -59,7 +61,7 @@ class EME(object):
 
     def propagate_period(self):
 
-        # Propagate the first two layers 
+        # Propagate the first two layers
         self.layers[0].activate_layer()
         mode_set1 = self.layers[0].get_activated_layer()
         self.layers[1].activate_layer()
@@ -87,11 +89,11 @@ class EME(object):
             layer1_.clear()
             current.update_s(self.cascade(Current(self.wavelength, current), interface), interface)
             interface.clear()
-        
 
         # Propagate final two layers
         current.update_s(
-            self.cascade(Current(self.wavelength, current), self.layers[-1].get_activated_layer()), self.layers[-1].get_activated_layer()
+            self.cascade(Current(self.wavelength, current), self.layers[-1].get_activated_layer()),
+            self.layers[-1].get_activated_layer(),
         )
 
         # Gather and return the s params and edge layers
@@ -116,7 +118,7 @@ class EME(object):
         # Run the eme for one period and collect s params and edge layers
         single_period, left, right = self.propagate_period()
 
-        # Create an itnerface between the two returns layers
+        # Create an interface between the two returns layers
         period_layer = PeriodicLayer(left.modes, right.modes, single_period)
         current_layer = PeriodicLayer(left.modes, right.modes, single_period)
         interface = self.interface(right, left)
@@ -126,15 +128,21 @@ class EME(object):
         self.layers[0].clear()
         self.layers[1].clear()
 
+        # print(current_layer.s_params)
+
         # Cascade params for each period
+        from copy import copy
         for _ in range(self.num_periods - 1):
 
-            current_layer.s_params = self.cascade(current_layer, interface)
-            current_layer.s_params = self.cascade(current_layer, period_layer)
-
+            current_layer.s_params = self.cascade((current_layer), (interface))
+            current_layer.s_params = self.cascade((current_layer), (period_layer))
+            # current_layer.s_params = self.cascade(current_layer, period_layer)
+            
         self.s_params = current_layer.s_params
 
     def cascade(self, first, second):
+        Subcircuit.clear_scache()
+
         # make sure the components are completely disconnected
         first.disconnect()
         second.disconnect()
@@ -143,7 +151,7 @@ class EME(object):
         for port in range(first.right_ports):
             first[f"right{port}"].connect(second[f"left{port}"])
 
-         # get the scattering parameters
+        # get the scattering parameters
         return first.circuit.s_parameters(np.array([self.wavelength]))
 
     def get_s_params(self):
@@ -177,7 +185,6 @@ class EME(object):
 
 
 class Current(Model):
-
     def __init__(self, wavelength, s, **kwargs):
         self.left_ports = s.left_ports
         self.left_pins = s.left_pins
@@ -217,7 +224,6 @@ class Current(Model):
 
 
 class ActivatedLayer(Model):
-
     def __init__(self, modes, wavelength, length, **kwargs):
         self.num_modes = len(modes)
         self.modes = modes
@@ -263,9 +269,7 @@ class ActivatedLayer(Model):
         return self.s_params
 
 
-
 class PeriodicLayer(Model):
-
     def __init__(self, left_modes, right_modes, s_params, **kwargs):
         self.left_modes = left_modes
         self.right_modes = right_modes
@@ -305,7 +309,7 @@ class InterfaceSingleMode(Model):
         self.num_ports = self.left_ports + self.right_ports
         self.left_pins = ["left" + str(i) for i in range(self.left_ports)]
         self.right_pins = ["right" + str(i) for i in range(self.right_ports)]
-        
+
         # create the pins for the model
         pins = []
         for name in self.left_pins:

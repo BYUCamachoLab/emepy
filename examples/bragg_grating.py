@@ -1,7 +1,7 @@
 import emepy
 from emepy.FD_modesolvers import ModeSolver_Lumerical  # Requires Lumerical API
 from emepy.FD_modesolvers import ModeSolver_EMpy  # Open source
-from emepy.eme import Layer, PeriodicEME
+from emepy.eme import Layer, EME
 from emepy.mode import Mode
 
 import numpy as np
@@ -9,11 +9,11 @@ from matplotlib import pyplot as plt
 
 num_periods = 50  # Number of Periods for Bragg Grating
 length = 0.155  # Length of each segment of BG, Period = Length * 2
-num_wavelengths = 2  # Number of wavelengths to sweep
+num_wavelengths = 20  # Number of wavelengths to sweep
 wl_lower = 1.5  # Lower wavelength bound
 wl_upper = 1.6  # Upper wavelength bound
 num_modes = 1  # Number of Modes
-mesh = 256
+mesh = 128
 modesolver = ModeSolver_Lumerical
 
 t = []  # Array that holds the transmission coefficients for different wavelengths
@@ -41,13 +41,14 @@ for wavelength in np.linspace(wl_lower, wl_upper, num_wavelengths):
     layer1 = Layer(mode_solver1, num_modes, wavelength * 1e-6, length * 1e-6)  # First half of bragg grating
     layer2 = Layer(mode_solver2, num_modes, wavelength * 1e-6, length * 1e-6)  # Second half of bragg grating
 
-    eme = PeriodicEME([layer1, layer2], num_periods)  # Periodic EME will save computational time for repeated geometry
+    eme = EME([layer1, layer2], num_periods)  # Periodic EME will save computational time for repeated geometry
 
     # eme.draw() # Draw the structure
 
     eme.propagate()  # propagate at given wavelength
 
-    t.append(np.abs((eme.s_parameters())[0, 0, num_modes]) ** 2)  # Grab the transmission coefficient
+    t.append(np.abs((eme.get_s_params())[0, 0, num_modes]) ** 2)  # Grab the transmission coefficient
+    print(t[-1])
 
 # Plot the results
 plt.plot(np.linspace(wl_lower, wl_upper, num_wavelengths), t)
