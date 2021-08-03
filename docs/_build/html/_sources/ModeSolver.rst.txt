@@ -1,0 +1,16 @@
+===============================
+ModeSolver
+===============================
+
+.. autoclass:: emepy.fd.ModeSolver
+   :members:
+
+.. autoclass:: emepy.fd.MSLumerical
+   :members:
+
+.. autoclass:: emepy.fd.MSEMpy
+   :members:
+
+.. autoclass:: emepy.fd.MSPickle
+   :members:
+

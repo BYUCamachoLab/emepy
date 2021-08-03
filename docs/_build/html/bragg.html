@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Example: Bragg Grating &mdash; EMEpy 1.0 documentation</title>
+  <title>Example: Bragg Grating &mdash; EMEpy 2.0 documentation</title>
   
 
   
@@ -34,7 +34,8 @@
 
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Example: Taper" href="taper.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -79,11 +80,15 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Example: Bragg Grating</a></li>
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="library.html">EMEPy Complete User Library</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="examples.html">EMEPy Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="taper.html">Example: Taper</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Example: Bragg Grating</a></li>
 </ul>
-</div>
+</li>
+</ul>
+
             
           
         </div>
@@ -128,6 +133,8 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
+          <li><a href="examples.html">EMEPy Examples</a> &raquo;</li>
+        
       <li>Example: Bragg Grating</li>
     
     
@@ -149,10 +156,10 @@
             
   <div class="section" id="example-bragg-grating">
 <h1>Example: Bragg Grating<a class="headerlink" href="#example-bragg-grating" title="Permalink to this headline">¶</a></h1>
-<p>This example shows the capabilities of the PeriodicEME object by designing a Bragg Grating. We begin by importing the similar classes and libraries as the <a class="reference internal" href="index.html"><span class="doc">last example</span></a>.</p>
+<p>This example shows the capabilities of the EME object by designing a Bragg Grating. We begin by importing the similar classes and libraries as the <a class="reference internal" href="index.html"><span class="doc">last example</span></a>. The script for this example can be found <a class="reference external" href="https://github.com/BYUCamachoLab/emepy/blob/master/examples/taper.py">here</a></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">emepy</span>
-<span class="kn">from</span> <span class="nn">emepy.FD_modesolvers</span> <span class="kn">import</span> <span class="n">ModeSolver_EMpy</span>  
-<span class="kn">from</span> <span class="nn">emepy.eme</span> <span class="kn">import</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">PeriodicEME</span>
+<span class="kn">from</span> <span class="nn">emepy.fd</span> <span class="kn">import</span> <span class="n">MSEMpy</span>  
+<span class="kn">from</span> <span class="nn">emepy.eme</span> <span class="kn">import</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">EME</span>
 <span class="kn">from</span> <span class="nn">emepy.mode</span> <span class="kn">import</span> <span class="n">Mode</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -167,7 +174,7 @@
 <span class="n">wl_upper</span> <span class="o">=</span> <span class="mf">1.6</span>  <span class="c1"># Upper wavelength bound</span>
 <span class="n">num_modes</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Number of Modes</span>
 <span class="n">mesh</span> <span class="o">=</span> <span class="mi">256</span>
-<span class="n">modesolver</span> <span class="o">=</span> <span class="n">ModeSolver_EMpy</span>
+<span class="n">modesolver</span> <span class="o">=</span> <span class="n">MSEMpy</span>
 </pre></div>
 </div>
 <p>This example utilizes the ability to calculate transmission values from the resulting s-matrix. Because EMEpy operates only in the frequency domain, we will run a simulation for each wavelength we care about. Let’s begin by creating an array to hold our transmission values.</p>
@@ -197,8 +204,8 @@
     <span class="n">layer2</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">mode_solver2</span><span class="p">,</span> <span class="n">num_modes</span><span class="p">,</span> <span class="n">wavelength</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">length</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">)</span>  <span class="c1"># Second half of bragg grating</span>
 </pre></div>
 </div>
-<p>Still in our loop, we will create a PeriodicEME object and assign a number of periods. The solver will utilize this by only solving for the modes of one period, and will cascade the resulting s-parameters together a number of times matching the period count.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">eme</span> <span class="o">=</span> <span class="n">PeriodicEME</span><span class="p">([</span><span class="n">layer1</span><span class="p">,</span> <span class="n">layer2</span><span class="p">],</span> <span class="n">num_periods</span><span class="p">)</span> 
+<p>Still in our loop, we will create a EME object and assign a number of periods. The solver will utilize this by only solving for the modes of one period, and will cascade the resulting s-parameters together a number of times matching the period count.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">eme</span> <span class="o">=</span> <span class="n">EME</span><span class="p">([</span><span class="n">layer1</span><span class="p">,</span> <span class="n">layer2</span><span class="p">],</span> <span class="n">num_periods</span><span class="p">)</span> 
 </pre></div>
 </div>
 <p>Let’s draw our structure just once and make sure we designed it correctly.</p>
@@ -206,7 +213,7 @@
         <span class="n">eme</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span> 
 </pre></div>
 </div>
-<p>Finally, let’s propagate our results and grab the absolute value of the tranmission value and append to our list.</p>
+<p>Finally, let’s propagate our results and grab the absolute value of the transmission value and append to our list.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">eme</span><span class="o">.</span><span class="n">propagate</span><span class="p">()</span>  <span class="c1"># propagate at given wavelength</span>
 
     <span class="n">t</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">eme</span><span class="o">.</span><span class="n">s_parameters</span><span class="p">())[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">num_modes</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># Grab the transmission coefficient</span>
@@ -227,6 +234,13 @@
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="taper.html" class="btn btn-neutral float-left" title="Example: Taper" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

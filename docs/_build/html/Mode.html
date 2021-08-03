@@ -1,0 +1,327 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Mode &mdash; EMEpy 2.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="EME" href="EME.html" />
+    <link rel="prev" title="EMEpy" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> EMEpy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">EMEpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#table-of-contents">Table of Contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EME.html">EME</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ModeSolver.html">ModeSolver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Tools.html">Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bragg.html">Example: Bragg Grating</a></li>
+<li class="toctree-l3"><a class="reference internal" href="taper.html">Example: Taper</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#eigenmode-expansion">Eigenmode Expansion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#acknowledgements">Acknowledgements</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="EME.html">EME</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ModeSolver.html">ModeSolver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bragg.html">Example: Bragg Grating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="taper.html">Example: Taper</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">EMEpy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Mode</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/Mode.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mode">
+<h1>Mode<a class="headerlink" href="#mode" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="emepy.mode.Mode">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.mode.</code><code class="sig-name descname">Mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">neff</span></em>, <em class="sig-param"><span class="n">Hx</span></em>, <em class="sig-param"><span class="n">Hy</span></em>, <em class="sig-param"><span class="n">Hz</span></em>, <em class="sig-param"><span class="n">Ex</span></em>, <em class="sig-param"><span class="n">Ey</span></em>, <em class="sig-param"><span class="n">Ez</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object that holds the field profiles and effective index for an eigenmode</p>
+<dl class="py method">
+<dt id="emepy.mode.Mode.compute_other_fields">
+<code class="sig-name descname">compute_other_fields</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.compute_other_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the Hx and Hy fields, maxwell’s curl relations can be used to calculate the remaining field; adapted from the EMpy</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_E">
+<code class="sig-name descname">get_E</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_E" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array [self.Ex, self.Ey, self.Ez].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_H">
+<code class="sig-name descname">get_H</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_H" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array [self.Hx, self.Hy, self.Hz].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_fields">
+<code class="sig-name descname">get_fields</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_neff">
+<code class="sig-name descname">get_neff</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_neff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the effective index as a complex number.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_wavelength">
+<code class="sig-name descname">get_wavelength</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_wavelength" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the wavelength.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.inner_product">
+<code class="sig-name descname">inner_product</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.inner_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the inner product between self and the provided Mode</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode2</strong> (<a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a>) – second eigenmode in the operation</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the inner product between the modes</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.normalize">
+<code class="sig-name descname">normalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalizes the Mode to power 1.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="o">=</span><span class="default_value">'Real'</span></em>, <em class="sig-param"><span class="n">colorbar</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>operation</strong> (<em>string</em>) – the operation to perform on the fields from (“Real”, “Imaginary”, “Abs”, “Abs^2”) (default:”Real”)</p></li>
+<li><p><strong>colorbar</strong> (<em>bool</em>) – if true, will show a colorbar for each field</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializes the mode into a pickle file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – The path (including name) to save the file. (default: “./<a href="#id1"><span class="problematic" id="id2">ModeObject_</span></a>” + str(random.random()))</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.zero_phase">
+<code class="sig-name descname">zero_phase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.zero_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the phase such that the z components are all imaginary and the xy components are all real.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="EME.html" class="btn btn-neutral float-right" title="EME" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="EMEpy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Ian Hammond
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

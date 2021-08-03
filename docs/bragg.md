@@ -1,10 +1,10 @@
 # Example: Bragg Grating
 
-This example shows the capabilities of the PeriodicEME object by designing a Bragg Grating. We begin by importing the similar classes and libraries as the [last example](index.md).
+This example shows the capabilities of the EME object by designing a Bragg Grating. We begin by importing the similar classes and libraries as the [last example](index.md). The script for this example can be found [here](https://github.com/BYUCamachoLab/emepy/blob/master/examples/taper.py)
 
     import emepy
-    from emepy.FD_modesolvers import ModeSolver_EMpy  
-    from emepy.eme import Layer, PeriodicEME
+    from emepy.fd import MSEMpy  
+    from emepy.eme import Layer, EME
     from emepy.mode import Mode
 
     import numpy as np
@@ -19,7 +19,7 @@ Next we'll define parameters for our device. In this example, we will sweep over
     wl_upper = 1.6  # Upper wavelength bound
     num_modes = 1  # Number of Modes
     mesh = 256
-    modesolver = ModeSolver_EMpy
+    modesolver = MSEMpy
 
 This example utilizes the ability to calculate transmission values from the resulting s-matrix. Because EMEpy operates only in the frequency domain, we will run a simulation for each wavelength we care about. Let's begin by creating an array to hold our transmission values. 
 
@@ -48,16 +48,16 @@ We will now sweep over our set of wavelengths and create modesolvers and layers 
         layer1 = Layer(mode_solver1, num_modes, wavelength * 1e-6, length * 1e-6)  # First half of bragg grating
         layer2 = Layer(mode_solver2, num_modes, wavelength * 1e-6, length * 1e-6)  # Second half of bragg grating
 
-Still in our loop, we will create a PeriodicEME object and assign a number of periods. The solver will utilize this by only solving for the modes of one period, and will cascade the resulting s-parameters together a number of times matching the period count. 
+Still in our loop, we will create a EME object and assign a number of periods. The solver will utilize this by only solving for the modes of one period, and will cascade the resulting s-parameters together a number of times matching the period count. 
 
-        eme = PeriodicEME([layer1, layer2], num_periods) 
+        eme = EME([layer1, layer2], num_periods) 
 
 Let's draw our structure just once and make sure we designed it correctly. 
 
         if wavelength == wl_lower:
             eme.draw() 
 
-Finally, let's propagate our results and grab the absolute value of the tranmission value and append to our list.
+Finally, let's propagate our results and grab the absolute value of the transmission value and append to our list.
 
         eme.propagate()  # propagate at given wavelength
 

@@ -3,16 +3,16 @@ from simphony import Model
 from simphony.pins import Pin
 from simphony.tools import wl2freq
 from simphony.models import Subcircuit
+from matplotlib import pyplot as plt
 
 
 class Layer(object):
-    """
-        Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures.
+    """Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures.
     """
 
     def __init__(self, mode_solvers, num_modes, wavelength, length):
         """Layer class constructor
-
+        
         Parameters
         ----------
         mode_solvers : list [tuple (ModeSolver, int)], Modesolver
@@ -81,8 +81,7 @@ class Layer(object):
 
 
 class EME(object):
-    """
-        The EME class is the heart of the package. It provides the algorithm that cascades sections modes together to provide the s-parameters for a geometric structure. The object is dependent on the Layer objects that are fed inside.
+    """The EME class is the heart of the package. It provides the algorithm that cascades sections modes together to provide the s-parameters for a geometric structure. The object is dependent on the Layer objects that are fed inside.
     """
 
     def __init__(self, layers=[], num_periods=1):
@@ -291,12 +290,11 @@ class EME(object):
 
 
 class Current(Model):
+    """The object that the EME uses to track the s_parameters and cascade them as they come along to save memory
     """
-        The object that the EME uses to track the s_parameters and cascade them as they come along to save memory
-    """
+
     def __init__(self, wavelength, s, **kwargs):
-        """
-        Current class constructor
+        """Current class constructor
 
         Parameters
         ----------
@@ -323,8 +321,7 @@ class Current(Model):
         super().__init__(**kwargs, pins=pins)
 
     def update_s(self, s, layer):
-        """
-        Updates the scattering matrix of the object
+        """Updates the scattering matrix of the object
 
         Parameters
         ----------
@@ -360,8 +357,7 @@ class Current(Model):
 
 
 class ActivatedLayer(Model):
-    """
-        ActivatedLayer is produced by the Layer class after the ModeSolvers calculate eigenmodes. This is used to create interfaces. This inherits from Simphony's Model class. 
+    """ActivatedLayer is produced by the Layer class after the ModeSolvers calculate eigenmodes. This is used to create interfaces. This inherits from Simphony's Model class. 
     """
 
     def __init__(self, modes, wavelength, length, **kwargs):
@@ -396,7 +392,7 @@ class ActivatedLayer(Model):
         super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self):
-        """Normalizes all of the eigenmodes such that the overlap with its self (integral of |E|^2) is 1. 
+        """Normalizes all of the eigenmodes such that the overlap with its self, power, is 1. 
         """
 
         for mode in range(len(self.modes)):
@@ -441,9 +437,9 @@ class ActivatedLayer(Model):
 
 
 class PeriodicLayer(Model):
+    """PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods. 
     """
-        PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods. 
-    """
+
     def __init__(self, left_modes, right_modes, s_params, **kwargs):
         """PeriodicLayer class constructor
 
@@ -476,7 +472,7 @@ class PeriodicLayer(Model):
         super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self):
-        """Normalizes all of the eigenmodes such that the overlap with its self (integral of |E|^2) is 1. 
+        """Normalizes all of the eigenmodes such that the overlap with its self, power, is 1. 
         """
 
         for mode in range(len(self.left_modes)):
@@ -497,9 +493,9 @@ class PeriodicLayer(Model):
 
 
 class InterfaceSingleMode(Model):
+    """The InterfaceSingleMode class represents the interface between two different layers. This class is an approximation to speed up the process and can ONLY be used during single mode EME. 
     """
-        The InterfaceSingleMode class represents the interface between two different layers. This class is an approximation to speed up the process and can ONLY be used during single mode EME. 
-    """
+
     def __init__(self, layer1, layer2, **kwargs):
         """InterfaceSingleMode class constructor
 
@@ -606,6 +602,7 @@ class InterfaceMultiMode(Model):
     """
         The InterfaceMultiMode class represents the interface between two different layers. 
     """
+
     def __init__(self, layer1, layer2, **kwargs):
         """InterfaceMultiMode class constructor
 

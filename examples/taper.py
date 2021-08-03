@@ -9,9 +9,9 @@ import pylab
 
 
 # Cross sectional parameters (computational complexity determined here)
-ModeSolver = MSEMpy  # Choose a modesolver object that will calculate the 2D field profile
-mesh = 128  # Mesh density of 2D field profiles
-num_modes = 1
+ModeSolver = MSLumerical  # Choose a modesolver object that will calculate the 2D field profile
+mesh = 256  # Mesh density of 2D field profiles
+num_modes = 2
 
 # Geometric parameters
 width1 = 0.8e-6  # Width of left waveguide
@@ -27,7 +27,7 @@ wg_length = 0.5 * (length - taper_length)  # Length of each division in the tape
 
 eme = EME()  # Choose either a normal eme or a periodic eme (PeriodicEME())
 
-for taper_density in range(27, 31):
+for taper_density in range(0, 20):
 
     # Ensure a new eme each iteration
     eme.reset()
@@ -39,7 +39,7 @@ for taper_density in range(27, 31):
         thickness=thickness1,
         mesh=mesh,
         num_modes=num_modes,
-        # lumapi_location="/Applications/Lumerical\ v202.app/Contents/API/Python/",
+        lumapi_location="/Applications/Lumerical v211.app/Contents/API/Python/",
     )
     straight1 = Layer(mode1, num_modes, wavelength, wg_length)
     eme.add_layer(straight1)
@@ -64,6 +64,6 @@ for taper_density in range(27, 31):
 
     eme.propagate()  # Run the eme
 
-    print(taper_density,": ",np.abs(eme.get_s_params()))  # Extract s_parameters
+    print(taper_density,": ",np.abs(eme.s_parameters()))  # Extract s_parameters
 
 

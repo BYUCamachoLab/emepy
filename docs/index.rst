@@ -7,10 +7,8 @@ Table of Contents
 .. toctree::
    :maxdepth: 2
 
-   index
-   class_func
-   taper
-   bragg
+   library
+   examples
 
 EMEpy is an open-source eigenmode expansion solver implemented in Python. 
 
@@ -44,13 +42,6 @@ For the latest version, the source code can be found on `GitHub <https://github.
 .. code-block:: python
 
    pip install -e .
-
-Tutorials
----------
-
-- :doc:`class_func`
-- :doc:`taper`
-- :doc:`bragg`
 
 Acknowledgements
 ----------------

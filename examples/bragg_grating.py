@@ -7,12 +7,12 @@ from matplotlib import pyplot as plt
 
 num_periods = 50  # Number of Periods for Bragg Grating
 length = 0.155  # Length of each segment of BG, Period = Length * 2
-num_wavelengths = 20  # Number of wavelengths to sweep
+num_wavelengths = 10  # Number of wavelengths to sweep
 wl_lower = 1.5  # Lower wavelength bound
 wl_upper = 1.6  # Upper wavelength bound
 num_modes = 1  # Number of Modes
 mesh = 128
-modesolver = MSEMpy
+modesolver = MSLumerical
 
 t = []  # Array that holds the transmission coefficients for different wavelengths
 
@@ -24,7 +24,7 @@ for wavelength in np.linspace(wl_lower, wl_upper, num_wavelengths):
         0.22e-6,
         mesh=mesh,
         num_modes=num_modes,
-        lumapi_location="/Applications/Lumerical v202.app/Contents/API/Python",
+        # lumapi_location="/Applications/Lumerical v202.app/Contents/API/Python",
     )  # First half of bragg grating
 
     mode_solver2 = modesolver(
@@ -33,7 +33,7 @@ for wavelength in np.linspace(wl_lower, wl_upper, num_wavelengths):
         0.22e-6,
         mesh=mesh,
         num_modes=num_modes,
-        lumapi_location="/Applications/Lumerical v202.app/Contents/API/Python",
+        # lumapi_location="/Applications/Lumerical v202.app/Contents/API/Python",
     )  # Second half of bragg grating
 
     layer1 = Layer(mode_solver1, num_modes, wavelength * 1e-6, length * 1e-6)  # First half of bragg grating
@@ -53,4 +53,4 @@ plt.plot(np.linspace(wl_lower, wl_upper, num_wavelengths), t)
 plt.title("BG Bode Plot Periods=" + str(num_periods))
 plt.xlabel("Wavelength (microns)")
 plt.ylabel("t")
-plt.savefig("./p50_" + str(num_periods) + ".jpg")
+plt.show()

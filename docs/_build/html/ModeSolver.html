@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ModeSolver &mdash; EMEpy 2.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tools" href="Tools.html" />
+    <link rel="prev" title="EME" href="EME.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> EMEpy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">EMEpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#table-of-contents">Table of Contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Mode.html">Mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EME.html">EME</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ModeSolver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Tools.html">Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bragg.html">Example: Bragg Grating</a></li>
+<li class="toctree-l3"><a class="reference internal" href="taper.html">Example: Taper</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#eigenmode-expansion">Eigenmode Expansion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#acknowledgements">Acknowledgements</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Mode.html">Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="EME.html">EME</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">ModeSolver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bragg.html">Example: Bragg Grating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="taper.html">Example: Taper</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">EMEpy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>ModeSolver</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/ModeSolver.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="modesolver">
+<h1>ModeSolver<a class="headerlink" href="#modesolver" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="emepy.fd.ModeSolver">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">ModeSolver</code><a class="headerlink" href="#emepy.fd.ModeSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ModeSolver object is the heart of finding eigenmodes for use in eigenmode expansion or simple examination. This parent class should be inherited and used as a wrapper for certain modules such as EMpy, Lumerical, Pickled data, Neural Networks, etc.</p>
+<dl class="py method">
+<dt id="emepy.fd.ModeSolver.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the modesolver’s eigenmodes to make memory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.ModeSolver.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Must extract the mode of choice</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode_num</strong> (<em>int</em>) – index of the mode of choice</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.ModeSolver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves the eigenmode solver for the specific eigenmodes of desire</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.fd.MSLumerical">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSLumerical</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">lumapi_location</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide.</p>
+<dl class="py method">
+<dt id="emepy.fd.MSLumerical.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the modesolver’s eigenmodes to make memory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSLumerical.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the indexed mode number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode_num</strong> (<em>int</em>) – index of the mode of choice</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the eigenmode of index mode_num</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="Mode.html#emepy.mode.Mode" title="emepy.mode.Mode">Mode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSLumerical.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the eigenmodes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.fd.MSEMpy">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSEMpy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">accuracy</span><span class="o">=</span><span class="default_value">1e-08</span></em>, <em class="sig-param"><span class="n">boundary</span><span class="o">=</span><span class="default_value">'0000'</span></em>, <em class="sig-param"><span class="n">epsfunc</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide.</p>
+<dl class="py method">
+<dt id="emepy.fd.MSEMpy.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the modesolver’s eigenmodes to make memory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSEMpy.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the indexed mode number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode_num</strong> (<em>int</em>) – index of the mode of choice</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the eigenmode of index mode_num</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="Mode.html#emepy.mode.Mode" title="emepy.mode.Mode">Mode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSEMpy.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the eigenmodes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.fd.MSPickle">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSPickle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thickness</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pickle Modesolver. See Modesolver. Pickle should serialize a list of Mode objects that can be opened here.</p>
+<dl class="py method">
+<dt id="emepy.fd.MSPickle.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the modesolver’s eigenmodes to make memory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSPickle.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the stored mode</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the eigenmode of index mode_num</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="Mode.html#emepy.mode.Mode" title="emepy.mode.Mode">Mode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSPickle.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the eigenmodes by loading them from the pickle file</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Tools.html" class="btn btn-neutral float-right" title="Tools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="EME.html" class="btn btn-neutral float-left" title="EME" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Ian Hammond
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

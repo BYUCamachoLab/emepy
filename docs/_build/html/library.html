@@ -1,0 +1,1043 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>EMEPy Complete User Library &mdash; EMEpy 2.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="EMEPy Examples" href="examples.html" />
+    <link rel="prev" title="EMEpy" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> EMEpy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">EMEPy Complete User Library</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mode">Mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eme">EME</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modesolver">ModeSolver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tools">Tools</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">EMEPy Examples</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">EMEpy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>EMEPy Complete User Library</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/library.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="emepy-complete-user-library">
+<h1>EMEPy Complete User Library<a class="headerlink" href="#emepy-complete-user-library" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="mode">
+<h2>Mode<a class="headerlink" href="#mode" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="emepy.mode.Mode">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.mode.</code><code class="sig-name descname">Mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">neff</span></em>, <em class="sig-param"><span class="n">Hx</span></em>, <em class="sig-param"><span class="n">Hy</span></em>, <em class="sig-param"><span class="n">Hz</span></em>, <em class="sig-param"><span class="n">Ex</span></em>, <em class="sig-param"><span class="n">Ey</span></em>, <em class="sig-param"><span class="n">Ez</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object that holds the field profiles and effective index for an eigenmode</p>
+<dl class="py method">
+<dt id="emepy.mode.Mode.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">neff</span></em>, <em class="sig-param"><span class="n">Hx</span></em>, <em class="sig-param"><span class="n">Hy</span></em>, <em class="sig-param"><span class="n">Hz</span></em>, <em class="sig-param"><span class="n">Ex</span></em>, <em class="sig-param"><span class="n">Ey</span></em>, <em class="sig-param"><span class="n">Ez</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for Mode Object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>(</em><em>ndarray float</em><em>)</em>) – array of grid points in x direction (propogation in z)</p></li>
+<li><p><strong>y</strong> (<em>(</em><em>ndarray float</em><em>)</em>) – array of grid points in y direction (propogation in z)</p></li>
+<li><p><strong>wl</strong> (<em>(</em><em>float</em><em>)</em>) – wavelength (meters)</p></li>
+<li><p><strong>neff</strong> (<em>(</em><em>float</em><em>)</em>) – effective index</p></li>
+<li><p><strong>Hx</strong> (<em>(</em><em>ndarray float</em><em>)</em>) – Hx field profile</p></li>
+<li><p><strong>Hy</strong> (<em>(</em><em>ndarray float</em><em>)</em>) – Hy field profile</p></li>
+<li><p><strong>Hz</strong> (<em>(</em><em>ndarray float</em><em>)</em>) – Hz field profile</p></li>
+<li><p><strong>Ex</strong> (<em>(</em><em>ndarray float</em><em>)</em>) – Ex field profile</p></li>
+<li><p><strong>Ey</strong> (<em>(</em><em>ndarray float</em><em>)</em>) – Ey field profile</p></li>
+<li><p><strong>Ez</strong> (<em>(</em><em>ndarray float</em><em>)</em>) – Ez field profile</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.compute_other_fields">
+<code class="sig-name descname">compute_other_fields</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.compute_other_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the Hx and Hy fields, maxwell’s curl relations can be used to calculate the remaining field; adapted from the EMpy</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_E">
+<code class="sig-name descname">get_E</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_E" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array [self.Ex, self.Ey, self.Ez].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_H">
+<code class="sig-name descname">get_H</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_H" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array [self.Hx, self.Hy, self.Hz].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_fields">
+<code class="sig-name descname">get_fields</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_neff">
+<code class="sig-name descname">get_neff</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_neff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the effective index as a complex number.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.get_wavelength">
+<code class="sig-name descname">get_wavelength</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.get_wavelength" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the wavelength.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.inner_product">
+<code class="sig-name descname">inner_product</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.inner_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the inner product between self and the provided Mode</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode2</strong> (<a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a>) – second eigenmode in the operation</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the inner product between the modes</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.normalize">
+<code class="sig-name descname">normalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalizes the Mode to power 1.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="o">=</span><span class="default_value">'Real'</span></em>, <em class="sig-param"><span class="n">colorbar</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>operation</strong> (<em>string</em>) – the operation to perform on the fields from (“Real”, “Imaginary”, “Abs”, “Abs^2”) (default:”Real”)</p></li>
+<li><p><strong>colorbar</strong> (<em>bool</em>) – if true, will show a colorbar for each field</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializes the mode into a pickle file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – The path (including name) to save the file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.mode.Mode.zero_phase">
+<code class="sig-name descname">zero_phase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.zero_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the phase such that the z components are all imaginary and the xy components are all real.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="eme">
+<h2>EME<a class="headerlink" href="#eme" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="emepy.eme.Layer">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.eme.</code><code class="sig-name descname">Layer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_solvers</span></em>, <em class="sig-param"><span class="n">num_modes</span></em>, <em class="sig-param"><span class="n">wavelength</span></em>, <em class="sig-param"><span class="n">length</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures.</p>
+<dl class="py method">
+<dt id="emepy.eme.Layer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_solvers</span></em>, <em class="sig-param"><span class="n">num_modes</span></em>, <em class="sig-param"><span class="n">wavelength</span></em>, <em class="sig-param"><span class="n">length</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Layer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Layer class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode_solvers</strong> (<em>list</em><em> [</em><em>tuple</em><em> (</em><a class="reference internal" href="#emepy.fd.ModeSolver" title="emepy.fd.ModeSolver"><em>ModeSolver</em></a><em>, </em><em>int</em><em>)</em><em>]</em><em>, </em><em>Modesolver</em>) – List of tuples that contain ModeSolver objects and the number of modes that corresponds to each. Should be in order from fundamental mode to least significant mode. If only one ModeSolver is needed, can simply be that object instead of a list.</p></li>
+<li><p><strong>num_modes</strong> (<em>int</em>) – Number of total modes for the layer.</p></li>
+<li><p><strong>wavelength</strong> (<em>number</em>) – Wavelength of eigenmode to solve for (m).</p></li>
+<li><p><strong>length</strong> (<em>number</em>) – Geometric length of the Layer (m). The length affects the phase of the eigenmodes inside the layer via the complex phasor $e^(jβz)$.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.Layer.activate_layer">
+<code class="sig-name descname">activate_layer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Layer.activate_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the modes in the layer and creates an ActivatedLayer object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.Layer.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Layer.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Empties the modes in the ModeSolver to clear memory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the edited image</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.Layer.get_activated_layer">
+<code class="sig-name descname">get_activated_layer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Layer.get_activated_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the activated layer if it exists or calls activate_layer first</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the object that stores the eigenmodes</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#emepy.eme.ActivatedLayer" title="emepy.eme.ActivatedLayer">ActivatedLayer</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.eme.EME">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.eme.</code><code class="sig-name descname">EME</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">num_periods</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME" title="Permalink to this definition">¶</a></dt>
+<dd><p>The EME class is the heart of the package. It provides the algorithm that cascades sections modes together to provide the s-parameters for a geometric structure. The object is dependent on the Layer objects that are fed inside.</p>
+<dl class="py method">
+<dt id="emepy.eme.EME.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">num_periods</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>EME class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>layers</strong> (<em>list</em><em> [</em><a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a><em>]</em>) – An list of Layer objects, arranged in the order they belong geometrically. (default: [])</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.EME.add_layer">
+<code class="sig-name descname">add_layer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layer</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME.add_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The add_layer method will add a Layer object to the EME object. The object will be geometrically added to the very right side of the structure. Using this method after propagate is useless as the solver has already been called.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>layer</strong> (<a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a>) – Layer object to be appended to the list of Layers inside the EME object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.EME.cascade">
+<code class="sig-name descname">cascade</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">first</span></em>, <em class="sig-param"><span class="n">second</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME.cascade" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the s_parameters between two layer objects</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> (<a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a>) – left Layer object</p></li>
+<li><p><strong>second</strong> (<a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a>) – right Layer object</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the s_parameters between the two Layers</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.EME.draw">
+<code class="sig-name descname">draw</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME.draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. Currently, the drawing is very rough. This will change in the future.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.EME.propagate">
+<code class="sig-name descname">propagate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME.propagate" title="Permalink to this definition">¶</a></dt>
+<dd><p>The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.EME.propagate_period">
+<code class="sig-name descname">propagate_period</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME.propagate_period" title="Permalink to this definition">¶</a></dt>
+<dd><p>The propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>s_params</em> – The s_params acquired during propagation</p></li>
+<li><p><em>mode_set1</em> – The set of Mode objects that were solved for on the input layer</p></li>
+<li><p><em>mode_set2</em> – The set of Mode objects that were solved for on the output layer</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.EME.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears out the layers and s params so the user can reuse the object in memory on a new geometry</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.EME.s_parameters">
+<code class="sig-name descname">s_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">freqs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.EME.s_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the s_parameters if they exist. If they don’t exist yet, propagate() will be called first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The s_params acquired during propagation</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.eme.Current">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.eme.</code><code class="sig-name descname">Current</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wavelength</span></em>, <em class="sig-param"><span class="n">s</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Current" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object that the EME uses to track the s_parameters and cascade them as they come along to save memory</p>
+<dl class="py method">
+<dt id="emepy.eme.Current.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wavelength</span></em>, <em class="sig-param"><span class="n">s</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Current.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wavelength</strong> (<em>number</em>) – the wavelength of the simulation</p></li>
+<li><p><strong>s</strong> (<em>numpy array</em>) – the starting scattering matrix</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.Current.s_parameters">
+<code class="sig-name descname">s_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">freq</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Current.s_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the scattering matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the scattering matrix</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.Current.update_s">
+<code class="sig-name descname">update_s</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span></em>, <em class="sig-param"><span class="n">layer</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.Current.update_s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the scattering matrix of the object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<em>numpy array</em>) – scattering matrix to use as the update</p></li>
+<li><p><strong>layer</strong> (<a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a>) – the layer object whos ports to match</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.eme.ActivatedLayer">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.eme.</code><code class="sig-name descname">ActivatedLayer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">modes</span></em>, <em class="sig-param"><span class="n">wavelength</span></em>, <em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.ActivatedLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>ActivatedLayer is produced by the Layer class after the ModeSolvers calculate eigenmodes. This is used to create interfaces. This inherits from Simphony’s Model class.</p>
+<dl class="py method">
+<dt id="emepy.eme.ActivatedLayer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">modes</span></em>, <em class="sig-param"><span class="n">wavelength</span></em>, <em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.ActivatedLayer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>ActivatedLayer class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modes</strong> (<em>list</em><em> [</em><a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a><em>]</em>) – list of solved eigenmodes in Mode class form</p></li>
+<li><p><strong>wavelength</strong> (<em>number</em>) – the wavelength of the eigenmodes</p></li>
+<li><p><strong>length</strong> (<em>number</em>) – the length of the layer object that produced the eigenmodes. This number is used for phase propagation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.ActivatedLayer.calculate_s_params">
+<code class="sig-name descname">calculate_s_params</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.ActivatedLayer.calculate_s_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the s params for the phase propagation and returns it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the scattering matrix for phase propagation.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.ActivatedLayer.normalize_fields">
+<code class="sig-name descname">normalize_fields</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.ActivatedLayer.normalize_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalizes all of the eigenmodes such that the overlap with its self, power, is 1.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.ActivatedLayer.s_parameters">
+<code class="sig-name descname">s_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">freq</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.ActivatedLayer.s_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the scattering matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the scattering matrix</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.eme.PeriodicLayer">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.eme.</code><code class="sig-name descname">PeriodicLayer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">left_modes</span></em>, <em class="sig-param"><span class="n">right_modes</span></em>, <em class="sig-param"><span class="n">s_params</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.PeriodicLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods.</p>
+<dl class="py method">
+<dt id="emepy.eme.PeriodicLayer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">left_modes</span></em>, <em class="sig-param"><span class="n">right_modes</span></em>, <em class="sig-param"><span class="n">s_params</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.PeriodicLayer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>PeriodicLayer class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>left_modes</strong> (<em>list</em><em> [</em><a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a><em>]</em>) – list of the eigenmodes on the left side of the layer</p></li>
+<li><p><strong>right_modes</strong> (<em>list</em><em> [</em><a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a><em>]</em>) – list of the eigenmodes on the right side of the layer</p></li>
+<li><p><strong>s_params</strong> – the scattering matrix that represents the layer, which includes both propagation and mode overlaps</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.PeriodicLayer.normalize_fields">
+<code class="sig-name descname">normalize_fields</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.PeriodicLayer.normalize_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalizes all of the eigenmodes such that the overlap with its self, power, is 1.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.PeriodicLayer.s_parameters">
+<code class="sig-name descname">s_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">freqs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.PeriodicLayer.s_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the scattering matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the scattering matrix</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.eme.InterfaceSingleMode">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.eme.</code><code class="sig-name descname">InterfaceSingleMode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layer1</span></em>, <em class="sig-param"><span class="n">layer2</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceSingleMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>The InterfaceSingleMode class represents the interface between two different layers. This class is an approximation to speed up the process and can ONLY be used during single mode EME.</p>
+<dl class="py method">
+<dt id="emepy.eme.InterfaceSingleMode.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layer1</span></em>, <em class="sig-param"><span class="n">layer2</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceSingleMode.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>InterfaceSingleMode class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layer1</strong> (<a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a>) – the left Layer object of the interface</p></li>
+<li><p><strong>layer2</strong> (<a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a>) – the right Layer object of the interface</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceSingleMode.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceSingleMode.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the scattering matrix in the object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceSingleMode.get_values">
+<code class="sig-name descname">get_values</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">left</span></em>, <em class="sig-param"><span class="n">right</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceSingleMode.get_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the reflection and transmission coefficient based on the two modes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>left</strong> (<a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a>) – leftside eigenmode</p></li>
+<li><p><strong>right</strong> (<a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a>) – rightside eigenmode</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>r</strong> (<em>number</em>) – reflection coefficient</p></li>
+<li><p><strong>t</strong> (<em>number</em>) – transmission coefficient</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceSingleMode.s_parameters">
+<code class="sig-name descname">s_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">freqs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceSingleMode.s_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the scattering matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the scattering matrix</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceSingleMode.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceSingleMode.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the scattering matrix based on transmission and reflection</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.eme.InterfaceMultiMode">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.eme.</code><code class="sig-name descname">InterfaceMultiMode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layer1</span></em>, <em class="sig-param"><span class="n">layer2</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceMultiMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>The InterfaceMultiMode class represents the interface between two different layers.</p>
+<dl class="py method">
+<dt id="emepy.eme.InterfaceMultiMode.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layer1</span></em>, <em class="sig-param"><span class="n">layer2</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceMultiMode.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>InterfaceMultiMode class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layer1</strong> (<a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a>) – the left Layer object of the interface</p></li>
+<li><p><strong>layer2</strong> (<a class="reference internal" href="#emepy.eme.Layer" title="emepy.eme.Layer"><em>Layer</em></a>) – the right Layer object of the interface</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceMultiMode.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceMultiMode.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the scattering matrix in the object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceMultiMode.get_r">
+<code class="sig-name descname">get_r</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">left</span></em>, <em class="sig-param"><span class="n">right</span></em>, <em class="sig-param"><span class="n">curr_ports</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceMultiMode.get_r" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the transmission coefficient based on the two modes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p</strong> (<em>int</em>) – port number to look at</p></li>
+<li><p><strong>left</strong> (<a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a>) – leftside eigenmode</p></li>
+<li><p><strong>right</strong> (<a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a>) – rightside eigenmode</p></li>
+<li><p><strong>curr_ports</strong> (<em>int</em>) – total number of ports</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>r</strong> – reflection coefficient</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceMultiMode.get_t">
+<code class="sig-name descname">get_t</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">left</span></em>, <em class="sig-param"><span class="n">right</span></em>, <em class="sig-param"><span class="n">curr_ports</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceMultiMode.get_t" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the transmission coefficient based on the two modes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p</strong> (<em>int</em>) – port number to look at</p></li>
+<li><p><strong>left</strong> (<a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a>) – leftside eigenmode</p></li>
+<li><p><strong>right</strong> (<a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode"><em>Mode</em></a>) – rightside eigenmode</p></li>
+<li><p><strong>curr_ports</strong> (<em>int</em>) – total number of ports</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>t</strong> – transmission coefficient</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceMultiMode.s_parameters">
+<code class="sig-name descname">s_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">freqs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceMultiMode.s_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the scattering matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the scattering matrix</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.eme.InterfaceMultiMode.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.eme.InterfaceMultiMode.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the scattering matrix based on transmission and reflection</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="modesolver">
+<h2>ModeSolver<a class="headerlink" href="#modesolver" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="emepy.fd.ModeSolver">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">ModeSolver</code><a class="headerlink" href="#emepy.fd.ModeSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ModeSolver object is the heart of finding eigenmodes for use in eigenmode expansion or simple examination. This parent class should be inherited and used as a wrapper for certain modules such as EMpy, Lumerical, Pickled data, Neural Networks, etc.</p>
+<dl class="py method">
+<dt id="emepy.fd.ModeSolver.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>ModeSolver class constructor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.ModeSolver.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the modesolver’s eigenmodes to make memory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.ModeSolver.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Must extract the mode of choice</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode_num</strong> (<em>int</em>) – index of the mode of choice</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.ModeSolver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves the eigenmode solver for the specific eigenmodes of desire</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.fd.MSLumerical">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSLumerical</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">lumapi_location</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide.</p>
+<dl class="py method">
+<dt id="emepy.fd.MSLumerical.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">lumapi_location</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>MSLumerical class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wl</strong> (<em>number</em>) – wavelength of the eigenmodes</p></li>
+<li><p><strong>width</strong> (<em>number</em>) – width of the core in the cross section</p></li>
+<li><p><strong>thickness</strong> (<em>number</em>) – thickness of the core in the cross section</p></li>
+<li><p><strong>num_modes</strong> (<em>int</em>) – number of modes to solve for (default:1)</p></li>
+<li><p><strong>cladding_width</strong> (<em>number</em>) – width of the cladding in the cross section (default:5e-6)</p></li>
+<li><p><strong>cladding_thickness</strong> (<em>number</em>) – thickness of the cladding in the cross section (default:5e-6)</p></li>
+<li><p><strong>core_index</strong> (<em>number</em>) – refractive index of the core (default:Si)</p></li>
+<li><p><strong>cladding_index</strong> (<em>number</em>) – refractive index of the cladding (default:SiO2)</p></li>
+<li><p><strong>mesh</strong> (<em>int</em>) – number of mesh points in each direction (xy)</p></li>
+<li><p><strong>lumapi_location</strong> (<em>string</em>) – location of the lumapi library if not already in the python path</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSLumerical.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the modesolver’s eigenmodes to make memory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSLumerical.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the indexed mode number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode_num</strong> (<em>int</em>) – index of the mode of choice</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the eigenmode of index mode_num</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode">Mode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSLumerical.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the eigenmodes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.fd.MSEMpy">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSEMpy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">accuracy</span><span class="o">=</span><span class="default_value">1e-08</span></em>, <em class="sig-param"><span class="n">boundary</span><span class="o">=</span><span class="default_value">'0000'</span></em>, <em class="sig-param"><span class="n">epsfunc</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide.</p>
+<dl class="py method">
+<dt id="emepy.fd.MSEMpy.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">accuracy</span><span class="o">=</span><span class="default_value">1e-08</span></em>, <em class="sig-param"><span class="n">boundary</span><span class="o">=</span><span class="default_value">'0000'</span></em>, <em class="sig-param"><span class="n">epsfunc</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>MSEMpy class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wl</strong> (<em>number</em>) – wavelength of the eigenmodes</p></li>
+<li><p><strong>width</strong> (<em>number</em>) – width of the core in the cross section</p></li>
+<li><p><strong>thickness</strong> (<em>number</em>) – thickness of the core in the cross section</p></li>
+<li><p><strong>num_modes</strong> (<em>int</em>) – number of modes to solve for (default:1)</p></li>
+<li><p><strong>cladding_width</strong> (<em>number</em>) – width of the cladding in the cross section (default:5e-6)</p></li>
+<li><p><strong>cladding_thickness</strong> (<em>number</em>) – thickness of the cladding in the cross section (default:5e-6)</p></li>
+<li><p><strong>core_index</strong> (<em>number</em>) – refractive index of the core (default:Si)</p></li>
+<li><p><strong>cladding_index</strong> (<em>number</em>) – refractive index of the cladding (default:SiO2)</p></li>
+<li><p><strong>mesh</strong> (<em>int</em>) – number of mesh points in each direction (xy)</p></li>
+<li><p><strong>x</strong> (<em>numpy array</em>) – the cross section grid in the x direction (z propagation) (default:None)</p></li>
+<li><p><strong>y</strong> (<em>numpy array</em>) – the cross section grid in the y direction (z propagation) (default:None)</p></li>
+<li><p><strong>mesh</strong> – the number of mesh points in each xy direction</p></li>
+<li><p><strong>accuracy</strong> (<em>number</em>) – the minimum accuracy of the finite difference solution (default:1e-8)</p></li>
+<li><p><strong>boundary</strong> (<em>string</em>) – the boundaries according to the EMpy library (default:”0000”)</p></li>
+<li><p><strong>epsfunc</strong> (<em>function</em>) – the function which defines the permittivity based on a grid (see EMpy library) (default:”0000”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSEMpy.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the modesolver’s eigenmodes to make memory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSEMpy.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the indexed mode number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode_num</strong> (<em>int</em>) – index of the mode of choice</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the eigenmode of index mode_num</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode">Mode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSEMpy.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the eigenmodes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.fd.MSPickle">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSPickle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thickness</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pickle Modesolver. See Modesolver. Pickle should serialize a list of Mode objects that can be opened here.</p>
+<dl class="py method">
+<dt id="emepy.fd.MSPickle.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thickness</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>MSPickle class constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>string</em>) – the name of the pickled file where the eigenmode is stored</p></li>
+<li><p><strong>index</strong> (<em>int</em>) – the index of the mode in the pickle file if the data stored is an array of Modes (default:None)</p></li>
+<li><p><strong>width</strong> (<em>number</em>) – width of the core in the cross section, used for drawing (default:None)</p></li>
+<li><p><strong>thickness</strong> (<em>number</em>) – thickness of the core in the cross section, used for drawing  (default:None)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSPickle.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the modesolver’s eigenmodes to make memory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSPickle.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the stored mode</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the eigenmode of index mode_num</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#emepy.mode.Mode" title="emepy.mode.Mode">Mode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.fd.MSPickle.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the eigenmodes by loading them from the pickle file</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="tools">
+<h2>Tools<a class="headerlink" href="#tools" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="emepy.tools.get_epsfunc">
+<code class="sig-prename descclassname">emepy.tools.</code><code class="sig-name descname">get_epsfunc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">cladding_width</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span></em>, <em class="sig-param"><span class="n">core_index</span></em>, <em class="sig-param"><span class="n">cladding_index</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.tools.get_epsfunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the epsfunc for given parameters</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="emepy.tools.Si">
+<code class="sig-prename descclassname">emepy.tools.</code><code class="sig-name descname">Si</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wavelength</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.tools.Si" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the refractive index for Silicon given the wavelength in microns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>wavelength</strong> (<em>number</em>) – wavelength (microns)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>refractive index</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="emepy.tools.SiO2">
+<code class="sig-prename descclassname">emepy.tools.</code><code class="sig-name descname">SiO2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wavelength</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.tools.SiO2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the refractive index for Silicon Dioxide given the wavelength in microns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>wavelength</strong> (<em>number</em>) – the optical wavelength (microns)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>refractive index</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>number</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="examples.html" class="btn btn-neutral float-right" title="EMEPy Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="EMEpy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Ian Hammond
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
