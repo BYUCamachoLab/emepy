@@ -1,8 +1,6 @@
-import emepy
-from emepy.FD_modesolvers import ModeSolver_Lumerical  # Requires Lumerical API
-from emepy.FD_modesolvers import ModeSolver_EMpy  # Open source
+from emepy.fd import MSLumerical # Requires Lumerical API
+from emepy.fd import MSEMpy  # Open source
 from emepy.eme import Layer, EME
-from emepy.mode import Mode
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -14,7 +12,7 @@ wl_lower = 1.5  # Lower wavelength bound
 wl_upper = 1.6  # Upper wavelength bound
 num_modes = 1  # Number of Modes
 mesh = 128
-modesolver = ModeSolver_Lumerical
+modesolver = MSEMpy
 
 t = []  # Array that holds the transmission coefficients for different wavelengths
 

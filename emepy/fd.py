@@ -10,8 +10,41 @@ import EMpy
 
 import pickle
 
+class ModeSolver(object):
+    """
+        The ModeSolver object is the heart of finding eigenmodes for use in eigenmode expansion or simple examination. This parent class should be inherited and used as a wrapper for certain modules such as EMpy, Lumerical, Pickled data, Neural Networks, etc. 
+    """
+    def __init__(self):
+        """
+            ModeSolver class constructor
+        """
+        raise NotImplementedError
+    def solve(self):
+        """
+            Solves the eigenmode solver for the specific eigenmodes of desire
+        """
+        raise NotImplementedError
+    def clear(self):
+        """
+            Clears the modesolver's eigenmodes to make memory
+        """
+        raise NotImplementedError
+    def get_mode(self, mode_num):
+        """
+            Must extract the mode of choice
 
-class ModeSolver_Lumerical(object):
+            Parameters
+            ----------
+            mode_num : int 
+                index of the mode of choice
+        """
+        raise NotImplementedError
+
+
+class MSLumerical(ModeSolver):
+    """
+        Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide. 
+    """
     def __init__(
         self,
         wl,
@@ -25,6 +58,32 @@ class ModeSolver_Lumerical(object):
         mesh=300,
         lumapi_location=None,
     ):
+        """
+        MSLumerical class constructor
+
+        Parameters
+        ----------
+        wl : number 
+            wavelength of the eigenmodes
+        width : number
+            width of the core in the cross section
+        thickness : number
+            thickness of the core in the cross section
+        num_modes : int
+            number of modes to solve for (default:1)
+        cladding_width : number
+            width of the cladding in the cross section (default:5e-6)
+        cladding_thickness : number
+            thickness of the cladding in the cross section (default:5e-6)
+        core_index : number
+            refractive index of the core (default:Si)
+        cladding_index : number
+            refractive index of the cladding (default:SiO2)
+        mesh : int
+            number of mesh points in each direction (xy)
+        lumapi_location : string
+            location of the lumapi library if not already in the python path
+        """
 
         self.wl = wl
         self.width = width
@@ -41,6 +100,9 @@ class ModeSolver_Lumerical(object):
             self.cladding_index = tools.SiO2(wl * 1e6)
 
     def solve(self):
+        """
+        Solves for the eigenmodes
+        """
 
         core_width = self.width
         core_thickness = self.thickness
@@ -169,6 +231,9 @@ class ModeSolver_Lumerical(object):
         self.fields = field
 
     def clear(self):
+        """
+        Clears the modesolver's eigenmodes to make memory
+        """
 
         self.x = None
         self.y = None
@@ -176,6 +241,19 @@ class ModeSolver_Lumerical(object):
         self.fields = None
 
     def get_mode(self, mode_num=0):
+        """
+        Get the indexed mode number
+
+        Parameters
+        ----------
+        mode_num : int 
+            index of the mode of choice
+
+        Returns
+        -------
+        Mode 
+            the eigenmode of index mode_num
+        """
 
         field = self.fields[mode_num]
         Ex = field[3]
@@ -189,7 +267,10 @@ class ModeSolver_Lumerical(object):
         return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez)
 
 
-class ModeSolver_EMpy(object):
+class MSEMpy(ModeSolver):
+    """
+        Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide. 
+    """
     def __init__(
         self,
         wl,
@@ -207,6 +288,42 @@ class ModeSolver_EMpy(object):
         boundary="0000",
         epsfunc=None,
     ):
+        """
+            MSEMpy class constructor
+
+            Parameters
+            ----------
+            wl : number 
+                wavelength of the eigenmodes
+            width : number
+                width of the core in the cross section
+            thickness : number
+                thickness of the core in the cross section
+            num_modes : int
+                number of modes to solve for (default:1)
+            cladding_width : number
+                width of the cladding in the cross section (default:5e-6)
+            cladding_thickness : number
+                thickness of the cladding in the cross section (default:5e-6)
+            core_index : number
+                refractive index of the core (default:Si)
+            cladding_index : number
+                refractive index of the cladding (default:SiO2)
+            mesh : int
+                number of mesh points in each direction (xy)
+            x : numpy array
+                the cross section grid in the x direction (z propagation) (default:None)
+            y : numpy array
+                the cross section grid in the y direction (z propagation) (default:None)
+            mesh : int
+                the number of mesh points in each xy direction 
+            accuracy : number
+                the minimum accuracy of the finite difference solution (default:1e-8)
+            boundary : string
+                the boundaries according to the EMpy library (default:"0000")
+            epsfunc : function
+                the function which defines the permittivity based on a grid (see EMpy library) (default:"0000")
+        """
 
         self.wl = wl
         self.width = width
@@ -242,17 +359,35 @@ class ModeSolver_EMpy(object):
             )
 
     def solve(self):
+        """
+        Solves for the eigenmodes
+        """
         self.solver = EMpy.modesolvers.FD.VFDModeSolver(self.wl, self.x, self.y, self.epsfunc, self.boundary).solve(
             self.num_modes, self.accuracy
         )
 
     def clear(self):
-
+        """
+        Clears the modesolver's eigenmodes to make memory
+        """
         self.solver = None
         self.x = None
         self.y = None
 
     def get_mode(self, mode_num=0):
+        """
+        Get the indexed mode number
+
+        Parameters
+        ----------
+        mode_num : int 
+            index of the mode of choice
+
+        Returns
+        -------
+        Mode 
+            the eigenmode of index mode_num
+        """
 
         Ex = self.solver.modes[mode_num].get_field("Ex", self.x, self.y)
         Ey = self.solver.modes[mode_num].get_field("Ey", self.x, self.y)
@@ -265,8 +400,25 @@ class ModeSolver_EMpy(object):
         return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez)
 
 
-class ModeSolver_Pickle(object):
+class MSPickle(object):
+    """
+        Pickle Modesolver. See Modesolver. Pickle should serialize a list of Mode objects that can be opened here. 
+    """
     def __init__(self, filename, index=None, width=None, thickness=None):
+        """
+            MSPickle class constructor
+
+            Parameters
+            ----------
+            filename : string
+                the name of the pickled file where the eigenmode is stored
+            index : int
+                the index of the mode in the pickle file if the data stored is an array of Modes (default:None)
+            width : number
+                width of the core in the cross section, used for drawing (default:None)
+            thickness : number
+                thickness of the core in the cross section, used for drawing  (default:None)
+        """
 
         self.filename = filename
         self.index = index
@@ -274,20 +426,34 @@ class ModeSolver_Pickle(object):
         self.thickness = thickness
 
     def solve(self):
+        """
+        Solves for the eigenmodes by loading them from the pickle file
+        """
 
         with open(self.filename, "rb") as f:
-            self.mode = pickle.load(f)[self.index] if self.index != None else pickle.load(f)
+            self.mode = pickle.load(f)[self.index] if not self.index is None else pickle.load(f)
 
         self.x = self.mode.x
         self.y = self.mode.y
 
     def clear(self):
+        """
+        Clears the modesolver's eigenmodes to make memory
+        """
 
         self.x = None
         self.y = None
         self.mode = None
 
     def get_mode(self, mode_num=0):
+        """
+        Get the stored mode
+
+        Returns
+        -------
+        Mode 
+            the eigenmode of index mode_num
+        """
 
         return self.mode
 

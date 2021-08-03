@@ -12,17 +12,31 @@ class Mode(object):
     """
 
     def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez):
-        """Constructor for Mode Object
-            :param x (ndarray float): array of grid points in x direction (propogation in z)
-            :param y (ndarray float): array of grid points in y direction (propogation in z)
-            :param wl (float): wavelength (meters)
-            :param neff (float): effective index
-            :param Hx (ndarray float): Hx field profile
-            :param Hy (ndarray float): Hy field profile
-            :param Hz (ndarray float): Hz field profile
-            :param Ex (ndarray float): Ex field profile
-            :param Ey (ndarray float): Ey field profile
-            :param Ez (ndarray float): Ez field profile
+        """
+        Constructor for Mode Object
+
+        Parameters
+        ----------
+        x : (ndarray float)
+            array of grid points in x direction (propogation in z)
+        y : (ndarray float)
+            array of grid points in y direction (propogation in z)
+        wl : (float)
+            wavelength (meters)
+        neff : (float)
+            effective index
+        Hx : (ndarray float)
+            Hx field profile
+        Hy : (ndarray float)
+            Hy field profile
+        Hz : (ndarray float)
+            Hz field profile
+        Ex : (ndarray float)
+            Ex field profile
+        Ey : (ndarray float)
+            Ey field profile
+        Ez : (ndarray float)
+            Ez field profile
         """
 
         self.x = x
@@ -36,33 +50,42 @@ class Mode(object):
         self.Ey = np.array(Ey)
         self.Ez = np.array(Ez)
 
+    def plot(self, operation="Real", colorbar=True):
+        """
+        Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
 
-    def plot(self, value_type="Real", colorbar=True):
+        Parameters
+        ----------
+        operation : string
+            the operation to perform on the fields from ("Real", "Imaginary", "Abs", "Abs^2") (default:"Real")
+        colorbar : bool
+            if true, will show a colorbar for each field
+        """
 
         self /= max([np.abs(np.real(np.amax(i))) for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]])
 
-        if value_type == "Imaginary":
+        if operation == "Imaginary":
             Hx = np.imag(self.Hx).T
             Hy = np.imag(self.Hy).T
             Hz = np.imag(self.Hz).T
             Ex = np.imag(self.Ex).T
             Ey = np.imag(self.Ey).T
             Ez = np.imag(self.Ez).T
-        elif value_type == "Abs":
+        elif operation == "Abs":
             Hx = np.abs(self.Hx).T
             Hy = np.abs(self.Hy).T
             Hz = np.abs(self.Hz).T
             Ex = np.abs(self.Ex).T
             Ey = np.abs(self.Ey).T
             Ez = np.abs(self.Ez).T
-        elif value_type == "Abs^2":
+        elif operation == "Abs^2":
             Hx = np.abs(self.Hx).T ** 2
             Hy = np.abs(self.Hy).T ** 2
             Hz = np.abs(self.Hz).T ** 2
             Ex = np.abs(self.Ex).T ** 2
             Ey = np.abs(self.Ey).T ** 2
             Ez = np.abs(self.Ez).T ** 2
-        elif value_type == "Real":
+        elif operation == "Real":
             Hx = np.real(self.Hx).T
             Hy = np.real(self.Hy).T
             Hz = np.real(self.Hz).T
@@ -70,7 +93,7 @@ class Mode(object):
             Ey = np.real(self.Ey).T
             Ez = np.real(self.Ez).T
         else:
-            raise Exception("Invalid value_type entered. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real')")
+            raise Exception("Invalid operation entered. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real')")
 
         plt.subplot(2, 3, 4, adjustable="box", aspect=Ex.shape[0] / Ex.shape[1])
         v = max(abs(Ex.min()), abs(Ex.max()))
@@ -81,7 +104,7 @@ class Mode(object):
             vmax=v,
             extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
         )
-        plt.title(value_type + "(Ex)")
+        plt.title(operation + "(Ex)")
         if colorbar:
             plt.colorbar(fraction=0.046, pad=0.04)
         plt.xlabel("x µm")
@@ -96,7 +119,7 @@ class Mode(object):
             vmax=v,
             extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
         )
-        plt.title(value_type + "(Ey)")
+        plt.title(operation + "(Ey)")
         if colorbar:
             plt.colorbar(fraction=0.046, pad=0.04)
         plt.xlabel("x µm")
@@ -111,7 +134,7 @@ class Mode(object):
             vmax=v,
             extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
         )
-        plt.title(value_type + "(Ez)")
+        plt.title(operation + "(Ez)")
         if colorbar:
             plt.colorbar(fraction=0.046, pad=0.04)
         plt.xlabel("x µm")
@@ -126,7 +149,7 @@ class Mode(object):
             vmax=v,
             extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
         )
-        plt.title(value_type + "(Hx)")
+        plt.title(operation + "(Hx)")
         if colorbar:
             plt.colorbar(fraction=0.046, pad=0.04)
         plt.xlabel("x µm")
@@ -141,7 +164,7 @@ class Mode(object):
             vmax=v,
             extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
         )
-        plt.title(value_type + "(Hy)")
+        plt.title(operation + "(Hy)")
         if colorbar:
             plt.colorbar(fraction=0.046, pad=0.04)
         plt.xlabel("x µm")
@@ -156,7 +179,7 @@ class Mode(object):
             vmax=v,
             extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
         )
-        plt.title(value_type + "(Hz)")
+        plt.title(operation + "(Hz)")
         if colorbar:
             plt.colorbar(fraction=0.046, pad=0.04)
         plt.xlabel("x µm")
@@ -165,6 +188,21 @@ class Mode(object):
         plt.tight_layout()
 
     def _inner_product(self, mode1, mode2):
+        """
+        Helper function that takes the inner product between Modes mode1 and mode2
+
+        Parameters
+        ----------
+        mode1 : Mode
+            first eigenmode in the operation 
+        mode2 : Mode
+            second eigenmode in the operation
+
+        Returns
+        -------
+        number 
+            the inner product between the two input modes
+        """
 
         res = mode1.Ex.shape[0] * mode1.Ex.shape[1]
         Ex = mode1.Ex.reshape(1, res)
@@ -185,64 +223,112 @@ class Mode(object):
         return 0.5 * np.trapz(np.trapz(cross, mode1.x), mode1.y)
 
     def inner_product(self, mode2):
+        """
+        Takes the inner product between self and the provided Mode
+
+        Parameters
+        ----------
+        mode2 : Mode
+            second eigenmode in the operation
+
+        Returns
+        -------
+        number 
+            the inner product between the modes
+        """
         return self._inner_product(self, mode2)
         # return self._inner_product(self, mode2) * self._inner_product(mode2, self) / self._inner_product(self, self)
 
     def __str__(self):
-
         return "Mode Object with effective index of " + str(self.neff)
 
     def __mul__(self, other):
+        if isinstance(other, Mode):
+            self.Hx *= self.Hx
+            self.Hy *= self.Hy
+            self.Hz *= self.Hz
+            self.Ex *= self.Ex
+            self.Ey *= self.Ey
+            self.Ez *= self.Ez
+        else: 
+            self.Hx *= other
+            self.Hy *= other
+            self.Hz *= other
+            self.Ex *= other
+            self.Ey *= other
+            self.Ez *= other
 
-        self.Hx *= other
-        self.Hy *= other
-        self.Hz *= other
-        self.Ex *= other
-        self.Ey *= other
-        self.Ez *= other
-
-        return self
+            return self
 
     def __add__(self, other):
-
-        self.Hx += other
-        self.Hy += other
-        self.Hz += other
-        self.Ex += other
-        self.Ey += other
-        self.Ez += other
+        if isinstance(other, Mode):
+            self.Hx += self.Hx
+            self.Hy += self.Hy
+            self.Hz += self.Hz
+            self.Ex += self.Ex
+            self.Ey += self.Ey
+            self.Ez += self.Ez
+        else: 
+            self.Hx += other
+            self.Hy += other
+            self.Hz += other
+            self.Ex += other
+            self.Ey += other
+            self.Ez += other
 
         return self
 
     def __truediv__(self, other):
 
-        self.Hx /= other
-        self.Hy /= other
-        self.Hz /= other
-        self.Ex /= other
-        self.Ey /= other
-        self.Ez /= other
+        if isinstance(other, Mode):
+            self.Hx /= self.Hx
+            self.Hy /= self.Hy
+            self.Hz /= self.Hz
+            self.Ex /= self.Ex
+            self.Ey /= self.Ey
+            self.Ez /= self.Ez
+        else: 
+            self.Hx /= other
+            self.Hy /= other
+            self.Hz /= other
+            self.Ex /= other
+            self.Ey /= other
+            self.Ez /= other
 
         return self
 
     def __sub__(self, other):
 
-        self.Hx -= other
-        self.Hy -= other
-        self.Hz -= other
-        self.Ex -= other
-        self.Ey -= other
-        self.Ez -= other
+        if isinstance(other, Mode):
+            self.Hx -= self.Hx
+            self.Hy -= self.Hy
+            self.Hz -= self.Hz
+            self.Ex -= self.Ex
+            self.Ey -= self.Ey
+            self.Ez -= self.Ez
+        else: 
+            self.Hx -= other
+            self.Hy -= other
+            self.Hz -= other
+            self.Ex -= other
+            self.Ey -= other
+            self.Ez -= other
 
         return self
 
     def normalize(self):
+        """
+        Normalizes the Mode to power 1.
+        """
 
         self.zero_phase()
         factor = self.inner_product(self)
         self /= np.sqrt(factor)
 
     def zero_phase(self):
+        """
+        Changes the phase such that the z components are all imaginary and the xy components are all real.
+        """
 
         index = int(self.Hy.shape[0] / 2)
         phase = np.angle(np.array(self.Hy))[index][index]
@@ -251,26 +337,49 @@ class Mode(object):
             self *= -1
 
     def get_fields(self):
+        """
+        Returns an array [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez].
+        """
 
         return [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez]
 
     def get_H(self):
+        """
+        Returns an array [self.Hx, self.Hy, self.Hz].
+        """
 
         return [self.Hx, self.Hy, self.Hz]
 
     def get_E(self):
+        """
+        Returns an array [self.Ex, self.Ey, self.Ez].
+        """
 
         return [self.Ex, self.Ey, self.Ez]
 
     def get_neff(self):
+        """
+        Returns the effective index as a complex number.
+        """
 
         return self.neff
 
     def get_wavelength(self):
+        """
+        Returns the wavelength.
+        """
 
         return self.wl
 
     def save(self, path=None):
+        """
+        Serializes the mode into a pickle file
+
+        Parameters
+        ----------
+        path : string 
+            The path (including name) to save the file. (default: “./ModeObject_” + str(random.random()))
+        """
 
         if path:
             pickle.dump(self, open(path, "wb+"))
@@ -278,7 +387,7 @@ class Mode(object):
             pickle.dump(self, open("./ModeObject_" + str(random.random()) + ".pk", "wb+"))
 
     def compute_other_fields(self, width, thickness):
-        """Adapted from the EMpy library LICENSED UNDER MIT LICENSE"""
+        """Given the Hx and Hy fields, maxwell's curl relations can be used to calculate the remaining field; adapted from the EMpy"""
 
         from scipy.sparse import coo_matrix
 
@@ -1442,7 +1551,7 @@ class Mode(object):
         self.y = self.y[1:]
 
     def _get_eps(self, xc, yc):
-        """Adapted from the EMpy library LICENSED UNDER MIT LICENSE"""
+        """Used by compute_other_fields and adapted from the EMpy library"""
         tmp = self.epsfunc(xc, yc)
 
         def _reshape(tmp):
