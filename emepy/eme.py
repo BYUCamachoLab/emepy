@@ -6,14 +6,34 @@ from simphony.models import Subcircuit
 
 
 class Layer(object):
+    """
+        Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures.
+    """
+
     def __init__(self, mode_solvers, num_modes, wavelength, length):
+        """Layer class constructor
+
+        Parameters
+        ----------
+        mode_solvers : list [tuple (ModeSolver, int)], Modesolver
+            List of tuples that contain ModeSolver objects and the number of modes that corresponds to each. Should be in order from fundamental mode to least significant mode. If only one ModeSolver is needed, can simply be that object instead of a list. 
+        num_modes : int
+            Number of total modes for the layer.
+        wavelength : number
+            Wavelength of eigenmode to solve for (m).
+        length : number
+            Geometric length of the Layer (m). The length affects the phase of the eigenmodes inside the layer via the complex phasor $e^(jβz)$.
+        """
 
         self.num_modes = num_modes
         self.mode_solvers = mode_solvers
         self.wavelength = wavelength
         self.length = length
+        self.activated_layer = None
 
     def activate_layer(self):
+        """Solves for the modes in the layer and creates an ActivatedLayer object
+        """
 
         modes = []
 
@@ -31,9 +51,27 @@ class Layer(object):
         self.activated_layer = ActivatedLayer(modes, self.wavelength, self.length)
 
     def get_activated_layer(self):
+        """Gets the activated layer if it exists or calls activate_layer first 
+
+        Returns
+        -------
+        ActivatedLayer
+            the object that stores the eigenmodes
+        """
+
+        if self.activated_layer is None:
+            self.activate_layer()
+
         return self.activated_layer
 
     def clear(self):
+        """Empties the modes in the ModeSolver to clear memory
+
+        Returns
+        -------
+        numpy array
+            the edited image
+        """
 
         if type(self.mode_solvers) != list:
             self.mode_solvers.clear()
@@ -43,16 +81,41 @@ class Layer(object):
 
 
 class EME(object):
+    """
+        The EME class is the heart of the package. It provides the algorithm that cascades sections modes together to provide the s-parameters for a geometric structure. The object is dependent on the Layer objects that are fed inside.
+    """
+
     def __init__(self, layers=[], num_periods=1):
+        """EME class constructor
+
+        Parameters
+        ----------
+        layers : list [Layer]
+            An list of Layer objects, arranged in the order they belong geometrically. (default: [])
+
+        """
 
         self.reset()
         self.layers = layers
         self.num_periods = num_periods
+        self.s_params = None
 
     def add_layer(self, layer):
+        """The add_layer method will add a Layer object to the EME object. The object will be geometrically added to the very right side of the structure. Using this method after propagate is useless as the solver has already been called.
+
+        Parameters
+        ----------
+        layer : Layer
+            Layer object to be appended to the list of Layers inside the EME object.
+
+        """
+
         self.layers.append(layer)
 
     def reset(self):
+        """Clears out the layers and s params so the user can reuse the object in memory on a new geometry
+        """
+
         self.layers = []
         self.interfaces = []
         self.wavelength = None
@@ -60,6 +123,19 @@ class EME(object):
         self.interface = None
 
     def propagate_period(self):
+        """The propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values. 
+
+        Returns
+        -------
+        s_params
+            The s_params acquired during propagation
+            
+        mode_set1
+            The set of Mode objects that were solved for on the input layer
+
+        mode_set2
+            The set of Mode objects that were solved for on the output layer
+        """
 
         # Propagate the first two layers
         self.layers[0].activate_layer()
@@ -104,6 +180,8 @@ class EME(object):
         return (current.s_params, mode_set1, mode_set2)
 
     def propagate(self):
+        """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.
+        """
 
         # Check for layers
         if not len(self.layers):
@@ -132,15 +210,31 @@ class EME(object):
 
         # Cascade params for each period
         from copy import copy
+
         for _ in range(self.num_periods - 1):
 
             current_layer.s_params = self.cascade((current_layer), (interface))
             current_layer.s_params = self.cascade((current_layer), (period_layer))
             # current_layer.s_params = self.cascade(current_layer, period_layer)
-            
+
         self.s_params = current_layer.s_params
 
     def cascade(self, first, second):
+        """Calculates the s_parameters between two layer objects
+
+        Parameters
+        ----------
+        first : Layer
+            left Layer object
+        second : Layer
+            right Layer object
+
+        Returns
+        -------
+        numpy array
+            the s_parameters between the two Layers
+        """
+
         Subcircuit.clear_scache()
 
         # make sure the components are completely disconnected
@@ -154,11 +248,23 @@ class EME(object):
         # get the scattering parameters
         return first.circuit.s_parameters(np.array([self.wavelength]))
 
-    def get_s_params(self):
+    def s_parameters(self, freqs=None):
+        """Returns the s_parameters if they exist. If they don't exist yet, propagate() will be called first. 
+
+        Returns
+        -------
+        numpy array
+            The s_params acquired during propagation
+        """
+
+        if self.s_params is None:
+            self.propagate()
 
         return self.s_params
 
     def draw(self):
+        """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. Currently, the drawing is very rough. This will change in the future. 
+        """
 
         # Simple drawing to debug geometry
         plt.figure()
@@ -185,7 +291,20 @@ class EME(object):
 
 
 class Current(Model):
+    """
+        The object that the EME uses to track the s_parameters and cascade them as they come along to save memory
+    """
     def __init__(self, wavelength, s, **kwargs):
+        """
+        Current class constructor
+
+        Parameters
+        ----------
+        wavelength : number 
+            the wavelength of the simulation
+        s : numpy array 
+            the starting scattering matrix
+        """
         self.left_ports = s.left_ports
         self.left_pins = s.left_pins
         self.s_params = s.s_params
@@ -204,6 +323,16 @@ class Current(Model):
         super().__init__(**kwargs, pins=pins)
 
     def update_s(self, s, layer):
+        """
+        Updates the scattering matrix of the object
+
+        Parameters
+        ----------
+        s : numpy array
+            scattering matrix to use as the update
+        layer : Layer
+            the layer object whos ports to match
+        """
 
         self.s_params = s
         self.right_ports = layer.right_ports
@@ -219,12 +348,35 @@ class Current(Model):
 
         super().__init__(pins=pins)
 
-    def s_parameters(self, freq):
+    def s_parameters(self, freq=None):
+        """Returns the scattering matrix.
+
+        Returns
+        -------
+        numpy array
+            the scattering matrix 
+        """
         return self.s_params
 
 
 class ActivatedLayer(Model):
+    """
+        ActivatedLayer is produced by the Layer class after the ModeSolvers calculate eigenmodes. This is used to create interfaces. This inherits from Simphony's Model class. 
+    """
+
     def __init__(self, modes, wavelength, length, **kwargs):
+        """ActivatedLayer class constructor
+
+        Parameters
+        ----------
+        modes : list [Mode]
+            list of solved eigenmodes in Mode class form
+        wavelength : number
+            the wavelength of the eigenmodes
+        length : number
+            the length of the layer object that produced the eigenmodes. This number is used for phase propagation. 
+        """
+
         self.num_modes = len(modes)
         self.modes = modes
         self.wavelength = wavelength
@@ -232,7 +384,7 @@ class ActivatedLayer(Model):
         self.normalize_fields()
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)]
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)]
-        self.s_params = self.get_s_params()
+        self.s_params = self.calculate_s_params()
 
         # create the pins for the model
         pins = []
@@ -244,10 +396,21 @@ class ActivatedLayer(Model):
         super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self):
+        """Normalizes all of the eigenmodes such that the overlap with its self (integral of |E|^2) is 1. 
+        """
+
         for mode in range(len(self.modes)):
             self.modes[mode].normalize()
 
-    def get_s_params(self):
+    def calculate_s_params(self):
+        """Calculates the s params for the phase propagation and returns it. 
+
+        Returns
+        -------
+        numpy array
+            the scattering matrix for phase propagation. 
+        """
+
         eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes]) / (self.wavelength)
 
         propagation_matrix1 = np.diag(
@@ -265,12 +428,35 @@ class ActivatedLayer(Model):
 
         return propagation_matrix
 
-    def s_parameters(self, freqs):
+    def s_parameters(self, freq=None):
+        """Returns the scattering matrix.
+
+        Returns
+        -------
+        numpy array
+            the scattering matrix 
+        """
+
         return self.s_params
 
 
 class PeriodicLayer(Model):
+    """
+        PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods. 
+    """
     def __init__(self, left_modes, right_modes, s_params, **kwargs):
+        """PeriodicLayer class constructor
+
+        Parameters
+        ----------
+        left_modes : list [Mode]
+            list of the eigenmodes on the left side of the layer
+        right_modes : list [Mode]
+            list of the eigenmodes on the right side of the layer
+        s_params : 
+            the scattering matrix that represents the layer, which includes both propagation and mode overlaps
+        """
+
         self.left_modes = left_modes
         self.right_modes = right_modes
         self.left_ports = len(self.left_modes)
@@ -290,22 +476,46 @@ class PeriodicLayer(Model):
         super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self):
+        """Normalizes all of the eigenmodes such that the overlap with its self (integral of |E|^2) is 1. 
+        """
+
         for mode in range(len(self.left_modes)):
             self.left_modes[mode].normalize()
         for mode in range(len(self.right_modes)):
             self.right_modes[mode].normalize()
 
-    def s_parameters(self, freqs):
+    def s_parameters(self, freqs=None):
+        """Returns the scattering matrix.
+
+        Returns
+        -------
+        numpy array
+            the scattering matrix 
+        """
+
         return self.s_params
 
 
 class InterfaceSingleMode(Model):
-    def __init__(self, layer1, layer2, num_modes=1, **kwargs):
+    """
+        The InterfaceSingleMode class represents the interface between two different layers. This class is an approximation to speed up the process and can ONLY be used during single mode EME. 
+    """
+    def __init__(self, layer1, layer2, **kwargs):
+        """InterfaceSingleMode class constructor
+
+        Parameters
+        ----------
+        layer1 : Layer
+            the left Layer object of the interface
+        layer2 : Layer
+            the right Layer object of the interface
+        """
+
         self.layer1 = layer1
         self.layer2 = layer2
-        self.num_modes = num_modes
-        self.left_ports = num_modes
-        self.right_ports = num_modes
+        self.num_modes = 1
+        self.left_ports = 1
+        self.right_ports = 1
         self.num_ports = self.left_ports + self.right_ports
         self.left_pins = ["left" + str(i) for i in range(self.left_ports)]
         self.right_pins = ["right" + str(i) for i in range(self.right_ports)]
@@ -318,10 +528,20 @@ class InterfaceSingleMode(Model):
             pins.append(Pin(self, name))
         super().__init__(**kwargs, pins=pins)
 
-    def s_parameters(self, freq):
+    def s_parameters(self, freqs=None):
+        """Returns the scattering matrix.
+
+        Returns
+        -------
+        numpy array
+            the scattering matrix 
+        """
+
         return self.s
 
     def solve(self):
+        """Solves for the scattering matrix based on transmission and reflection
+        """
 
         s = np.zeros((2 * self.num_modes, 2 * self.num_modes), dtype=complex)
 
@@ -350,6 +570,22 @@ class InterfaceSingleMode(Model):
         self.s = s.reshape((1, 2 * self.num_modes, 2 * self.num_modes))
 
     def get_values(self, left, right):
+        """Returns the reflection and transmission coefficient based on the two modes
+
+        Parameters
+        ----------
+        left : Mode
+            leftside eigenmode
+        right : Mode
+            rightside eigenmode
+
+        Returns
+        -------
+        r : number
+            reflection coefficient
+        t : number
+            transmission coefficient
+        """
 
         a = 0.5 * left.inner_product(right) + 0.5 * right.inner_product(left)
         b = 0.5 * left.inner_product(right) - 0.5 * right.inner_product(left)
@@ -360,11 +596,27 @@ class InterfaceSingleMode(Model):
         return -r, t
 
     def clear(self):
+        """Clears the scattering matrix in the object
+        """
+
         self.s = None
 
 
 class InterfaceMultiMode(Model):
+    """
+        The InterfaceMultiMode class represents the interface between two different layers. 
+    """
     def __init__(self, layer1, layer2, **kwargs):
+        """InterfaceMultiMode class constructor
+
+        Parameters
+        ----------
+        layer1 : Layer
+            the left Layer object of the interface
+        layer2 : Layer
+            the right Layer object of the interface
+        """
+
         self.layer1 = layer1
         self.layer2 = layer2
         self.num_ports = layer1.right_ports + layer2.left_ports
@@ -382,10 +634,20 @@ class InterfaceMultiMode(Model):
 
         super().__init__(**kwargs, pins=pins)
 
-    def s_parameters(self, freq):
+    def s_parameters(self, freqs=None):
+        """Returns the scattering matrix.
+
+        Returns
+        -------
+        numpy array
+            the scattering matrix 
+        """
+
         return self.s
 
     def solve(self):
+        """Solves for the scattering matrix based on transmission and reflection
+        """
 
         s = np.zeros((self.num_ports, self.num_ports), dtype=complex)
 
@@ -412,6 +674,24 @@ class InterfaceMultiMode(Model):
         self.s = s.reshape((1, self.num_ports, self.num_ports))
 
     def get_t(self, p, left, right, curr_ports):
+        """Returns the transmission coefficient based on the two modes
+
+        Parameters
+        ----------
+        p : int
+            port number to look at
+        left : Mode
+            leftside eigenmode
+        right : Mode
+            rightside eigenmode
+        curr_ports : int
+            total number of ports
+
+        Returns
+        -------
+        t : number
+            transmission coefficient
+        """
 
         # Ax = b
         A = np.array(
@@ -429,6 +709,24 @@ class InterfaceMultiMode(Model):
         return x
 
     def get_r(self, p, x, left, right, curr_ports):
+        """Returns the transmission coefficient based on the two modes
+
+        Parameters
+        ----------
+        p : int
+            port number to look at
+        left : Mode
+            leftside eigenmode
+        right : Mode
+            rightside eigenmode
+        curr_ports : int
+            total number of ports
+
+        Returns
+        -------
+        r : number
+            reflection coefficient
+        """
 
         rs = np.array(
             [
@@ -447,6 +745,8 @@ class InterfaceMultiMode(Model):
         return rs
 
     def clear(self):
+        """Clears the scattering matrix in the object
+        """
 
         self.s_params = None
 

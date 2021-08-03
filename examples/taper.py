@@ -1,6 +1,6 @@
 import emepy
-from emepy.FD_modesolvers import ModeSolver_Lumerical  # Requires Lumerical API
-from emepy.FD_modesolvers import ModeSolver_EMpy  # Open source
+from emepy.fd import MSLumerical  # Requires Lumerical API
+from emepy.fd import MSEMpy  # Open source
 from emepy.eme import Layer, EME
 from emepy.mode import Mode
 
@@ -9,7 +9,7 @@ import pylab
 
 
 # Cross sectional parameters (computational complexity determined here)
-ModeSolver = ModeSolver_EMpy  # Choose a modesolver object that will calculate the 2D field profile
+ModeSolver = MSEMpy  # Choose a modesolver object that will calculate the 2D field profile
 mesh = 128  # Mesh density of 2D field profiles
 num_modes = 1
 
@@ -44,8 +44,6 @@ for taper_density in range(27, 31):
     straight1 = Layer(mode1, num_modes, wavelength, wg_length)
     eme.add_layer(straight1)
 
-    # eme.draw()
-
     # create the discrete taper with a fine enough taper density to approximate a continuous linear taper
     widths = np.linspace(width1, width2, taper_density)
     thicknesses = np.linspace(thickness1, thickness2, taper_density)
@@ -57,14 +55,10 @@ for taper_density in range(27, 31):
         taper_layer = Layer(solver, num_modes, wavelength, taper_length_per)
         eme.add_layer(taper_layer)
 
-    # eme.draw()
-
     # last layer is a straight waveguide of smaller geometry
     mode2 = ModeSolver(wl=wavelength, width=width2, thickness=thickness2, mesh=mesh, num_modes=num_modes)
     straight2 = Layer(mode2, num_modes, wavelength, wg_length)
     eme.add_layer(straight2)
-
-    # eme.draw()
 
     # eme.draw()  # Look at our simulation geometry
 

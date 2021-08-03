@@ -23,6 +23,7 @@ from sklearn import linear_model
 from EMpy.modesolvers.FD import stretchmesh
 from EMpy.utils import centered2d
 import EMpy
+from fd import Modesolver
 
 
 FIELD_WIDTH = 128
@@ -138,7 +139,7 @@ class Network(nn.Module):
         return out, field
 
 
-class ModeSolver_Network(object):
+class MSNeuralNetwork(Modesolver):
     def __init__(
         self,
         networkBaseObject,
@@ -217,7 +218,7 @@ class ModeSolver_Network(object):
         return m
 
 
-class NetworkBaseObject(object):
+class ANN(object):
     def __init__(
         self,
         sklearn_save,
