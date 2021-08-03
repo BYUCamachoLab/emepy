@@ -12,8 +12,7 @@ class Mode(object):
     """
 
     def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez):
-        """
-        Constructor for Mode Object
+        """Constructor for Mode Object
 
         Parameters
         ----------
@@ -51,8 +50,7 @@ class Mode(object):
         self.Ez = np.array(Ez)
 
     def plot(self, operation="Real", colorbar=True):
-        """
-        Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
+        """Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
 
         Parameters
         ----------
@@ -188,8 +186,7 @@ class Mode(object):
         plt.tight_layout()
 
     def _inner_product(self, mode1, mode2):
-        """
-        Helper function that takes the inner product between Modes mode1 and mode2
+        """Helper function that takes the inner product between Modes mode1 and mode2
 
         Parameters
         ----------
@@ -223,8 +220,7 @@ class Mode(object):
         return 0.5 * np.trapz(np.trapz(cross, mode1.x), mode1.y)
 
     def inner_product(self, mode2):
-        """
-        Takes the inner product between self and the provided Mode
+        """Takes the inner product between self and the provided Mode
 
         Parameters
         ----------
@@ -250,7 +246,7 @@ class Mode(object):
             self.Ex *= self.Ex
             self.Ey *= self.Ey
             self.Ez *= self.Ez
-        else: 
+        else:
             self.Hx *= other
             self.Hy *= other
             self.Hz *= other
@@ -268,7 +264,7 @@ class Mode(object):
             self.Ex += self.Ex
             self.Ey += self.Ey
             self.Ez += self.Ez
-        else: 
+        else:
             self.Hx += other
             self.Hy += other
             self.Hz += other
@@ -287,7 +283,7 @@ class Mode(object):
             self.Ex /= self.Ex
             self.Ey /= self.Ey
             self.Ez /= self.Ez
-        else: 
+        else:
             self.Hx /= other
             self.Hy /= other
             self.Hz /= other
@@ -306,7 +302,7 @@ class Mode(object):
             self.Ex -= self.Ex
             self.Ey -= self.Ey
             self.Ez -= self.Ez
-        else: 
+        else:
             self.Hx -= other
             self.Hy -= other
             self.Hz -= other
@@ -317,8 +313,7 @@ class Mode(object):
         return self
 
     def normalize(self):
-        """
-        Normalizes the Mode to power 1.
+        """Normalizes the Mode to power 1.
         """
 
         self.zero_phase()
@@ -326,8 +321,7 @@ class Mode(object):
         self /= np.sqrt(factor)
 
     def zero_phase(self):
-        """
-        Changes the phase such that the z components are all imaginary and the xy components are all real.
+        """Changes the phase such that the z components are all imaginary and the xy components are all real.
         """
 
         index = int(self.Hy.shape[0] / 2)
@@ -337,48 +331,42 @@ class Mode(object):
             self *= -1
 
     def get_fields(self):
-        """
-        Returns an array [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez].
+        """Returns an array [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez].
         """
 
         return [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez]
 
     def get_H(self):
-        """
-        Returns an array [self.Hx, self.Hy, self.Hz].
+        """Returns an array [self.Hx, self.Hy, self.Hz].
         """
 
         return [self.Hx, self.Hy, self.Hz]
 
     def get_E(self):
-        """
-        Returns an array [self.Ex, self.Ey, self.Ez].
+        """Returns an array [self.Ex, self.Ey, self.Ez].
         """
 
         return [self.Ex, self.Ey, self.Ez]
 
     def get_neff(self):
-        """
-        Returns the effective index as a complex number.
+        """Returns the effective index as a complex number.
         """
 
         return self.neff
 
     def get_wavelength(self):
-        """
-        Returns the wavelength.
+        """Returns the wavelength.
         """
 
         return self.wl
 
     def save(self, path=None):
-        """
-        Serializes the mode into a pickle file
+        """Serializes the mode into a pickle file
 
         Parameters
         ----------
         path : string 
-            The path (including name) to save the file. (default: “./ModeObject_” + str(random.random()))
+            The path (including name) to save the file.
         """
 
         if path:
@@ -1541,9 +1529,9 @@ class Mode(object):
             Eys.append(Ey)
             Ezs.append(Ez)
 
-        self.Hx = Hx[1:,1:] + 0j
-        self.Hy = Hy[1:,1:] + 0j
-        self.Hz = Hzs[0][1:,1:]
+        self.Hx = Hx[1:, 1:] + 0j
+        self.Hy = Hy[1:, 1:] + 0j
+        self.Hz = Hzs[0][1:, 1:]
         self.Ex = Exs[0]
         self.Ey = Eys[0]
         self.Ez = Ezs[0]
@@ -1555,8 +1543,7 @@ class Mode(object):
         tmp = self.epsfunc(xc, yc)
 
         def _reshape(tmp):
-            """
-            pads the array by duplicating edge values
+            """pads the array by duplicating edge values
             """
             tmp = np.c_[tmp[:, 0:1], tmp, tmp[:, -1:]]
             tmp = np.r_[tmp[0:1, :], tmp, tmp[-1:, :]]

@@ -1,0 +1,10 @@
+===============================
+Tools
+===============================
+
+.. autofunction:: emepy.tools.get_epsfunc
+
+.. autofunction:: emepy.tools.Si
+
+.. autofunction:: emepy.tools.SiO2
+

@@ -11,9 +11,17 @@ def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index
     def epsfunc(x_, y_):
         """Return a matrix describing a 2d material.
 
-        :param x_: x values
-        :param y_: y values
-        :return: 2d-matrix
+        Parameters
+        ----------
+        x_: numpy array
+            x values
+        y_: numpy array
+            y values
+
+        Returns
+        -------
+        numpy array
+            2d-matrix
         """
         layer = int(len(x_) / 20)
         nlayers = [layer, layer, layer, layer]
@@ -320,9 +328,17 @@ SiO2_n = [
 def Si(wavelength):
     """Return the refractive index for Silicon given the wavelength in microns.
 
-    :param wavelength (float): wavelength (microns)
-    :return (float): refractive index
+    Parameters 
+    ----------
+    wavelength : number
+        wavelength (microns)
+
+    Returns
+    -------
+    number
+        refractive index
     """
+
     f = scipy.interpolate.interp1d(Si_lambda, Si_n)
     return f([wavelength, wavelength])[0]
 
@@ -330,8 +346,16 @@ def Si(wavelength):
 def SiO2(wavelength):
     """Return the refractive index for Silicon Dioxide given the wavelength in microns.
 
-    :param wavelength (float): wavelength (microns)
-    :return (float): refractive index
+    Parameters
+    ----------
+    wavelength : number 
+        the optical wavelength (microns)
+
+    Returns
+    -------
+    number
+        refractive index
     """
+
     f = scipy.interpolate.interp1d(SiO2_lambda, SiO2_n)
     return f([wavelength, wavelength])[0]

@@ -1,13 +1,13 @@
 # Example: Taper
 
-A tapered structure between two waveguides can be easy to simulate using EMEpy. The script for this example can be found [here](https://github.com/BYUCamachoLab/emepy/examples/taper.py).
+A tapered structure between two waveguides can be easy to simulate using EMEpy. The script for this example can be found [here](https://github.com/BYUCamachoLab/emepy/blob/master/examples/taper.py).
 
 Begin by importing the EMEpy library and our modesolver.
 
     import emepy
-    from emepy.FD_modesolvers import ModeSolver_EMpy 
+    from emepy.fd import MSEMpy 
 
-    ModeSolver = ModeSolver_EMpy  # Choose a modesolver object that will calculate the 2D field profile
+    modesolver = MSEMpy  # Choose a modesolver object that will calculate the 2D field profile
 
 We're going to simulate with a cross section mesh density of 256. Better results can be found with higher densities at the cost of a more expensive simulation. In addition, we'll perform the simulation with two modes to keep it simple. 
 
@@ -35,7 +35,7 @@ Our final values to define involve our taper. We'll define a universal length to
 
 Lets import the rest of our classes as well as some other libraries to help us design our taper and see our results. We'll use numpy for some operations and plot our results using pylab. 
         
-    from emepy.eme import Layer, EMERunner
+    from emepy.eme import Layer, EME
     from emepy.mode import Mode
 
     import numpy as np
@@ -47,7 +47,7 @@ We need to define an EME object. Our options are EME and PeriodicEME. Because we
 
 It's time to define our first section of our structure. This is the input waveguide connected to the taper. Because this structure is continuous in our direction of propagation, we only need to define a single modesolver object, and a single layer object to contain it. 
 
-    mode1 = ModeSolver(
+    mode1 = modesolver(
         wl=wavelength,
         width=width1,
         thickness=thickness1,
@@ -72,7 +72,7 @@ The next piece of our structure is the taper itself. We defined a taper_density 
 Let's create a modesolver and layer for each step of the taper and add them to our eme object. 
 
     for i in range(taper_density):
-        solver = ModeSolver(wl=wavelength, width=widths[i], thickness=thicknesses[i], mesh=mesh, num_modes=num_modes)
+        solver = modesolver(wl=wavelength, width=widths[i], thickness=thicknesses[i], mesh=mesh, num_modes=num_modes)
         taper_layer = Layer(solver, num_modes, wavelength, taper_length_per)
         eme.add_layer(taper_layer)
 
@@ -84,7 +84,7 @@ Again let's see what our geometry looks like now with our taper.
 
 Finally we create another waveguide section just like before. 
 
-    mode2 = ModeSolver(wl=wavelength, width=width2, thickness=thickness2, mesh=mesh, num_modes=num_modes)
+    mode2 = modesolver(wl=wavelength, width=width2, thickness=thickness2, mesh=mesh, num_modes=num_modes)
     straight2 = Layer(mode2, num_modes, wavelength, wg_length)
     eme.add_layer(straight2)
 
@@ -100,15 +100,15 @@ We're happy with our design, so now it's time to let the eme solver propagate. T
 
 Finally we can visualize the s parameters. Let's look at the absolute value which will tell us the power transmission and reflection per mode input.
 
-    print(np.abs(eme.get_s_params()))  
+    print(np.abs(eme.s_parameters()))  
 
 We can also look at the phase to know the output phase of each mode. 
 
-    print(np.angle(eme.get_s_params()))  
+    print(np.angle(eme.s_parameters()))  
 
 We can use this to examine the results of specified inputs. For example, if we were to send in one mode on the left of our structure, we can see both the output phase and which output modes contain all the power.
 
-    result = np.matmul(eme.get_s_params(),np.array([1,0,0,0]))
+    result = np.matmul(eme.s_parameters(),np.array([1,0,0,0]))
     
     print(np.abs(result)) 
     print(np.angle(result)) 
