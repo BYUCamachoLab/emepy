@@ -147,28 +147,22 @@ class Network(nn.Module):
 class MSNeuralNetwork(ModeSolver):
     def __init__(
         self,
-        networkBaseObject,
+        ann,
         wl,
         width,
         thickness,
-        neff=None,
-        Hx = None,
-        Hy = None
     ):
 
         self.wl = wl
         self.width = width
         self.thickness = thickness
-        self.networkBaseObject = networkBaseObject
-        self.Hx_model = networkBaseObject.Hx_model
-        self.Hy_model = networkBaseObject.Hy_model
-        self.neff_model = networkBaseObject.neff_model
+        self.ann = ann
+        self.Hx_model = ann.Hx_model
+        self.Hy_model = ann.Hy_model
+        self.neff_model = ann.neff_model
         self.num_modes = 1
-        self.x = networkBaseObject.x
-        self.y = networkBaseObject.y
-        self.neff = neff
-        self.Hx = Hx
-        self.Hy = Hy
+        self.x = ann.x
+        self.y = ann.y
 
 
     def solve(self):
@@ -179,7 +173,7 @@ class MSNeuralNetwork(ModeSolver):
             Hx, Hy, neff = self.data(
                 i, self.width, self.thickness, self.wl
             )
-            self.modes.append((Hx, Hy, neff)) if self.neff is None else self.modes.append((self.Hx, self.Hy, neff))
+            self.modes.append((Hx, Hy, neff))
 
     def data(self, mode_num, width, thickness, wl):
 
@@ -230,24 +224,15 @@ class MSNeuralNetwork(ModeSolver):
 
 
 class ANN(object):
+    """Object that loads the neural network
+    """
     def __init__(
         self,
-        num_modes=1,
-        cladding_width=2.5e-6,
-        cladding_thickness=2.5e-6,
-        x=None,
-        y=None,
     ):
-        self.num_modes = num_modes
-        self.cladding_width = cladding_width
-        self.cladding_thickness = cladding_thickness
-        self.x = x
-        self.y = y
-
-        if x == None:
-            self.x = np.linspace(0, cladding_width, FIELD_WIDTH)
-        if y == None:
-            self.y = np.linspace(0, cladding_width, FIELD_WIDTH)
+        """Constructor for Mode Object
+        """
+        self.x = np.linspace(0, 2.5e-6, FIELD_WIDTH)
+        self.y = np.linspace(0, 2.5e-6, FIELD_WIDTH)
 
         self.Hx_model = self.Hx_network()
         self.Hy_model = self.Hy_network()
@@ -267,20 +252,11 @@ class ANN(object):
 
             # original saved file with DataParallel
             state_dict = torch.load(f)
-            # create new OrderedDict that does not contain `module.`
-            from collections import OrderedDict
-
-            # new_state_dict = OrderedDict()
-            # for k, v in state_dict.items():
-            #     name = k[7:]  # remove `module.`
-            #     new_state_dict[name] = v
-            # load params
             model.load_state_dict(state_dict)
 
             model.eval()
 
         os.system('rm hx_temp.pt')
-
         return model
 
     def Hy_network(self):
@@ -291,18 +267,9 @@ class ANN(object):
 
             # original saved file with DataParallel
             state_dict = torch.load(f)
-            # create new OrderedDict that does not contain `module.`
-            from collections import OrderedDict
-
-            # new_state_dict = OrderedDict()
-            # for k, v in state_dict.items():
-            #     name = k[7:]  # remove `module.`
-            #     new_state_dict[name] = v
-            # load params
             model.load_state_dict(state_dict)
 
             model.eval()
 
         os.system('rm hy_temp.pt')
-
         return model
