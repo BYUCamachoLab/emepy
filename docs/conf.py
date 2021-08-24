@@ -23,7 +23,7 @@ author = "Ian Hammond"
 
 # The full version, including alpha/beta/rc tags
 release = "2.0"
-
+hads ++
 
 # -- General configuration ---------------------------------------------------
 
