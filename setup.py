@@ -9,7 +9,7 @@ setup(
     author_email="ihammond@byu.edu",
     license="MIT",
     packages=["emepy"],
-    install_requires=["simphony","numpy","matplotlib","scipy","sklearn","pandas"],
+    install_requires=["simphony","numpy","matplotlib","scipy","sklearn","pandas","electromagneticpython"],
     zip_safe=False,
 )
 

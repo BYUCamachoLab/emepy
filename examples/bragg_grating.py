@@ -36,9 +36,6 @@ for wavelength in np.linspace(wl_lower, wl_upper, num_wavelengths):
         wavelength * 1e-6,
         0.54e-6,
         0.22e-6,
-        # neff = mode_solver2.get_mode().neff,
-        # Hx = mode_solver2.get_mode().Hx,
-        # Hy = mode_solver2.get_mode().Hy
     )  # Second half of bragg grating
 
     eme.add_layer(Layer(mode_solver1, num_modes, wavelength * 1e-6, length * 1e-6))  # First half of bragg grating
@@ -54,4 +51,4 @@ plt.plot(np.linspace(wl_lower, wl_upper, num_wavelengths), t)
 plt.title("BG Bode Plot Periods=" + str(num_periods))
 plt.xlabel("Wavelength (microns)")
 plt.ylabel("t")
-plt.savefig('plot1')
+plt.savefig('Transfer Function')
