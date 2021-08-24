@@ -71,6 +71,24 @@ ModeSolver
 
    .. automethod:: __init__
 
+Neural Network Acceleration
+---------------------------
+
+.. autoclass:: emepy.ann.MSNeuralNetwork
+   :members:
+
+   .. automethod:: __init__
+
+.. autoclass:: emepy.ann.ANN
+   :members:
+
+   .. automethod:: __init__
+
+.. autoclass:: emepy.ann.Network
+   :members:
+
+   .. automethod:: __init__
+
 Tools
 -----
 

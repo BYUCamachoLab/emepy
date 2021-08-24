@@ -37,7 +37,7 @@ class ModeSolver(object):
 
 
 class MSLumerical(ModeSolver):
-    """Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide. 
+    """Outdated Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide. 
     """
     def __init__(
         self,
