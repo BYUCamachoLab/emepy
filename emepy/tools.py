@@ -364,7 +364,7 @@ def SiO2(wavelength):
 
 
 def into_chunks(location, name):
-    CHUNK_SIZE = 90000000
+    CHUNK_SIZE = 20000000
     f = open(location, 'rb')
     chunk = f.read(CHUNK_SIZE)
     count = 0
