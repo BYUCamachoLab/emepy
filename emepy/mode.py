@@ -11,7 +11,7 @@ class Mode(object):
     """Object that holds the field profiles and effective index for an eigenmode
     """
 
-    def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez):
+    def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n_profile=None):
         """Constructor for Mode Object
 
         Parameters
@@ -48,6 +48,7 @@ class Mode(object):
         self.Ex = np.array(Ex)
         self.Ey = np.array(Ey)
         self.Ez = np.array(Ez)
+        self.n_profile = n_profile
 
     def plot(self, operation="Real", colorbar=True):
         """Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
@@ -381,9 +382,12 @@ class Mode(object):
 
         core_index = tools.Si(self.wl * 1e6)
         cladding_index = tools.SiO2(self.wl * 1e6)
-        self.epsfunc = tools.get_epsfunc(
-            width, thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
-        )
+        if self.n_profile is None:
+            self.epsfunc = tools.get_epsfunc(
+                width, thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+            )
+        else:
+            self.epsfunc = lambda x, y: self.n_profile[:len(x),:len(y)]
 
         wl = self.wl
         x = np.array(self.x)
@@ -1529,14 +1533,19 @@ class Mode(object):
             Eys.append(Ey)
             Ezs.append(Ez)
 
-        self.Hx = Hx[1:, 1:] + 0j
-        self.Hy = Hy[1:, 1:] + 0j
-        self.Hz = Hzs[0][1:, 1:]
+        self.Hx = (Hx[1:, 1:] + Hx[1:,:-1] + Hx[:-1,1:] + Hx[:-1,:-1]) / 4.0 + 0j
+        self.Hy = (Hy[1:, 1:] + Hy[1:,:-1] + Hy[:-1,1:] + Hy[:-1,:-1]) / 4.0 + 0j
+        self.Hz = (Hzs[0][1:, 1:] + Hzs[0][1:,:-1] + Hzs[0][:-1,1:] + Hzs[0][:-1,:-1]) / 4.0 + 0j
         self.Ex = Exs[0]
         self.Ey = Eys[0]
         self.Ez = Ezs[0]
-        self.x = self.x[1:]
-        self.y = self.y[1:]
+        self.x = (self.x[1:] + self.x[:-1]) / 2.0
+        self.y = (self.y[1:] + self.y[:-1]) / 2.0
+
+        # self.Hz = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")
+        # self.Ex = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")
+        # self.Ey = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")
+        # self.Ez = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")
 
     def _get_eps(self, xc, yc):
         """Used by compute_other_fields and adapted from the EMpy library"""

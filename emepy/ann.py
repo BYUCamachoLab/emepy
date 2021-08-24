@@ -23,7 +23,8 @@ from sklearn import linear_model
 from EMpy.modesolvers.FD import stretchmesh
 from EMpy.utils import centered2d
 import EMpy
-from fd import Modesolver
+from emepy.fd import ModeSolver
+from emepy.tools import from_chunks
 
 
 FIELD_WIDTH = 128
@@ -94,7 +95,7 @@ def getDownConvLayer(i_size, o_size, kernal, channels, first=False, last=False):
 
 
 class Network(nn.Module):
-    def __init__(self, code_size, channels):
+    def __init__(self, code_size, channels, component):
         super().__init__()
         self.channels = channels
 
@@ -121,6 +122,8 @@ class Network(nn.Module):
         torch.nn.init.xavier_normal_(self.conv_up_2.weight)
         torch.nn.init.xavier_normal_(self.conv_up_3.weight)
 
+        self.component = component
+
     def forward(self, field):
 
 
@@ -136,16 +139,21 @@ class Network(nn.Module):
         
         out = self.linear_up_5(out).view(-1,FIELD_WIDTH,FIELD_WIDTH)
 
+        out = out / 1000.0 if self.component == "Hx" else out / 100.0
+
         return out, field
 
 
-class MSNeuralNetwork(Modesolver):
+class MSNeuralNetwork(ModeSolver):
     def __init__(
         self,
         networkBaseObject,
         wl,
         width,
-        thickness
+        thickness,
+        neff=None,
+        Hx = None,
+        Hy = None
     ):
 
         self.wl = wl
@@ -158,6 +166,9 @@ class MSNeuralNetwork(Modesolver):
         self.num_modes = 1
         self.x = networkBaseObject.x
         self.y = networkBaseObject.y
+        self.neff = neff
+        self.Hx = Hx
+        self.Hy = Hy
 
 
     def solve(self):
@@ -168,7 +179,7 @@ class MSNeuralNetwork(Modesolver):
             Hx, Hy, neff = self.data(
                 i, self.width, self.thickness, self.wl
             )
-            self.modes.append((Hx, Hy, neff))
+            self.modes.append((Hx, Hy, neff)) if self.neff is None else self.modes.append((self.Hx, self.Hy, neff))
 
     def data(self, mode_num, width, thickness, wl):
 
@@ -212,7 +223,7 @@ class MSNeuralNetwork(Modesolver):
     def get_mode(self, mode_num=0):
 
         Hx, Hy, neff = self.modes[mode_num]
-        m = Mode(self.x, self.y, self.wl, neff, Hx+0j, Hy+0j, None, None, None, None, pickle.load(open("/fslhome/ihammond/GitHub/ANNEME/ANN/Network/output/03_good/n_profile", "rb")))
+        m = Mode(self.x, self.y, self.wl, neff, Hx+0j, Hy+0j, None, None, None, None)
         m.compute_other_fields(self.width, self.thickness)
 
         return m
@@ -221,12 +232,9 @@ class MSNeuralNetwork(Modesolver):
 class ANN(object):
     def __init__(
         self,
-        sklearn_save,
-        torch_save_x,
-        torch_save_y,
         num_modes=1,
-        cladding_width=5e-6,
-        cladding_thickness=5e-6,
+        cladding_width=2.5e-6,
+        cladding_thickness=2.5e-6,
         x=None,
         y=None,
     ):
@@ -235,9 +243,6 @@ class ANN(object):
         self.cladding_thickness = cladding_thickness
         self.x = x
         self.y = y
-        self.sklearn_save = sklearn_save
-        self.torch_save_x = torch_save_x
-        self.torch_save_y = torch_save_y
 
         if x == None:
             self.x = np.linspace(0, cladding_width, FIELD_WIDTH)
@@ -250,49 +255,54 @@ class ANN(object):
 
     def neff_regression(self):
 
-        with open(self.sklearn_save, "rb") as f:
+        with open(os.path.dirname(os.path.abspath(__file__))+'/models/neff_pickle/model.pk', "rb") as f:
             model = pickle.load(f)
 
         return model
 
     def Hx_network(self):
-
-        with open(self.torch_save_x, "rb") as f:
-            model = Network(3, 1)
+        from_chunks(os.path.dirname(os.path.abspath(__file__))+'/models/Hx_chunks/', 'hx_temp.pt')
+        with open('hx_temp.pt', "rb") as f:
+            model = Network(3, 1, "Hx")
 
             # original saved file with DataParallel
             state_dict = torch.load(f)
             # create new OrderedDict that does not contain `module.`
             from collections import OrderedDict
 
-            new_state_dict = OrderedDict()
-            for k, v in state_dict.items():
-                name = k[7:]  # remove `module.`
-                new_state_dict[name] = v
+            # new_state_dict = OrderedDict()
+            # for k, v in state_dict.items():
+            #     name = k[7:]  # remove `module.`
+            #     new_state_dict[name] = v
             # load params
-            model.load_state_dict(new_state_dict)
+            model.load_state_dict(state_dict)
 
             model.eval()
+
+        os.system('rm hx_temp.pt')
 
         return model
 
     def Hy_network(self):
 
-        with open(self.torch_save_y, "rb") as f:
-            model = Network(3, 1)
+        from_chunks(os.path.dirname(os.path.abspath(__file__))+'/models/Hy_chunks/', 'hy_temp.pt')
+        with open("hy_temp.pt", "rb") as f:
+            model = Network(3, 1, "Hy")
 
             # original saved file with DataParallel
             state_dict = torch.load(f)
             # create new OrderedDict that does not contain `module.`
             from collections import OrderedDict
 
-            new_state_dict = OrderedDict()
-            for k, v in state_dict.items():
-                name = k[7:]  # remove `module.`
-                new_state_dict[name] = v
+            # new_state_dict = OrderedDict()
+            # for k, v in state_dict.items():
+            #     name = k[7:]  # remove `module.`
+            #     new_state_dict[name] = v
             # load params
-            model.load_state_dict(new_state_dict)
+            model.load_state_dict(state_dict)
 
             model.eval()
+
+        os.system('rm hy_temp.pt')
 
         return model

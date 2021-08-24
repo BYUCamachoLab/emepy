@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import scipy
 from EMpy.modesolvers.FD import stretchmesh
+import pickle as pk
+import os
 
 
 def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index, cladding_index):
@@ -359,3 +361,31 @@ def SiO2(wavelength):
 
     f = scipy.interpolate.interp1d(SiO2_lambda, SiO2_n)
     return f([wavelength, wavelength])[0]
+
+
+def into_chunks(location, name):
+    CHUNK_SIZE = 90000000
+    f = open(location, 'rb')
+    chunk = f.read(CHUNK_SIZE)
+    count = 0
+    while chunk: #loop until the chunk is empty (the file is exhausted)
+        with open(name + '_chunk_' + str(count), 'wb+') as w:
+            w.write(chunk)
+        count += 1
+        chunk = f.read(CHUNK_SIZE) #read the next chunk
+    f.close()
+
+def from_chunks(location, name):
+    f = open(name, 'wb+')
+    direc = os.listdir(location)
+    keys = [int(d[9:]) for d in direc]
+    dic = dict(zip(keys, direc))
+    for i in sorted (dic):
+        f.write(open(location+dic[i], 'rb').read())
+    f.close()
+
+# print(os.path.dirname(os.path.abspath(__file__)))
+# into_chunks('/fslhome/ihammond/GitHub/ANNEME/ANN/Network/output/08_04/up_m0_ne60_bs16_lr0.0005_c1_fHy_r0.3314978800752325.pt','models/Hy_chunks/Hy')
+# into_chunks('/fslhome/ihammond/GitHub/ANNEME/ANN/Network/output/08_04/up_m0_ne60_bs16_lr0.0005_c1_fHx_r0.2685827810309602.pt','models/Hx_chunks/Hx')
+# into_chunks('/fslhome/ihammond/GitHub/ANNEME/ANN/Network/regression/model.pk','models/neff_chunks/neff')
+# from_chunks('/fslhome/ihammond/GitHub/emepy/emepy/models/Hy_chunks/', "temp.pt")

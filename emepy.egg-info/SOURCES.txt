@@ -1,9 +1,9 @@
 README.md
 setup.py
-emepy/ANN_modesolver.py
-emepy/FD_modesolvers.py
 emepy/__init__.py
+emepy/ann.py
 emepy/eme.py
+emepy/fd.py
 emepy/mode.py
 emepy/tools.py
 emepy.egg-info/PKG-INFO
