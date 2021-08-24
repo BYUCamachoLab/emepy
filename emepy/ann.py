@@ -32,6 +32,8 @@ FIELD_SIZE = FIELD_WIDTH ** 2
 
 
 def getUpConvLayer(i_size, o_size, kernal, channels, first=False, last=False):
+    """Returns the right size for up convolutional sampling
+    """
     def out_size(in_size, kernal, stride, padding, output_padding):
         return (in_size - 1) * stride - 2 * padding + kernal + output_padding
 
@@ -67,6 +69,8 @@ def getUpConvLayer(i_size, o_size, kernal, channels, first=False, last=False):
 
 
 def getDownConvLayer(i_size, o_size, kernal, channels, first=False, last=False):
+    """Returns the right size for down convolutional sampling
+    """
     def out_size(in_size, kernal, stride, padding, dilation):
         return (in_size + 2 * padding - dilation * (kernal - 1) - 1) / stride + 1
 
@@ -95,7 +99,20 @@ def getDownConvLayer(i_size, o_size, kernal, channels, first=False, last=False):
 
 
 class Network(nn.Module):
+    """The pytorch inherited class that defines and represents the physical neural network
+    """
     def __init__(self, code_size, channels, component):
+        """Network constructor
+
+        Parameters
+        ----------
+        code_size : int
+            the number of inputs
+        channels : int 
+            the number of channels
+        component : string
+            "Hx" or "Hy"
+        """
         super().__init__()
         self.channels = channels
 
@@ -125,6 +142,18 @@ class Network(nn.Module):
         self.component = component
 
     def forward(self, field):
+        """Performs the network propagation
+
+        Parameters
+        ----------
+        field : array
+            The inputs to the network
+
+        Returns 
+        -------
+        tuple (torch array, torch array)
+            Returns a tuple of the outputs, inputs
+        """
 
 
         out = self.tanh(self.linear_up_1(field)).view(-1,1,int(FIELD_WIDTH/20)**2)
@@ -145,6 +174,8 @@ class Network(nn.Module):
 
 
 class MSNeuralNetwork(ModeSolver):
+    """ModeSolver object for the sample neural networks, parameterizes the cross section components. Currently designed only for single mode calculations in Silicon on SiO2
+    """
     def __init__(
         self,
         ann,
@@ -152,6 +183,19 @@ class MSNeuralNetwork(ModeSolver):
         width,
         thickness,
     ):
+        """MSNeuralNetwork constructor
+
+        Parameters
+        ----------
+        ann : ANN
+            The ANN object that contains the network and regression models 
+        wl : number
+            The wavelength (most accurate around 1.55 µm) 
+        width : number
+            The width of the cross section (most accurate around 550 nm)
+        thickness : number
+            The thickness of the cross section (most accurate around 250 nm)
+        """
 
         self.wl = wl
         self.width = width
@@ -166,24 +210,57 @@ class MSNeuralNetwork(ModeSolver):
 
 
     def solve(self):
+        """Solves for the eigenmode using the neural networks
+        """
 
-        self.modes = []
+        self.mode = None
 
-        for i in range(self.num_modes):
-            Hx, Hy, neff = self.data(
-                i, self.width, self.thickness, self.wl
-            )
-            self.modes.append((Hx, Hy, neff))
+        Hx, Hy, neff = self.data(self.width, self.thickness, self.wl)
+        self.mode = (Hx, Hy, neff)
 
-    def data(self, mode_num, width, thickness, wl):
+    def data(self, width, thickness, wl):
+        """Propagates the inputs into the neural networks and regression models and returns the outputs
 
-        neff = self.neff_regression(mode_num, width, thickness, wl, self.neff_model)
-        Hx = self.Hx_network(mode_num, width, thickness, wl, self.Hx_model)
-        Hy = self.Hy_network(mode_num, width, thickness, wl, self.Hy_model)
+        Parameters
+        ----------
+        width : number
+            The width of the cross section (most accurate around 550 nm)
+        thickness : number
+            The thickness of the cross section (most accurate around 250 nm)
+        wl : number
+            The wavelength (most accurate around 1.55 µm) 
+
+        Returns
+        -------
+        tuple (numpy array, numpy array, number)
+            Returns Hx, Hy, and neff
+        """
+
+        neff = self.neff_regression(width, thickness, wl, self.neff_model)
+        Hx = self.Hx_network(width, thickness, wl, self.Hx_model)
+        Hy = self.Hy_network(width, thickness, wl, self.Hy_model)
 
         return Hx, Hy, neff
 
-    def neff_regression(self, mode_num, width, thickness, wl, model):
+    def neff_regression(self, width, thickness, wl, model):
+        """Calculates the effective index using a regression model
+
+        Parameters
+        ----------
+        width : number
+            The width of the cross section (most accurate around 550 nm)
+        thickness : number
+            The thickness of the cross section (most accurate around 250 nm)
+        wl : number
+            The wavelength (most accurate around 1.55 µm) 
+        model : sklearn regression model
+            The model that performs the regression
+
+        Returns
+        -------
+        number
+            Returns the effective index
+        """
 
         poly = PolynomialFeatures(degree=8)
         X = poly.fit_transform([[width * 1e6, thickness * 1e6, wl * 1e6]])
@@ -191,20 +268,56 @@ class MSNeuralNetwork(ModeSolver):
 
         return neff[0]
 
-    def Hx_network(self, mode_num, width, thickness, wl, model):
+    def Hx_network(self, width, thickness, wl, model):
+        """Calculates the Hx component using a network model
+
+        Parameters
+        ----------
+        width : number
+            The width of the cross section (most accurate around 550 nm)
+        thickness : number
+            The thickness of the cross section (most accurate around 250 nm)
+        wl : number
+            The wavelength (most accurate around 1.55 µm) 
+        model : pytorch model
+            The model that performs the ann calculation
+
+        Returns
+        -------
+        numpy array
+            Returns the Hx field 
+        """
 
         with torch.no_grad():
-            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
+            parameters = torch.Tensor([[[width * 1e6, thickness * 1e6, wl * 1e6]]])
             output, _ = model(parameters)
             output = output.numpy()
             output = output.reshape(128,128)
 
         return output
 
-    def Hy_network(self, mode_num, width, thickness, wl, model):
+    def Hy_network(self, width, thickness, wl, model):
+        """Calculates the Hy component using a network model
+
+        Parameters
+        ----------
+        width : number
+            The width of the cross section (most accurate around 550 nm)
+        thickness : number
+            The thickness of the cross section (most accurate around 250 nm)
+        wl : number
+            The wavelength (most accurate around 1.55 µm) 
+        model : pytorch model
+            The model that performs the ann calculation
+
+        Returns
+        -------
+        numpy array
+            Returns the Hy field 
+        """
 
         with torch.no_grad():
-            parameters = torch.Tensor([[[self.width * 1e6, self.thickness * 1e6, self.wl * 1e6]]])
+            parameters = torch.Tensor([[[width * 1e6, thickness * 1e6, wl * 1e6]]])
             output, _ = model(parameters)
             output = output.numpy()
             output = output.reshape(128,128)
@@ -212,11 +325,14 @@ class MSNeuralNetwork(ModeSolver):
         return output
 
     def clear(self):
-        self.modes = []
+        """Clears the mode in the object
+        """
+        self.mode = None
 
     def get_mode(self, mode_num=0):
-
-        Hx, Hy, neff = self.modes[mode_num]
+        """Returns the solved eigenmode
+        """
+        Hx, Hy, neff = self.mode
         m = Mode(self.x, self.y, self.wl, neff, Hx+0j, Hy+0j, None, None, None, None)
         m.compute_other_fields(self.width, self.thickness)
 
@@ -224,7 +340,7 @@ class MSNeuralNetwork(ModeSolver):
 
 
 class ANN(object):
-    """Object that loads the neural network
+    """Object that loads the neural network; Users are heavily encouraged to design their own networks and rewrite their own ANN to match their needs
     """
     def __init__(
         self,
@@ -239,6 +355,8 @@ class ANN(object):
         self.neff_model = self.neff_regression()
 
     def neff_regression(self):
+        """Return the opened regression model for the effective index
+        """
 
         with open(os.path.dirname(os.path.abspath(__file__))+'/models/neff_pickle/model.pk', "rb") as f:
             model = pickle.load(f)
@@ -246,6 +364,9 @@ class ANN(object):
         return model
 
     def Hx_network(self):
+        """Return the opened network model for the Hx component
+        """
+
         from_chunks(os.path.dirname(os.path.abspath(__file__))+'/models/Hx_chunks/', 'hx_temp.pt')
         with open('hx_temp.pt', "rb") as f:
             model = Network(3, 1, "Hx")
@@ -260,6 +381,8 @@ class ANN(object):
         return model
 
     def Hy_network(self):
+        """Return the opened network model for the Hy component
+        """
 
         from_chunks(os.path.dirname(os.path.abspath(__file__))+'/models/Hy_chunks/', 'hy_temp.pt')
         with open("hy_temp.pt", "rb") as f:

@@ -86,6 +86,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#mode">Mode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#eme">EME</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#modesolver">ModeSolver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#neural-network-acceleration">Neural Network Acceleration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#tools">Tools</a></li>
 </ul>
 </li>
@@ -161,11 +162,11 @@
 <h2>Mode<a class="headerlink" href="#mode" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="emepy.mode.Mode">
-<em class="property">class </em><code class="sig-prename descclassname">emepy.mode.</code><code class="sig-name descname">Mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">neff</span></em>, <em class="sig-param"><span class="n">Hx</span></em>, <em class="sig-param"><span class="n">Hy</span></em>, <em class="sig-param"><span class="n">Hz</span></em>, <em class="sig-param"><span class="n">Ex</span></em>, <em class="sig-param"><span class="n">Ey</span></em>, <em class="sig-param"><span class="n">Ez</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emepy.mode.</code><code class="sig-name descname">Mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">neff</span></em>, <em class="sig-param"><span class="n">Hx</span></em>, <em class="sig-param"><span class="n">Hy</span></em>, <em class="sig-param"><span class="n">Hz</span></em>, <em class="sig-param"><span class="n">Ex</span></em>, <em class="sig-param"><span class="n">Ey</span></em>, <em class="sig-param"><span class="n">Ez</span></em>, <em class="sig-param"><span class="n">n_profile</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Object that holds the field profiles and effective index for an eigenmode</p>
 <dl class="py method">
 <dt id="emepy.mode.Mode.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">neff</span></em>, <em class="sig-param"><span class="n">Hx</span></em>, <em class="sig-param"><span class="n">Hy</span></em>, <em class="sig-param"><span class="n">Hz</span></em>, <em class="sig-param"><span class="n">Ex</span></em>, <em class="sig-param"><span class="n">Ey</span></em>, <em class="sig-param"><span class="n">Ez</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">neff</span></em>, <em class="sig-param"><span class="n">Hx</span></em>, <em class="sig-param"><span class="n">Hy</span></em>, <em class="sig-param"><span class="n">Hz</span></em>, <em class="sig-param"><span class="n">Ex</span></em>, <em class="sig-param"><span class="n">Ey</span></em>, <em class="sig-param"><span class="n">Ez</span></em>, <em class="sig-param"><span class="n">n_profile</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.mode.Mode.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructor for Mode Object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -738,11 +739,11 @@
 <h2>ModeSolver<a class="headerlink" href="#modesolver" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="emepy.fd.ModeSolver">
-<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">ModeSolver</code><a class="headerlink" href="#emepy.fd.ModeSolver" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">ModeSolver</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver" title="Permalink to this definition">¶</a></dt>
 <dd><p>The ModeSolver object is the heart of finding eigenmodes for use in eigenmode expansion or simple examination. This parent class should be inherited and used as a wrapper for certain modules such as EMpy, Lumerical, Pickled data, Neural Networks, etc.</p>
 <dl class="py method">
 <dt id="emepy.fd.ModeSolver.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.ModeSolver.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>ModeSolver class constructor</p>
 </dd></dl>
 
@@ -773,11 +774,11 @@
 
 <dl class="py class">
 <dt id="emepy.fd.MSLumerical">
-<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSLumerical</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">lumapi_location</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical" title="Permalink to this definition">¶</a></dt>
-<dd><p>Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide.</p>
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSLumerical</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">lumapi_location</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Outdated Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide.</p>
 <dl class="py method">
 <dt id="emepy.fd.MSLumerical.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">lumapi_location</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">lumapi_location</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSLumerical.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>MSLumerical class constructor</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -830,11 +831,11 @@
 
 <dl class="py class">
 <dt id="emepy.fd.MSEMpy">
-<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSEMpy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">accuracy</span><span class="o">=</span><span class="default_value">1e-08</span></em>, <em class="sig-param"><span class="n">boundary</span><span class="o">=</span><span class="default_value">'0000'</span></em>, <em class="sig-param"><span class="n">epsfunc</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSEMpy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">accuracy</span><span class="o">=</span><span class="default_value">1e-08</span></em>, <em class="sig-param"><span class="n">boundary</span><span class="o">=</span><span class="default_value">'0000'</span></em>, <em class="sig-param"><span class="n">epsfunc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide.</p>
 <dl class="py method">
 <dt id="emepy.fd.MSEMpy.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">accuracy</span><span class="o">=</span><span class="default_value">1e-08</span></em>, <em class="sig-param"><span class="n">boundary</span><span class="o">=</span><span class="default_value">'0000'</span></em>, <em class="sig-param"><span class="n">epsfunc</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">num_modes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cladding_width</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">cladding_thickness</span><span class="o">=</span><span class="default_value">2.5e-06</span></em>, <em class="sig-param"><span class="n">core_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cladding_index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">accuracy</span><span class="o">=</span><span class="default_value">1e-08</span></em>, <em class="sig-param"><span class="n">boundary</span><span class="o">=</span><span class="default_value">'0000'</span></em>, <em class="sig-param"><span class="n">epsfunc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSEMpy.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>MSEMpy class constructor</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -892,11 +893,11 @@
 
 <dl class="py class">
 <dt id="emepy.fd.MSPickle">
-<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSPickle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thickness</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emepy.fd.</code><code class="sig-name descname">MSPickle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thickness</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pickle Modesolver. See Modesolver. Pickle should serialize a list of Mode objects that can be opened here.</p>
 <dl class="py method">
 <dt id="emepy.fd.MSPickle.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thickness</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thickness</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>MSPickle class constructor</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -934,6 +935,204 @@
 <dt id="emepy.fd.MSPickle.solve">
 <code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.fd.MSPickle.solve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solves for the eigenmodes by loading them from the pickle file</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="neural-network-acceleration">
+<h2>Neural Network Acceleration<a class="headerlink" href="#neural-network-acceleration" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="emepy.ann.MSNeuralNetwork">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.ann.</code><code class="sig-name descname">MSNeuralNetwork</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ann</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>ModeSolver object for the sample neural networks, parameterizes the cross section components. Currently designed only for single mode calculations in Silicon on SiO2</p>
+<dl class="py method">
+<dt id="emepy.ann.MSNeuralNetwork.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ann</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>MSNeuralNetwork constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ann</strong> (<a class="reference internal" href="#emepy.ann.ANN" title="emepy.ann.ANN"><em>ANN</em></a>) – The ANN object that contains the network and regression models</p></li>
+<li><p><strong>wl</strong> (<em>number</em>) – The wavelength (most accurate around 1.55 µm)</p></li>
+<li><p><strong>width</strong> (<em>number</em>) – The width of the cross section (most accurate around 550 nm)</p></li>
+<li><p><strong>thickness</strong> (<em>number</em>) – The thickness of the cross section (most accurate around 250 nm)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.MSNeuralNetwork.Hx_network">
+<code class="sig-name descname">Hx_network</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork.Hx_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Hx component using a network model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>number</em>) – The width of the cross section (most accurate around 550 nm)</p></li>
+<li><p><strong>thickness</strong> (<em>number</em>) – The thickness of the cross section (most accurate around 250 nm)</p></li>
+<li><p><strong>wl</strong> (<em>number</em>) – The wavelength (most accurate around 1.55 µm)</p></li>
+<li><p><strong>model</strong> (<em>pytorch model</em>) – The model that performs the ann calculation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns the Hx field</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.MSNeuralNetwork.Hy_network">
+<code class="sig-name descname">Hy_network</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork.Hy_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Hy component using a network model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>number</em>) – The width of the cross section (most accurate around 550 nm)</p></li>
+<li><p><strong>thickness</strong> (<em>number</em>) – The thickness of the cross section (most accurate around 250 nm)</p></li>
+<li><p><strong>wl</strong> (<em>number</em>) – The wavelength (most accurate around 1.55 µm)</p></li>
+<li><p><strong>model</strong> (<em>pytorch model</em>) – The model that performs the ann calculation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns the Hy field</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.MSNeuralNetwork.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the mode in the object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.MSNeuralNetwork.data">
+<code class="sig-name descname">data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">wl</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propagates the inputs into the neural networks and regression models and returns the outputs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>number</em>) – The width of the cross section (most accurate around 550 nm)</p></li>
+<li><p><strong>thickness</strong> (<em>number</em>) – The thickness of the cross section (most accurate around 250 nm)</p></li>
+<li><p><strong>wl</strong> (<em>number</em>) – The wavelength (most accurate around 1.55 µm)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns Hx, Hy, and neff</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple (numpy array, numpy array, number)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.MSNeuralNetwork.get_mode">
+<code class="sig-name descname">get_mode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode_num</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork.get_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the solved eigenmode</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.MSNeuralNetwork.neff_regression">
+<code class="sig-name descname">neff_regression</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">thickness</span></em>, <em class="sig-param"><span class="n">wl</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork.neff_regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the effective index using a regression model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>number</em>) – The width of the cross section (most accurate around 550 nm)</p></li>
+<li><p><strong>thickness</strong> (<em>number</em>) – The thickness of the cross section (most accurate around 250 nm)</p></li>
+<li><p><strong>wl</strong> (<em>number</em>) – The wavelength (most accurate around 1.55 µm)</p></li>
+<li><p><strong>model</strong> (<em>sklearn regression model</em>) – The model that performs the regression</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns the effective index</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.MSNeuralNetwork.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.MSNeuralNetwork.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves for the eigenmode using the neural networks</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.ann.ANN">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.ann.</code><code class="sig-name descname">ANN</code><a class="headerlink" href="#emepy.ann.ANN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object that loads the neural network; Users are heavily encouraged to design their own networks and rewrite their own ANN to match their needs</p>
+<dl class="py method">
+<dt id="emepy.ann.ANN.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.ANN.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for Mode Object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.ANN.Hx_network">
+<code class="sig-name descname">Hx_network</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.ANN.Hx_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the opened network model for the Hx component</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.ANN.Hy_network">
+<code class="sig-name descname">Hy_network</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.ANN.Hy_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the opened network model for the Hy component</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.ANN.neff_regression">
+<code class="sig-name descname">neff_regression</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.ANN.neff_regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the opened regression model for the effective index</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emepy.ann.Network">
+<em class="property">class </em><code class="sig-prename descclassname">emepy.ann.</code><code class="sig-name descname">Network</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code_size</span></em>, <em class="sig-param"><span class="n">channels</span></em>, <em class="sig-param"><span class="n">component</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.Network" title="Permalink to this definition">¶</a></dt>
+<dd><p>The pytorch inherited class that defines and represents the physical neural network</p>
+<dl class="py method">
+<dt id="emepy.ann.Network.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code_size</span></em>, <em class="sig-param"><span class="n">channels</span></em>, <em class="sig-param"><span class="n">component</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.Network.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Network constructor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>code_size</strong> (<em>int</em>) – the number of inputs</p></li>
+<li><p><strong>channels</strong> (<em>int</em>) – the number of channels</p></li>
+<li><p><strong>component</strong> (<em>string</em>) – “Hx” or “Hy”</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emepy.ann.Network.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">field</span></em><span class="sig-paren">)</span><a class="headerlink" href="#emepy.ann.Network.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the network propagation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>field</strong> (<em>array</em>) – The inputs to the network</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns a tuple of the outputs, inputs</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple (torch array, torch array)</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

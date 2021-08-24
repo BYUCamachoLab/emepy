@@ -363,8 +363,17 @@ def SiO2(wavelength):
     return f([wavelength, wavelength])[0]
 
 
-def into_chunks(location, name):
-    CHUNK_SIZE = 20000000
+def into_chunks(location, name, chunk_size=20000000):
+    """Takes a large serialized file and breaks it up into smaller chunk files
+
+    Paramters
+    ---------
+    location : string
+        the absolute or relative path of the large file
+    name : string
+        the name of the serialized smaller components (will have _chunk_# appended to it)
+    """
+    CHUNK_SIZE = chunk_size
     f = open(location, 'rb')
     chunk = f.read(CHUNK_SIZE)
     count = 0
@@ -376,6 +385,17 @@ def into_chunks(location, name):
     f.close()
 
 def from_chunks(location, name):
+    """Takes a directory of serialized chunks that were made using into_chunks and combines them back into a large serialized file
+
+    Parameters
+    ----------
+    location : string
+        the path of the directory where the chunks are located 
+    name : string
+        the name of the serialized file to create (make sure to include file extension if it matters)
+    """
+    if location[-1] != "/":
+        location += "/"
     f = open(name, 'wb+')
     direc = os.listdir(location)
     keys = [int(d[9:]) for d in direc]
@@ -383,9 +403,3 @@ def from_chunks(location, name):
     for i in sorted (dic):
         f.write(open(location+dic[i], 'rb').read())
     f.close()
-
-# print(os.path.dirname(os.path.abspath(__file__)))
-# into_chunks('/fslhome/ihammond/GitHub/ANNEME/ANN/Network/output/08_04/up_m0_ne60_bs16_lr0.0005_c1_fHy_r0.3314978800752325.pt','models/Hy_chunks/Hy')
-# into_chunks('/fslhome/ihammond/GitHub/ANNEME/ANN/Network/output/08_04/up_m0_ne60_bs16_lr0.0005_c1_fHx_r0.2685827810309602.pt','models/Hx_chunks/Hx')
-# into_chunks('/fslhome/ihammond/GitHub/ANNEME/ANN/Network/regression/model.pk','models/neff_chunks/neff')
-# from_chunks('/fslhome/ihammond/GitHub/emepy/emepy/models/Hy_chunks/', "temp.pt")
