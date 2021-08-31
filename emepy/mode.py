@@ -11,7 +11,7 @@ class Mode(object):
     """Object that holds the field profiles and effective index for an eigenmode
     """
 
-    def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n_profile=None):
+    def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n_profile=None, width=None, thickness=None):
         """Constructor for Mode Object
 
         Parameters
@@ -36,6 +36,10 @@ class Mode(object):
             Ey field profile
         Ez : (ndarray float)
             Ez field profile
+        width : number
+            The core width
+        thickness : number
+            The core thickness
         """
 
         self.x = x
@@ -49,6 +53,8 @@ class Mode(object):
         self.Ey = np.array(Ey)
         self.Ez = np.array(Ez)
         self.n_profile = n_profile
+        self.width = width
+        self.thickness = thickness
 
     def plot(self, operation="Real", colorbar=True):
         """Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
@@ -375,7 +381,24 @@ class Mode(object):
         else:
             pickle.dump(self, open("./ModeObject_" + str(random.random()) + ".pk", "wb+"))
 
-    def compute_other_fields(self, width, thickness):
+    def plot_material(self):
+        """Plots the index of refraction profile"""
+        n_profile = self.n_profile
+        if n_profile is None:
+            eps_func = tools.get_epsfunc(
+                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+            )
+            n_profile = eps_func(self.x, self.y)
+
+        plt.imshow(
+            np.sqrt(np.real(n_profile)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6]
+        )
+        plt.colorbar()
+        plt.title("Index of Refraction")
+        plt.xlabel("x (µm)")
+        plt.ylabel("y (µm)")
+
+    def compute_other_fields(self):
         """Given the Hx and Hy fields, maxwell's curl relations can be used to calculate the remaining field; adapted from the EMpy"""
 
         from scipy.sparse import coo_matrix
@@ -384,10 +407,10 @@ class Mode(object):
         cladding_index = tools.SiO2(self.wl * 1e6)
         if self.n_profile is None:
             self.epsfunc = tools.get_epsfunc(
-                width, thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
             )
         else:
-            self.epsfunc = lambda x, y: self.n_profile[:len(x),:len(y)]
+            self.epsfunc = lambda x, y: self.n_profile[: len(x), : len(y)]
 
         wl = self.wl
         x = np.array(self.x)
@@ -1533,9 +1556,9 @@ class Mode(object):
             Eys.append(Ey)
             Ezs.append(Ez)
 
-        self.Hx = (Hx[1:, 1:] + Hx[1:,:-1] + Hx[:-1,1:] + Hx[:-1,:-1]) / 4.0 + 0j
-        self.Hy = (Hy[1:, 1:] + Hy[1:,:-1] + Hy[:-1,1:] + Hy[:-1,:-1]) / 4.0 + 0j
-        self.Hz = (Hzs[0][1:, 1:] + Hzs[0][1:,:-1] + Hzs[0][:-1,1:] + Hzs[0][:-1,:-1]) / 4.0 + 0j
+        self.Hx = (Hx[1:, 1:] + Hx[1:, :-1] + Hx[:-1, 1:] + Hx[:-1, :-1]) / 4.0 + 0j
+        self.Hy = (Hy[1:, 1:] + Hy[1:, :-1] + Hy[:-1, 1:] + Hy[:-1, :-1]) / 4.0 + 0j
+        self.Hz = (Hzs[0][1:, 1:] + Hzs[0][1:, :-1] + Hzs[0][:-1, 1:] + Hzs[0][:-1, :-1]) / 4.0 + 0j
         self.Ex = Exs[0]
         self.Ey = Eys[0]
         self.Ez = Ezs[0]
