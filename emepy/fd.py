@@ -255,7 +255,7 @@ class MSLumerical(ModeSolver):
         Hz = field[2]
         neff = self.neffs[mode_num]
 
-        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez)
+        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness)
 
 
 class MSEMpy(ModeSolver):
@@ -384,7 +384,7 @@ class MSEMpy(ModeSolver):
         Hz = self.solver.modes[mode_num].get_field("Hz", self.x, self.y)
         neff = self.solver.modes[mode_num].neff
 
-        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez)
+        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness)
 
 
 class MSPickle(object):

@@ -333,8 +333,8 @@ class MSNeuralNetwork(ModeSolver):
         """Returns the solved eigenmode
         """
         Hx, Hy, neff = self.mode
-        m = Mode(self.x, self.y, self.wl, neff, Hx+0j, Hy+0j, None, None, None, None)
-        m.compute_other_fields(self.width, self.thickness)
+        m = Mode(self.x, self.y, self.wl, neff, Hx+0j, Hy+0j, None, None, None, None,width=self.width, thickness=self.thickness)
+        m.compute_other_fields()
 
         return m
 
