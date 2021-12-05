@@ -335,6 +335,7 @@ class MSNeuralNetwork(ModeSolver):
         Hx, Hy, neff = self.mode
         m = Mode(self.x, self.y, self.wl, neff, Hx+0j, Hy+0j, None, None, None, None,width=self.width, thickness=self.thickness)
         m.compute_other_fields()
+        m.normalize()
 
         return m
 

@@ -45,8 +45,8 @@ class MSLumerical(ModeSolver):
         width,
         thickness,
         num_modes=1,
-        cladding_width=5e-6,
-        cladding_thickness=5e-6,
+        cladding_width=10e-6,
+        cladding_thickness=10e-6,
         core_index=None,
         cladding_index=None,
         mesh=300,
@@ -85,7 +85,7 @@ class MSLumerical(ModeSolver):
         self.num_modes = num_modes
         self.cladding_width = cladding_width
         self.cladding_thickness = cladding_thickness
-        self.mesh = mesh - 1
+        self.mesh = mesh #- 1
         self.mode = mode
         self.close_after = False
 
@@ -144,11 +144,11 @@ class MSLumerical(ModeSolver):
         # set up FDE
         fde = self.mode.addfde()
         fde.y = 0
-        fde.y_span = clad_width / 2
+        fde.y_span = 2e-6#clad_width / 2
         fde.solver_type = "2D X normal"
         fde.x = 0
         fde.z = 0
-        fde.z_span = clad_thickness / 2
+        fde.z_span = 2e-6#clad_thickness / 2
         fde.mesh_cells_y = mesh
         fde.mesh_cells_z = mesh
         self.mode.run
@@ -257,6 +257,14 @@ class MSLumerical(ModeSolver):
         Hy = field[1]
         Hz = field[2]
         neff = self.neffs[mode_num]
+        # print(len(self.x))
+        mode = Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness)
+        # mode.normalize()
+        # from matplotlib import pyplot as plt
+        # plt.figure()
+        # mode.plot()
+        # plt.show()
+        # quit()
 
-        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness)
+        return mode
       
