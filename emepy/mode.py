@@ -224,7 +224,8 @@ class Mode(object):
         size = int(np.sqrt(cross.shape[0]))
         cross = cross.reshape((size, size))
 
-        return 0.5 * np.trapz(np.trapz(cross, mode1.x), mode1.y)
+        # cross = mode1.Ex * np.conj(mode2.Hy) - mode1.Ey * np.conj(mode2.Hx)
+        return np.trapz(np.trapz(cross, mode1.x), mode1.y)#np.trapz(np.trapz(cross, mode1.x), mode1.y)
 
     def inner_product(self, mode2):
         """Takes the inner product between self and the provided Mode
@@ -239,8 +240,8 @@ class Mode(object):
         number 
             the inner product between the modes
         """
-        return self._inner_product(self, mode2)
-        # return self._inner_product(self, mode2) * self._inner_product(mode2, self) / self._inner_product(self, self)
+
+        return self._inner_product(self, mode2) #/ self._inner_product(self, self)
 
     def __str__(self):
         return "Mode Object with effective index of " + str(self.neff)
@@ -322,10 +323,10 @@ class Mode(object):
     def normalize(self):
         """Normalizes the Mode to power 1.
         """
-
         self.zero_phase()
         factor = self.inner_product(self)
         self /= np.sqrt(factor)
+        return
 
     def zero_phase(self):
         """Changes the phase such that the z components are all imaginary and the xy components are all real.

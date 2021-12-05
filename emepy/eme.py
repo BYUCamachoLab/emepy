@@ -194,6 +194,7 @@ class EME(object):
 
         # Run the eme for one period and collect s params and edge layers
         single_period, left, right = self.propagate_period()
+        self.interface = InterfaceMultiMode
 
         # Create an interface between the two returns layers
         period_layer = PeriodicLayer(left.modes, right.modes, single_period)
@@ -205,11 +206,7 @@ class EME(object):
         self.layers[0].clear()
         self.layers[1].clear()
 
-        # print(current_layer.s_params)
-
         # Cascade params for each period
-        from copy import copy
-
         for _ in range(self.num_periods - 1):
 
             current_layer.s_params = self.cascade((current_layer), (interface))
@@ -585,6 +582,7 @@ class InterfaceSingleMode(Model):
 
         a = 0.5 * left.inner_product(right) + 0.5 * right.inner_product(left)
         b = 0.5 * left.inner_product(right) - 0.5 * right.inner_product(left)
+
 
         t = (a ** 2 - b ** 2) / a
         r = 1 - t / (a + b)
