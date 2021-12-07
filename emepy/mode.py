@@ -225,7 +225,7 @@ class Mode(object):
         cross = cross.reshape((size, size))
 
         # cross = mode1.Ex * np.conj(mode2.Hy) - mode1.Ey * np.conj(mode2.Hx)
-        return np.trapz(np.trapz(cross, mode1.x), mode1.y)#np.trapz(np.trapz(cross, mode1.x), mode1.y)
+        return np.trapz(np.trapz(cross, mode1.x), mode1.y)/np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
 
     def inner_product(self, mode2):
         """Takes the inner product between self and the provided Mode
@@ -408,7 +408,7 @@ class Mode(object):
         cladding_index = tools.SiO2(self.wl * 1e6)
         if self.n_profile is None:
             self.epsfunc = tools.get_epsfunc(
-                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6), compute=True
             )
         else:
             self.epsfunc = lambda x, y: self.n_profile[: len(x), : len(y)]
@@ -1565,6 +1565,8 @@ class Mode(object):
         self.Ez = Ezs[0]
         self.x = (self.x[1:] + self.x[:-1]) / 2.0
         self.y = (self.y[1:] + self.y[:-1]) / 2.0
+        self.x = self.x - self.x[int(len(self.x)/2)]
+        self.y = self.y - self.y[int(len(self.y)/2)]
 
         # self.Hz = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")
         # self.Ex = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")

@@ -115,9 +115,9 @@ class MSEMpy(ModeSolver):
         if cladding_index is None:
             self.cladding_index = tools.SiO2(wl * 1e6)
         if x is None:
-            self.x = np.linspace(0, cladding_width, mesh)
+            self.x = np.linspace(-0.5*cladding_width, 0.5*cladding_width, mesh)
         if y is None:
-            self.y = np.linspace(0, cladding_width, mesh)
+            self.y = np.linspace(-0.5*cladding_width, 0.5*cladding_width, mesh)
         if epsfunc is None:
             self.epsfunc = tools.get_epsfunc(
                 self.width,

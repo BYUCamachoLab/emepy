@@ -58,11 +58,11 @@ def main():
 
     parser.add_argument('-num_periods',type=int, default="50", help='Number of Periods for Bragg Grating (default: 50)')
     parser.add_argument('-length',type=float, default="0.159", help='Length of each segment of BG, Period = Length * 2 (microns) (default: 0.159)')
-    parser.add_argument('-num_wavelengths',type=int, default="20", help='Number of wavelengths to sweep (default: 30)')
+    parser.add_argument('-num_wavelengths',type=int, default="25", help='Number of wavelengths to sweep (default: 30)')
     parser.add_argument('-wl_lower',type=float, default="1.5", help='Lower wavelength bound (microns) (default: 1.5)')
     parser.add_argument('-wl_upper',type=float, default="1.6", help='Upper wavelength bound (microns) (default: 1.6)')
     parser.add_argument('-num_modes',type=int, default="1", help='Number of Modes (default: 1)')
-    parser.add_argument('-mesh',type=int, default="128", help='Number of mesh points (default: 128)')
+    parser.add_argument('-mesh',type=int, default="256", help='Number of mesh points (default: 128)')
     parser.add_argument('-width1',type=float, default="0.46", help='Width of first core block (microns) (default: 0.46)')
     parser.add_argument('-width2',type=float, default="0.54", help='Width of second core block  (microns) (default: 0.54)')
     parser.add_argument('-thickness',type=float, default="0.22", help='Thickness of the core (microns) (default: 0.22)')
@@ -75,6 +75,7 @@ def main():
     plt.title("Grating freq sweep empy nperiods=" + str(args.num_periods))
     plt.xlabel("Wavelength (microns)")
     plt.ylabel("t")
+    plt.grid()
     plt.show()
 
 if __name__ == "__main__":
