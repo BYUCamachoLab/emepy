@@ -73,6 +73,7 @@ def main():
     plt.title("Grating freq sweep nperiods=" + str(args.num_periods))
     plt.xlabel("Wavelength (microns)")
     plt.ylabel("t")
+    plt.grid()
     plt.show()
 
 if __name__ == "__main__":

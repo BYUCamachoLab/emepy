@@ -374,7 +374,7 @@ class ActivatedLayer(Model):
         self.modes = modes
         self.wavelength = wavelength
         self.length = length
-        self.normalize_fields()
+        # self.normalize_fields()
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)]
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)]
         self.s_params = self.calculate_s_params()
@@ -454,7 +454,7 @@ class PeriodicLayer(Model):
         self.right_modes = right_modes
         self.left_ports = len(self.left_modes)
         self.right_ports = len(self.right_modes)
-        self.normalize_fields()
+        # self.normalize_fields()
         self.left_pins = ["left" + str(i) for i in range(len(self.left_modes))]
         self.right_pins = ["right" + str(i) for i in range(len(self.right_modes))]
         self.s_params = s_params

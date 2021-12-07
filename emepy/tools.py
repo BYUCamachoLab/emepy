@@ -6,7 +6,7 @@ import pickle as pk
 import os
 
 
-def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index, cladding_index):
+def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index, cladding_index, compute=False):
     """Returns the epsfunc for given parameters
     """
 
@@ -30,12 +30,20 @@ def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index
         factor = 1 + 2j
         x, y, _, _, _, _ = stretchmesh(x_, y_, nlayers, factor)
         xx, yy = np.meshgrid(x, y)
-        n = np.where(
-            (np.abs(xx.T - cladding_width * 0.5) <= width * 0.5)
-            * (np.abs(yy.T - cladding_thickness * 0.5) <= thickness * 0.5),
-            core_index ** 2 + 0j,
-            cladding_index ** 2 + 0j,
-        )
+        if compute:
+            n = np.where(
+                (np.abs(np.real(xx.T) - cladding_width * 0.5) <= width * 0.5)
+                * (np.abs(np.real(yy.T) - cladding_thickness * 0.5) <= thickness * 0.5),
+                core_index ** 2 + 0j,
+                cladding_index ** 2 + 0j,
+            )
+        else:
+            n = np.where(
+                (np.abs(np.real(xx.T)) <= width * 0.5)
+                * (np.abs(np.real(yy.T)) <= thickness * 0.5),
+                core_index ** 2 + 0j,
+                cladding_index ** 2 + 0j,
+            )
 
         return n
 

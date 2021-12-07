@@ -32,7 +32,8 @@ def bragg_lumerical(args):
             thickness * 1e-6,
             mesh=mesh,
             num_modes=num_modes,
-            mode=eme.mode
+            mode=eme.mode,
+            eme_modes=True
         )  # First half of bragg grating
 
         mode_solver2 = modesolver(
@@ -41,7 +42,8 @@ def bragg_lumerical(args):
             thickness * 1e-6,
             mesh=mesh,
             num_modes=num_modes,
-            mode=eme.mode
+            mode=eme.mode,
+            eme_modes=True
         )  # Second half of bragg grating
 
         eme.add_layer(Layer(mode_solver1, num_modes, wavelength * 1e-6, length * 1e-6))  # First half of bragg grating
@@ -77,6 +79,7 @@ def main():
     plt.title("Grating freq sweep nperiods=" + str(args.num_periods))
     plt.xlabel("Wavelength (microns)")
     plt.ylabel("t")
+    plt.grid()
     plt.show()
 
 if __name__ == "__main__":

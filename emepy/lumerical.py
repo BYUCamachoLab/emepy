@@ -36,6 +36,14 @@ class LumEME(EME):
         if os.path.isfile("api.lms"):
             os.remove("api.lms")
 
+    def __del__(self):
+
+        if os.path.isfile("api.lms"):
+            os.remove("api.lms")
+        
+        if os.path.isfile("api_p0.log"):
+            os.remove("api_p0.log")
+
 class MSLumerical(ModeSolver):
     """Outdated Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide. 
     """
@@ -51,6 +59,8 @@ class MSLumerical(ModeSolver):
         cladding_index=None,
         mesh=300,
         mode=None,
+        eme_modes=True,
+        PML=False,
         **kwargs
     ):
         """MSLumerical class constructor
@@ -77,6 +87,10 @@ class MSLumerical(ModeSolver):
             number of mesh points in each direction (xy)
         mode : lumapi.MODE
             MODE object that contains the file information
+        eme_modes : boolean
+            if true, will utilize the lumerical eme wrapped fde solver which is not normalized to one. Produces slightly different results purely due to roundoff error during normalization.
+        PML : boolean
+            if true, will enable PML boundary conditions, note: this will increase the mesh and grid space
         """
 
         self.wl = wl
@@ -88,6 +102,8 @@ class MSLumerical(ModeSolver):
         self.mesh = mesh #- 1
         self.mode = mode
         self.close_after = False
+        self.eme_modes = eme_modes
+        self.PML = PML
 
         if core_index is None:
             self.core_index = tools.Si(wl * 1e6)
@@ -101,6 +117,7 @@ class MSLumerical(ModeSolver):
                 os.remove("api.lms")
 
             self.mode = lm.MODE(hide=True)
+            self.mode.save("api.lms")
 
     def solve(self):
         """Solves for the eigenmodes
@@ -141,80 +158,130 @@ class MSLumerical(ModeSolver):
         # core.index = core_index
         core.material = "Si (Silicon) - Palik"
 
-        # set up FDE
-        fde = self.mode.addfde()
-        fde.y = 0
-        fde.y_span = 2e-6#clad_width / 2
-        fde.solver_type = "2D X normal"
-        fde.x = 0
-        fde.z = 0
-        fde.z_span = 2e-6#clad_thickness / 2
-        fde.mesh_cells_y = mesh
-        fde.mesh_cells_z = mesh
-        self.mode.run
+        if self.eme_modes:
 
-        self.mode.set("number of trial modes", num_modes)
-        self.mode.set("wavelength", self.wl)
-        self.mode.findmodes()
-        field = []
-        gridx = self.mode.getresult("FDE::data::mode1", "y")
-        gridx = gridx.reshape(gridx.shape[0])
-        gridy = self.mode.getresult("FDE::data::mode1", "z")
-        gridy = gridy.reshape(gridy.shape[0])
-        grid = [gridx.tolist(), gridy.tolist()]
-        neff = []
-        for modeNum in range(1, num_modes + 1):
-            mode_field = []
-            neff.append(self.mode.getdata("FDE::data::mode" + str(modeNum), "neff")[0][0])
-            mode_field.append(
-                self.mode.getdata("FDE::data::mode" + str(modeNum), "Hy").reshape(
-                    (
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Hy").shape[1],
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Hy").shape[2],
+            # set up EME for FDE extraction
+            eme = self.mode.addeme()
+            self.mode.set("wavelength",self.wl)
+            self.mode.set("mesh cells y",mesh)
+            self.mode.set("mesh cells z",mesh)
+            self.mode.set("x min",-1e-6)
+            self.mode.set("y",0)
+            self.mode.set("y span",2e-6)
+            self.mode.set("z",0)
+            self.mode.set("z span",2e-6)
+            self.mode.set("allow custom eigensolver settings",1)
+            self.mode.set("cells",1)
+            self.mode.set("group spans",2e-6)
+            self.mode.set("modes",num_modes)
+            if self.PML:
+                self.mode.set("y min bc","PML")
+                self.mode.set("y max bc","PML")
+                self.mode.set("z min bc","PML")
+                self.mode.set("z max bc","PML")
+
+            # run
+            self.mode.run()
+            
+            # get modes
+            results = self.mode.getresult("EME::Cells::cell_1","mode fields")
+            neff = []
+            gridx = results["y"]
+            gridx = gridx.reshape(gridx.shape[0])
+            gridy = results["z"]
+            gridy = gridy.reshape(gridy.shape[0])
+            grid = [gridx, gridy]
+            mesh = len(gridx)
+            self.mesh = mesh
+            field = []
+            for mode_num in range(1, num_modes + 1):
+                neff.append(self.mode.getresult("EME::Cells::cell_1","neff")["neff"].flatten()[mode_num-1])
+                E = results["E" + str(mode_num)].reshape(mesh,mesh,3)
+                H = results["H" + str(mode_num)].reshape(mesh,mesh,3)
+                Ex = E[:,:,1]
+                Ey = E[:,:,2]
+                Ez = E[:,:,0]
+                Hx = H[:,:,1]
+                Hy = H[:,:,2]
+                Hz = H[:,:,0]
+                field.append([Hx, Hy, Hz, Ex, Ey, Ez])
+
+        else:
+
+            # set up FDE
+            fde = self.mode.addfde()
+            fde.y = 0
+            fde.y_span = 2e-6#clad_width / 2
+            fde.solver_type = "2D X normal"
+            fde.x = 0
+            fde.z = 0
+            fde.z_span = 2e-6#clad_thickness / 2
+            fde.mesh_cells_y = mesh
+            fde.mesh_cells_z = mesh
+            self.mode.run
+
+            self.mode.set("number of trial modes", num_modes)
+            self.mode.set("wavelength", self.wl)
+            self.mode.findmodes()
+            field = []
+            gridx = self.mode.getresult("FDE::data::mode1", "y")
+            gridx = gridx.reshape(gridx.shape[0])
+            gridy = self.mode.getresult("FDE::data::mode1", "z")
+            gridy = gridy.reshape(gridy.shape[0])
+            grid = [gridx, gridy]
+            neff = []
+            for mode_num in range(1, num_modes + 1):
+                mode_field = []
+                neff.append(self.mode.getdata("FDE::data::mode" + str(mode_num), "neff")[0][0])
+                mode_field.append(
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hy").reshape(
+                        (
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Hy").shape[1],
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Hy").shape[2],
+                        )
                     )
                 )
-            )
-            mode_field.append(
-                self.mode.getdata("FDE::data::mode" + str(modeNum), "Hz").reshape(
-                    (
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Hz").shape[1],
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Hz").shape[2],
+                mode_field.append(
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hz").reshape(
+                        (
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Hz").shape[1],
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Hz").shape[2],
+                        )
                     )
                 )
-            )
-            mode_field.append(
-                self.mode.getdata("FDE::data::mode" + str(modeNum), "Hx").reshape(
-                    (
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Hx").shape[1],
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Hx").shape[2],
+                mode_field.append(
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hx").reshape(
+                        (
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Hx").shape[1],
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Hx").shape[2],
+                        )
                     )
                 )
-            )
-            mode_field.append(
-                self.mode.getdata("FDE::data::mode" + str(modeNum), "Ey").reshape(
-                    (
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Ey").shape[1],
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Ey").shape[2],
+                mode_field.append(
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ey").reshape(
+                        (
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Ey").shape[1],
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Ey").shape[2],
+                        )
                     )
                 )
-            )
-            mode_field.append(
-                self.mode.getdata("FDE::data::mode" + str(modeNum), "Ez").reshape(
-                    (
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Ez").shape[1],
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Ez").shape[2],
+                mode_field.append(
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ez").reshape(
+                        (
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Ez").shape[1],
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Ez").shape[2],
+                        )
                     )
                 )
-            )
-            mode_field.append(
-                self.mode.getdata("FDE::data::mode" + str(modeNum), "Ex").reshape(
-                    (
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Ex").shape[1],
-                        self.mode.getdata("FDE::data::mode" + str(modeNum), "Ex").shape[2],
+                mode_field.append(
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ex").reshape(
+                        (
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Ex").shape[1],
+                            self.mode.getdata("FDE::data::mode" + str(mode_num), "Ex").shape[2],
+                        )
                     )
                 )
-            )
-            field.append(mode_field)
+                field.append(mode_field)
 
         field = np.array(field).tolist()
 
@@ -257,14 +324,9 @@ class MSLumerical(ModeSolver):
         Hy = field[1]
         Hz = field[2]
         neff = self.neffs[mode_num]
-        # print(len(self.x))
         mode = Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness)
-        # mode.normalize()
-        # from matplotlib import pyplot as plt
-        # plt.figure()
-        # mode.plot()
-        # plt.show()
-        # quit()
+
 
         return mode
-      
+
+    

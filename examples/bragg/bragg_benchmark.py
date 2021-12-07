@@ -5,8 +5,7 @@ from bragg_ann import bragg_ann
 from bragg_lumerical import bragg_lumerical
 from bragg_empy import bragg_empy
 from lumerical_eme import lumerical_eme
-
-
+from lumerical_fdtd import lumerical_fdtd
 
 
 
@@ -16,7 +15,7 @@ def main():
 
     parser.add_argument('-num_periods',type=int, default="50", help='Number of Periods for Bragg Grating (default: 50)')
     parser.add_argument('-length',type=float, default="0.159", help='Length of each segment of BG, Period = Length * 2 (microns) (default: 0.159)')
-    parser.add_argument('-num_wavelengths',type=int, default="100", help='Number of wavelengths to sweep (default: 30)')
+    parser.add_argument('-num_wavelengths',type=int, default="10", help='Number of wavelengths to sweep (default: 30)')
     parser.add_argument('-wl_lower',type=float, default="1.5", help='Lower wavelength bound (microns) (default: 1.5)')
     parser.add_argument('-wl_upper',type=float, default="1.6", help='Upper wavelength bound (microns) (default: 1.6)')
     parser.add_argument('-num_modes',type=int, default="1", help='Number of Modes (default: 1)')
@@ -27,20 +26,25 @@ def main():
 
     args = parser.parse_args()
 
-    t_ann = bragg_ann(args)
+    # t_ann = bragg_ann(args)
+    t_lumerical_eme = lumerical_eme(args) # Retry tomorrow with proper licensing issues gone and then make sure to fix the normalization of modes and mode overlap formulation for the other solvers
     t_lumerical = bragg_lumerical(args)
-    t_empy = bragg_empy(args)
-    t_lumerical_eme = lumerical_eme(args)
+    # t_empy = bragg_empy(args)
+    # t_lumerical_fdtd = lumerical_fdtd(args)
 
     plt.figure()
-    plt.plot(np.linspace(1.5,1.6,args.num_wavelengths),t_ann, label="Neural Networks")
+    # plt.plot(np.linspace(1.5,1.6,args.num_wavelengths),t_ann, label="Neural Networks")
     plt.plot(np.linspace(1.5,1.6,args.num_wavelengths),t_lumerical, label="Lumerical MODE FDE")
-    plt.plot(np.linspace(1.5,1.6,args.num_wavelengths),t_empy, label="Electromagnetic Python")
+    # plt.plot(np.linspace(1.5,1.6,args.num_wavelengths),t_empy, label="Electromagnetic Python")
     plt.plot(np.linspace(1.5,1.6,args.num_wavelengths),t_lumerical_eme, label="Lumerical EME")
+    # plt.plot(np.linspace(1.5,1.6,args.num_wavelengths),t_lumerical_fdtd, label="Lumerical FDTD")
     plt.xlabel('Lambda (um)')
     plt.ylabel('Trasmission Power')
     plt.legend()
-    plt.savefig("benchmark")
+    plt.grid()
+    plt.show()
+    # plt.savefig("benchmark")
+    # plt.savefig("benchmark.eps",format="eps")
 
 if __name__ == "__main__":
     
