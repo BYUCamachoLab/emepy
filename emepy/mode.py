@@ -225,7 +225,7 @@ class Mode(object):
         cross = cross.reshape((size, size))
 
         # cross = mode1.Ex * np.conj(mode2.Hy) - mode1.Ey * np.conj(mode2.Hx)
-        return np.trapz(np.trapz(cross, mode1.x), mode1.y)/np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
+        return np.trapz(np.trapz(cross, mode1.x), mode1.y)#/np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
 
     def inner_product(self, mode2):
         """Takes the inner product between self and the provided Mode
