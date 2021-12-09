@@ -59,7 +59,7 @@ class MSLumerical(ModeSolver):
         cladding_index=None,
         mesh=300,
         mode=None,
-        eme_modes=True,
+        eme_modes=False,
         PML=False,
         **kwargs
     ):

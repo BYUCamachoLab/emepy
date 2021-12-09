@@ -75,10 +75,10 @@ def lumerical_eme(args):
         mode.set("group spans",2*vlength)
         mode.set("modes",vnum_modes)
         mode.set("periods",vnum_periods)
-        mode.set("y min bc","PML")
-        mode.set("y max bc","PML")
-        mode.set("z min bc","PML")
-        mode.set("z max bc","PML")
+        # mode.set("y min bc","PML")
+        # mode.set("y max bc","PML")
+        # mode.set("z min bc","PML")
+        # mode.set("z max bc","PML")
 
         # run
         mode.run()

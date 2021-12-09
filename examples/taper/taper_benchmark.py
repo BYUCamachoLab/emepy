@@ -15,11 +15,11 @@ def main():
 
     plt.figure()
     plt.subplot(1,2,1)
-    plt.plot(taper_ann_dict["density"],np.log10(taper_ann_dict["time"]), label="ANN")
-    plt.plot(taper_lumerical_dict["density"],np.log10(taper_lumerical_dict["time"]), label="Lumerical FD")
+    plt.plot(taper_ann_dict["density"],np.abs(taper_ann_dict["time"]), label="ANN")
+    plt.plot(taper_lumerical_dict["density"],np.abs(taper_lumerical_dict["time"]), label="Lumerical FD")
     # plt.plot(taper_empy_dict["density"],np.log10(taper_empy_dict["time"]), label="Electromagnetic Python")
     plt.xlabel("Taper Density")
-    plt.ylabel("Time (log10 s)")
+    plt.ylabel("Time (s)")
     plt.legend()
     plt.grid()
 

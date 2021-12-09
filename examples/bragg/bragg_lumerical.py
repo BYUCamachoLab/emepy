@@ -46,6 +46,7 @@ def bragg_lumerical(args):
             eme_modes=True
         )  # Second half of bragg grating
 
+
         eme.add_layer(Layer(mode_solver1, num_modes, wavelength * 1e-6, length * 1e-6))  # First half of bragg grating
         eme.add_layer(Layer(mode_solver2, num_modes, wavelength * 1e-6, length * 1e-6))  # Second half of bragg grating
 
