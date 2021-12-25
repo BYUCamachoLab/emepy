@@ -55,6 +55,9 @@ class Mode(object):
         self.n_profile = n_profile
         self.width = width
         self.thickness = thickness
+        if self.Ex and self.Ey and self.Ez and self.Hx and self.Hy and self.Hz:
+            self.H = np.sqrt(np.abs(self.Hx)**2 + np.abs(self.Hy)**2 + np.abs(self.Hz)**2)
+            self.E = np.sqrt(np.abs(self.Ex)**2 + np.abs(self.Ey)**2 + np.abs(self.Ez)**2)
 
     def plot(self, operation="Real", colorbar=True):
         """Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
@@ -1567,6 +1570,8 @@ class Mode(object):
         self.y = (self.y[1:] + self.y[:-1]) / 2.0
         self.x = self.x - self.x[int(len(self.x)/2)]
         self.y = self.y - self.y[int(len(self.y)/2)]
+        self.H = np.sqrt(np.abs(self.Hx)**2 + np.abs(self.Hy)**2 + np.abs(self.Hz)**2)
+        self.E = np.sqrt(np.abs(self.Ex)**2 + np.abs(self.Ey)**2 + np.abs(self.Ez)**2)
 
         # self.Hz = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")
         # self.Ex = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")

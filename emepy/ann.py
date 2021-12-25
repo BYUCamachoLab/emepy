@@ -207,6 +207,7 @@ class MSNeuralNetwork(ModeSolver):
         self.num_modes = 1
         self.x = ann.x
         self.y = ann.y
+        self.mesh = len(self.x) - 1
 
 
     def solve(self):
