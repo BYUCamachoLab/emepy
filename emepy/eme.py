@@ -4,6 +4,7 @@ from simphony.pins import Pin
 from simphony.tools import wl2freq
 from simphony.models import Subcircuit
 from matplotlib import pyplot as plt
+from emepy.monitors import Monitor
 
 
 class Layer(object):
@@ -98,6 +99,7 @@ class EME(object):
         self.layers = layers
         self.num_periods = num_periods
         self.s_params = None
+        self.monitors = []
 
     def add_layer(self, layer):
         """The add_layer method will add a Layer object to the EME object. The object will be geometrically added to the very right side of the structure. Using this method after propagate is useless as the solver has already been called.
@@ -120,6 +122,7 @@ class EME(object):
         self.wavelength = None
         self.s_params = None
         self.interface = None
+        self.monitors = []
 
     def propagate_period(self):
         """The propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values. 
@@ -141,6 +144,17 @@ class EME(object):
         mode_set1 = self.layers[0].get_activated_layer()
         self.layers[1].activate_layer()
         current = Current(self.wavelength, self.layers[0].get_activated_layer())
+        
+        # Update the monitors
+        for m in range(len(self.monitors)):
+            while self.monitors[m].remaining_lengths[0] < self.layers[0].length:
+                _, y, _ = self.monitors[m].dimensions
+                eigenvalue = (2 * np.pi) * mode_set1.modes[0].neff / (self.wavelength)
+                phasor = np.exp(self.monitors[m].remaining_lengths[0] * 1j * eigenvalue)
+                for c in range(len(self.monitors[m].components)):
+                    self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = getattr(mode_set1.modes[0], self.monitors[m].components[c])[0] * phasor
+            self.monitors[m].cur_length += self.layers[0].length
+
         interface = self.interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
         interface.solve()
         self.layers[0].clear()
@@ -156,6 +170,17 @@ class EME(object):
 
             layer1 = layer1_.get_activated_layer()
             layer2 = layer2_.get_activated_layer()
+
+            # Update the monitors
+            for m in range(len(self.monitors)):
+                while self.monitors[m].remaining_lengths[0] < self.layers[index].length + self.monitors[m].cur_length:
+                    _, y, _ = self.monitors[m].dimensions
+                    eigenvalue = (2 * np.pi) * layer1.modes[0].neff / (self.wavelength)
+                    phasor = np.exp((self.monitors[m].remaining_lengths[0]-self.monitors[m].cur_length) * 1j * eigenvalue)
+                    phasor = phasor * current.s_parameters()[0,0,current.left_ports]
+                    for c in range(len(self.monitors[m].components)):
+                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = getattr(layer1.modes[0], self.monitors[m].components[c])[0] * phasor
+                self.monitors[m].cur_length += self.layers[index].length
 
             interface = self.interface(layer1, layer2)
             interface.solve()
@@ -173,6 +198,18 @@ class EME(object):
 
         # Gather and return the s params and edge layers
         mode_set2 = self.layers[-1].get_activated_layer()
+
+        # Update the monitors
+        for m in range(len(self.monitors)):
+            while self.monitors[m].remaining_lengths[0] < self.layers[-1].length + self.monitors[m].cur_length:
+                _, y, _ = self.monitors[m].dimensions
+                eigenvalue = (2 * np.pi) * mode_set2.modes[0].neff / (self.wavelength)
+                phasor = np.exp((self.monitors[m].remaining_lengths[0]-self.monitors[m].cur_length) * 1j * eigenvalue)
+                phasor = phasor * current.s_parameters()[0,0,current.left_ports]
+                for c in range(len(self.monitors[m].components)):
+                    self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = getattr(mode_set2.modes[0], self.monitors[m].components[c])[0] * phasor
+            self.monitors[m].cur_length += self.layers[-1].length
+
         self.layers[-1].clear()
         self.s_params = current.s_params
 
@@ -257,6 +294,41 @@ class EME(object):
             self.propagate()
 
         return self.s_params
+
+    def get_total_length(self):
+        return np.sum([layer.length for layer in self.layers])
+
+    def add_monitor(self, axes="xz", dimensions=None, components=["E"]):
+        """Creates a monitor associated with the eme object BEFORE the simulation is ran
+
+        Parameters
+        ----------
+        axes : string
+            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'xz', 'xyz', 'x', 'y', 'z'. Currently only 'xz' is implemented. Note, propagation is always in z. 
+        dimensions : tuple
+            the spacial dimensions of the resulting field. Note, if the dimensions are greater than the mesh in axes not along propagation, the fields will be interpolated. (default: mesh density of cross sections and 10 propagation points).
+        components : list
+            list of the field components to store from ('E','H','Ex','Ey','Ez','Hx','Hy','Hz)
+        
+        Returns
+        -------
+        Monitor
+            the newly created Monitor object
+        """
+
+        if axes == "xz" or axes == "zx":
+            if dimensions is None:
+                y = self.layers[0].mode_solvers.mesh
+                z = 100
+                dimensions = [y,z]
+                lengths = np.linspace(0,self.get_total_length(),z)
+            monitor = Monitor(axes, tuple([len(components)]+dimensions), lengths, components)
+        else:
+            raise Exception("Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xz']".format(axes))
+        
+        self.monitors.append(monitor)
+        return monitor
+
 
     def draw(self):
         """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. Currently, the drawing is very rough. This will change in the future. 

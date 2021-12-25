@@ -128,7 +128,7 @@ def lumerical_fdtd(args):
     power = np.abs(fdtd.getdata("monitor","power"))**2 * spectrum
     power = power / np.max(power)
 
-    new_lambd = np.linspace(1.5,1.6,100)*1e-6
+    new_lambd = np.linspace(1.5,1.6,args.num_wavelengths)*1e-6
     power = fdtd.interp(power, l, new_lambd)
 
     return power
