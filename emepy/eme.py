@@ -147,31 +147,16 @@ class EME(object):
         
         # Update the monitors
         for m in range(len(self.monitors)):
-            while self.monitors[m].remaining_lengths[0] < self.layers[0].length:
-                _, y, _ = self.monitors[m].dimensions
-                eigenvalue = (2 * np.pi) * mode_set1.modes[0].neff / (self.wavelength)
-                phasor = np.exp(self.monitors[m].remaining_lengths[0] * 1j * eigenvalue)
-                for c in range(len(self.monitors[m].components)):
-                    if self.monitors[m].components[c] == "E":
-                        field = getattr(mode_set1.modes[0], "Ex")
-                        Ex = field[int(len(field)/2)] * phasor
-                        field = getattr(mode_set1.modes[0], "Ey")
-                        Ey = field[int(len(field)/2)] * phasor
-                        field = getattr(mode_set1.modes[0], "Ez")
-                        Ez = field[int(len(field)/2)] * phasor
-                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = np.sqrt(np.abs(Ex)**2 + np.abs(Ey)**2 + np.abs(Ez)**2)
-                    if self.monitors[m].components[c] == "H":
-                        field = getattr(mode_set1.modes[0], "Hx")
-                        Hx = field[int(len(field)/2)] * phasor
-                        field = getattr(mode_set1.modes[0], "Hy")
-                        Hy = field[int(len(field)/2)] * phasor
-                        field = getattr(mode_set1.modes[0], "Hz")
-                        Hz = field[int(len(field)/2)] * phasor
-                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = np.sqrt(np.abs(Hx)**2 + np.abs(Hy)**2 + np.abs(Hz)**2)
-                    else:
-                        field = getattr(mode_set1.modes[0], self.monitors[m].components[c])
-                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = field[int(len(field)/2)]  * phasor
-            self.monitors[m].cur_length += self.layers[0].length
+            for c in range(len(self.monitors[m].components)):
+                while self.monitors[m].remaining_lengths[c][0] < self.layers[0].length:
+                    _, y, _ = self.monitors[m].dimensions
+                    eigenvalue = (2 * np.pi) * mode_set1.modes[0].neff / (self.wavelength)
+                    phasor = np.exp(self.monitors[m].remaining_lengths[c][0] * 1j * eigenvalue) 
+                    field = getattr(mode_set1.modes[0], self.monitors[m].components[c])
+                    if self.monitors[m].components[c] == "n":
+                            phasor = 1
+                    self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field[:,int(len(field)/2)]  * phasor
+                self.monitors[m].cur_length[c] += self.layers[0].length
 
         interface = self.interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
         interface.solve()
@@ -191,32 +176,17 @@ class EME(object):
 
             # Update the monitors
             for m in range(len(self.monitors)):
-                while self.monitors[m].remaining_lengths[0] < self.layers[index].length + self.monitors[m].cur_length:
-                    _, y, _ = self.monitors[m].dimensions
-                    eigenvalue = (2 * np.pi) * layer1.modes[0].neff / (self.wavelength)
-                    phasor = np.exp((self.monitors[m].remaining_lengths[0]-self.monitors[m].cur_length) * 1j * eigenvalue)
-                    phasor = phasor * current.s_parameters()[0,0,current.left_ports]
-                    for c in range(len(self.monitors[m].components)):
-                        if self.monitors[m].components[c] == "E":
-                            field = getattr(layer1.modes[0], "Ex")
-                            Ex = field[int(len(field)/2)] * phasor
-                            field = getattr(layer1.modes[0], "Ey")
-                            Ey = field[int(len(field)/2)] * phasor
-                            field = getattr(layer1.modes[0], "Ez")
-                            Ez = field[int(len(field)/2)] * phasor
-                            self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = np.sqrt(np.abs(Ex)**2 + np.abs(Ey)**2 + np.abs(Ez)**2)
-                        if self.monitors[m].components[c] == "H":
-                            field = getattr(layer1.modes[0], "Hx")
-                            Hx = field[int(len(field)/2)] * phasor
-                            field = getattr(layer1.modes[0], "Hy")
-                            Hy = field[int(len(field)/2)] * phasor
-                            field = getattr(layer1.modes[0], "Hz")
-                            Hz = field[int(len(field)/2)] * phasor
-                            self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = np.sqrt(np.abs(Hx)**2 + np.abs(Hy)**2 + np.abs(Hz)**2)
-                        else:
-                            field = getattr(layer1.modes[0], self.monitors[m].components[c])
-                            self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = field[int(len(field)/2)]  * phasor
-                self.monitors[m].cur_length += self.layers[index].length
+                for c in range(len(self.monitors[m].components)):
+                    while self.monitors[m].remaining_lengths[c][0] < self.layers[index].length + self.monitors[m].cur_length[c]:
+                        _, y, _ = self.monitors[m].dimensions
+                        eigenvalue = (2 * np.pi) * layer1.modes[0].neff / (self.wavelength)
+                        phasor = np.exp((self.monitors[m].remaining_lengths[c][0]-self.monitors[m].cur_length[c]) * 1j * eigenvalue)
+                        phasor = phasor * current.s_parameters()[0,0,current.left_ports]
+                        field = getattr(layer1.modes[0], self.monitors[m].components[c])
+                        if self.monitors[m].components[c] == "n":
+                            phasor = 1
+                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field[:,int(len(field)/2)]  * phasor
+                    self.monitors[m].cur_length[c] += self.layers[index].length
 
             interface = self.interface(layer1, layer2)
             interface.solve()
@@ -226,43 +196,28 @@ class EME(object):
             current.update_s(self.cascade(Current(self.wavelength, current), interface), interface)
             interface.clear()
 
-        # Propagate final two layers
-        current.update_s(
-            self.cascade(Current(self.wavelength, current), self.layers[-1].get_activated_layer()),
-            self.layers[-1].get_activated_layer(),
-        )
-
         # Gather and return the s params and edge layers
         mode_set2 = self.layers[-1].get_activated_layer()
 
         # Update the monitors
         for m in range(len(self.monitors)):
-            while len(self.monitors[m].remaining_lengths) and self.monitors[m].remaining_lengths[0] < self.layers[-1].length + self.monitors[m].cur_length:
-                _, y, _ = self.monitors[m].dimensions
-                eigenvalue = (2 * np.pi) * mode_set2.modes[0].neff / (self.wavelength)
-                phasor = np.exp((self.monitors[m].remaining_lengths[0]-self.monitors[m].cur_length) * 1j * eigenvalue)
-                phasor = phasor * current.s_parameters()[0,0,current.left_ports]
-                for c in range(len(self.monitors[m].components)):
-                    if self.monitors[m].components[c] == "E":
-                        field = getattr(mode_set2.modes[0], "Ex")
-                        Ex = field[int(len(field)/2)] * phasor
-                        field = getattr(mode_set2.modes[0], "Ey")
-                        Ey = field[int(len(field)/2)] * phasor
-                        field = getattr(mode_set2.modes[0], "Ez")
-                        Ez = field[int(len(field)/2)] * phasor
-                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = np.sqrt(np.abs(Ex)**2 + np.abs(Ey)**2 + np.abs(Ez)**2)
-                    if self.monitors[m].components[c] == "H":
-                        field = getattr(mode_set2.modes[0], "Hx")
-                        Hx = field[int(len(field)/2)] * phasor
-                        field = getattr(mode_set2.modes[0], "Hy")
-                        Hy = field[int(len(field)/2)] * phasor
-                        field = getattr(mode_set2.modes[0], "Hz")
-                        Hz = field[int(len(field)/2)] * phasor
-                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = np.sqrt(np.abs(Hx)**2 + np.abs(Hy)**2 + np.abs(Hz)**2)
-                    else:
-                        field = getattr(mode_set2.modes[0], self.monitors[m].components[c])
-                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index] = field[int(len(field)/2)] * phasor
-            self.monitors[m].cur_length += self.layers[-1].length
+            for c in range(len(self.monitors[m].components)):
+                while len(self.monitors[m].remaining_lengths) and self.monitors[m].remaining_lengths[c][0] < self.layers[-1].length + self.monitors[m].cur_length[c]:
+                    _, y, _ = self.monitors[m].dimensions
+                    eigenvalue = (2 * np.pi) * mode_set2.modes[0].neff / (self.wavelength)
+                    phasor = np.exp((self.monitors[m].remaining_lengths[c][0]-self.monitors[m].cur_length[c]) * 1j * eigenvalue)
+                    phasor = phasor * current.s_parameters()[0,0,current.left_ports]
+                    field = getattr(mode_set2.modes[0], self.monitors[m].components[c])
+                    if self.monitors[m].components[c] == "n":
+                            phasor = 1
+                    self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field[:,int(len(field)/2)] * phasor
+                self.monitors[m].cur_length[c] += self.layers[-1].length
+
+        # Propagate final two layers
+        current.update_s(
+            self.cascade(Current(self.wavelength, current), self.layers[-1].get_activated_layer()),
+            self.layers[-1].get_activated_layer(),
+        )
 
         self.layers[-1].clear()
         self.s_params = current.s_params
@@ -352,7 +307,7 @@ class EME(object):
     def get_total_length(self):
         return np.sum([layer.length for layer in self.layers])
 
-    def add_monitor(self, axes="xz", dimensions=None, components=["Ex"]):
+    def add_monitor(self, axes="xz", dimensions=None):
         """Creates a monitor associated with the eme object BEFORE the simulation is ran
 
         Parameters
@@ -361,21 +316,20 @@ class EME(object):
             the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'xz', 'xyz', 'x', 'y', 'z'. Currently only 'xz' is implemented. Note, propagation is always in z. 
         dimensions : tuple
             the spacial dimensions of the resulting field. Note, if the dimensions are greater than the mesh in axes not along propagation, the fields will be interpolated. (default: mesh density of cross sections and 10 propagation points).
-        components : list
-            list of the field components to store from ('E','H','Ex','Ey','Ez','Hx','Hy','Hz)
         
         Returns
         -------
         Monitor
             the newly created Monitor object
         """
-
+        components=['Ex','Ey','Ez','Hx','Hy','Hz','n']
         if axes == "xz" or axes == "zx":
             if dimensions is None:
                 y = self.layers[0].mode_solvers.mesh
                 z = 50
                 dimensions = [y,z]
-                lengths = np.linspace(0,self.get_total_length(),z)
+                l = self.get_total_length()
+                lengths = [np.linspace(0,l,z).tolist() for i in range(len(components))]
             monitor = Monitor(axes, tuple([len(components)]+dimensions), lengths, components)
         else:
             raise Exception("Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xz']".format(axes))

@@ -11,7 +11,7 @@ class Mode(object):
     """Object that holds the field profiles and effective index for an eigenmode
     """
 
-    def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n_profile=None, width=None, thickness=None):
+    def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n=None, width=None, thickness=None):
         """Constructor for Mode Object
 
         Parameters
@@ -52,12 +52,17 @@ class Mode(object):
         self.Ex = np.array(Ex)
         self.Ey = np.array(Ey)
         self.Ez = np.array(Ez)
-        self.n_profile = n_profile
+        self.n = n
         self.width = width
         self.thickness = thickness
         if self.Ex and self.Ey and self.Ez and self.Hx and self.Hy and self.Hz:
             self.H = np.sqrt(np.abs(self.Hx)**2 + np.abs(self.Hy)**2 + np.abs(self.Hz)**2)
             self.E = np.sqrt(np.abs(self.Ex)**2 + np.abs(self.Ey)**2 + np.abs(self.Ez)**2)
+        if self.n is None:
+            eps_func = tools.get_epsfunc(
+                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+            )
+            self.n = eps_func(self.x, self.y)
 
     def plot(self, operation="Real", colorbar=True):
         """Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
@@ -387,15 +392,10 @@ class Mode(object):
 
     def plot_material(self):
         """Plots the index of refraction profile"""
-        n_profile = self.n_profile
-        if n_profile is None:
-            eps_func = tools.get_epsfunc(
-                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
-            )
-            n_profile = eps_func(self.x, self.y)
+        n = self.n
 
         plt.imshow(
-            np.sqrt(np.real(n_profile)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6]
+            np.sqrt(np.real(n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6]
         )
         plt.colorbar()
         plt.title("Index of Refraction")
@@ -409,12 +409,12 @@ class Mode(object):
 
         core_index = tools.Si(self.wl * 1e6)
         cladding_index = tools.SiO2(self.wl * 1e6)
-        if self.n_profile is None:
+        if self.n is None:
             self.epsfunc = tools.get_epsfunc(
                 self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6), compute=True
             )
         else:
-            self.epsfunc = lambda x, y: self.n_profile[: len(x), : len(y)]
+            self.epsfunc = lambda x, y: self.n[: len(x), : len(y)]
 
         wl = self.wl
         x = np.array(self.x)
@@ -1572,6 +1572,10 @@ class Mode(object):
         self.y = self.y - self.y[int(len(self.y)/2)]
         self.H = np.sqrt(np.abs(self.Hx)**2 + np.abs(self.Hy)**2 + np.abs(self.Hz)**2)
         self.E = np.sqrt(np.abs(self.Ex)**2 + np.abs(self.Ey)**2 + np.abs(self.Ez)**2)
+        eps_func = tools.get_epsfunc(
+                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+            )
+        self.n = eps_func(self.x, self.y)
 
         # self.Hz = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")
         # self.Ex = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")
