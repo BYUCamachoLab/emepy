@@ -8,7 +8,7 @@ wavelength = 1.55
 width = 0.4
 thickness = 0.22
 num_modes = 1
-length = wavelength 
+length = wavelength * 0.63
 
 eme = EME()
 ann = ANN()
@@ -19,14 +19,14 @@ mode_solvers = [
         wavelength * 1e-6,
         width * 1e-6,
         thickness * 1e-6,
-    )  for i in range(2)
+    )  for i in range(5)
 ]
 
-for i in range(2):
+for i in range(5):
     eme.add_layer(Layer(mode_solvers[i], num_modes, wavelength * 1e-6, length * 1e-6))
 
 monitor = eme.add_monitor(axes="xz")
 
 eme.propagate() 
 
-monitor.visualize()
+monitor.visualize(["Hy"])
