@@ -19,16 +19,10 @@ mode_solvers = [
         wavelength * 1e-6,
         width * 1e-6,
         thickness * 1e-6,
-    )  for i in range(5)
+    )  for i in range(2)
 ]
 
-mode_solvers[0].solve()
-plt.figure()
-mode_solvers[0].get_mode().plot()
-plt.show()
-quit()
-
-for i in range(5):
+for i in range(2):
     eme.add_layer(Layer(mode_solvers[i], num_modes, wavelength * 1e-6, length * 1e-6))
 
 monitor = eme.add_monitor(axes="xz")
