@@ -55,7 +55,7 @@ class Mode(object):
         self.n = n
         self.width = width
         self.thickness = thickness
-        if self.Ex and self.Ey and self.Ez and self.Hx and self.Hy and self.Hz:
+        if True in [self.Ex is None,self.Ey is None,self.Ez is None,self.Hx is None,self.Hy is None,self.Hz is None]:
             self.H = np.sqrt(np.abs(self.Hx)**2 + np.abs(self.Hy)**2 + np.abs(self.Hz)**2)
             self.E = np.sqrt(np.abs(self.Ex)**2 + np.abs(self.Ey)**2 + np.abs(self.Ez)**2)
         if self.n is None:
