@@ -44,8 +44,8 @@ class MSEMpy(ModeSolver):
     def __init__(
         self,
         wl,
-        width,
-        thickness,
+        width=None,
+        thickness=None,
         num_modes=1,
         cladding_width=2.5e-6,
         cladding_thickness=2.5e-6,
@@ -57,6 +57,7 @@ class MSEMpy(ModeSolver):
         accuracy=1e-8,
         boundary="0000",
         epsfunc=None,
+        n=None,
         **kwargs
     ):
         """MSEMpy class constructor
@@ -93,6 +94,8 @@ class MSEMpy(ModeSolver):
                 the boundaries according to the EMpy library (default:"0000")
             epsfunc : function
                 the function which defines the permittivity based on a grid (see EMpy library) (default:"0000")
+            n : numpy array
+                2D profile of the refractive index
         """
 
         self.wl = wl
@@ -109,6 +112,7 @@ class MSEMpy(ModeSolver):
         self.accuracy = accuracy
         self.boundary = boundary
         self.epsfunc = epsfunc
+        self.n = n
 
         if core_index is None:
             self.core_index = tools.Si(wl * 1e6)
@@ -126,6 +130,9 @@ class MSEMpy(ModeSolver):
                 self.cladding_thickness,
                 self.core_index,
                 self.cladding_index,
+                profile=self.n,
+                nx=self.x,
+                ny=self.y
             )
 
     def solve(self):
@@ -134,6 +141,7 @@ class MSEMpy(ModeSolver):
         self.solver = EMpy.modesolvers.FD.VFDModeSolver(self.wl, self.x, self.y, self.epsfunc, self.boundary).solve(
             self.num_modes, self.accuracy
         )
+        return self
 
     def clear(self):
         """Clears the modesolver's eigenmodes to make memory
@@ -141,6 +149,7 @@ class MSEMpy(ModeSolver):
         self.solver = None
         self.x = None
         self.y = None
+        return self
 
     def get_mode(self, mode_num=0):
         """Get the indexed mode number
@@ -163,8 +172,9 @@ class MSEMpy(ModeSolver):
         Hy = self.solver.modes[mode_num].get_field("Hy", self.x, self.y)
         Hz = self.solver.modes[mode_num].get_field("Hz", self.x, self.y)
         neff = self.solver.modes[mode_num].neff
+        n = self.epsfunc(self.x,self.y)
 
-        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness)
+        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness,n=n)
 
 
 class MSPickle(object):
@@ -199,6 +209,7 @@ class MSPickle(object):
 
         self.x = self.mode.x
         self.y = self.mode.y
+        return self
 
     def clear(self):
         """Clears the modesolver's eigenmodes to make memory
@@ -207,6 +218,7 @@ class MSPickle(object):
         self.x = None
         self.y = None
         self.mode = None
+        return self
 
     def get_mode(self, mode_num=0):
         """Get the stored mode

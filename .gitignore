@@ -1,2 +1,18 @@
 examples/bragg/lumerical_sims
 examples/taper/log10
+examples/benchmarks/taper/log10
+
+# Benchmark figures
+examples/benchmarks/taper/*.eps
+examples/benchmarks/taper/*.png
+examples/benchmarks/bragg/*.eps
+examples/benchmarks/bragg/*.png
+
+# pycache
+**/__pycache__
+
+# Api created documents when connecting to lumapi
+**/api.log
+**/api.fsp
+**/api.lms
+**/api_p0.log

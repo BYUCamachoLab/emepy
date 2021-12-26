@@ -155,7 +155,8 @@ class EME(object):
                     field = getattr(mode_set1.modes[0], self.monitors[m].components[c])
                     if self.monitors[m].components[c] == "n":
                             phasor = 1
-                    self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field[:,int(len(field)/2)]  * phasor
+                    field = field[:,int(len(field)/2)] if self.monitors[m].axes == "xz" else field[int(len(field)/2),:]    
+                    self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field  * phasor
                 self.monitors[m].cur_length[c] += self.layers[0].length
 
         interface = self.interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
@@ -185,7 +186,8 @@ class EME(object):
                         field = getattr(layer1.modes[0], self.monitors[m].components[c])
                         if self.monitors[m].components[c] == "n":
                             phasor = 1
-                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field[:,int(len(field)/2)]  * phasor
+                        field = field[:,int(len(field)/2)] if self.monitors[m].axes == "xz" else field[int(len(field)/2),:]
+                        self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field  * phasor
                     self.monitors[m].cur_length[c] += self.layers[index].length
 
             interface = self.interface(layer1, layer2)
@@ -210,7 +212,8 @@ class EME(object):
                     field = getattr(mode_set2.modes[0], self.monitors[m].components[c])
                     if self.monitors[m].components[c] == "n":
                             phasor = 1
-                    self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field[:,int(len(field)/2)] * phasor
+                    field = field[:,int(len(field)/2)] if self.monitors[m].axes == "xz" else field[int(len(field)/2),:]    
+                    self.monitors[m][c,0:y,self.monitors[m].cur_prop_index[c]] = field * phasor
                 self.monitors[m].cur_length[c] += self.layers[-1].length
 
         # Propagate final two layers
@@ -331,8 +334,16 @@ class EME(object):
                 l = self.get_total_length()
                 lengths = [np.linspace(0,l,z).tolist() for i in range(len(components))]
             monitor = Monitor(axes, tuple([len(components)]+dimensions), lengths, components)
+        elif axes == "yz" or axes == "zy":
+            if dimensions is None:
+                y = self.layers[0].mode_solvers.mesh
+                z = 50
+                dimensions = [y,z]
+                l = self.get_total_length()
+                lengths = [np.linspace(0,l,z).tolist() for i in range(len(components))]
+            monitor = Monitor(axes, tuple([len(components)]+dimensions), lengths, components)
         else:
-            raise Exception("Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xz']".format(axes))
+            raise Exception("Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xz', 'yz']".format(axes))
         
         self.monitors.append(monitor)
         return monitor

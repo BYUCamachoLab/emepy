@@ -4,13 +4,15 @@ import scipy
 from EMpy.modesolvers.FD import stretchmesh
 import pickle as pk
 import os
+from matplotlib import pyplot as plt
+from scipy.interpolate import griddata
 
-
-def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index, cladding_index, compute=False):
+def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index, cladding_index, compute=False,profile=None,nx=None,ny=None):
     """Returns the epsfunc for given parameters
     """
 
-    def epsfunc(x_, y_):
+    # Case 1 : width and thickness are defined 
+    def epsfunc_1(x_, y_):
         """Return a matrix describing a 2d material.
 
         Parameters
@@ -47,7 +49,40 @@ def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index
 
         return n
 
-    return epsfunc
+    # Case 2 : thickness and 1D n is defined
+    def epsfunc_2(x_, y_):
+
+        n = profile
+        xx, yy = np.meshgrid(x_, y_)
+        n = np.interp(x_, nx, n).astype(complex)
+        n = np.repeat(n, len(y_)).reshape((len(n),len(y_)))
+        n = np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j) ** 2
+         
+        return n 
+
+    # Case 3 : 2D n is defined
+    def epsfunc_3(x_, y_):
+
+        xxn, yyn = np.meshgrid(nx, ny)
+        points = np.array( (xxn.flatten(), yyn.flatten()) ).T
+        n = profile.flatten()
+        xx, yy = np.meshgrid(x_, y_)
+        n_real = griddata( points, np.real(n), (xx,yy) )
+        n_imag = griddata( points, np.imag(n), (xx,yy) )
+        n = (n_real+1j*n_imag) ** 2
+         
+        return n 
+
+    if not (width is None) and not (thickness is None):
+        return epsfunc_1
+
+    elif (width is None) and not (thickness is None) and not (profile is None):
+        return epsfunc_2
+
+    elif (width is None) and (thickness is None) and not (profile is None):
+        return epsfunc_3
+
+    raise Exception("Need to provide width & thickness, or 1D profile and thickness, or 2D profile")
 
 
 Si_lambda = [
