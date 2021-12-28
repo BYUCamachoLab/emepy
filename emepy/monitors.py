@@ -94,13 +94,13 @@ class Monitor(object):
 
         if ax:  
             im = ax.imshow(np.real(results[component]), extent=self.axlims, cmap=cmap_lookup[component])
-            ax.set_xlabel("z (µm)")
-            ax.set_ylabel("x (µm)")
+            ax.set_xlabel("z")
+            ax.set_ylabel("x")
             ax.set_title(component)
         else:  
             im = plt.imshow(np.real(results[component]), extent=self.axlims, cmap=cmap_lookup[component])
-            plt.xlabel("z (µm)")
-            plt.ylabel("x (µm)")
+            plt.xlabel("z")
+            plt.ylabel("x")
             plt.title(component)
 
         return im
