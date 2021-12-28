@@ -104,3 +104,4 @@ class Monitor(object):
             plt.title(component)
 
         return im
+

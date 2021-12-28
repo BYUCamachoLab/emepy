@@ -372,24 +372,25 @@ class EME(object):
     def get_total_length(self):
         return np.sum([layer.length for layer in self.layers])
 
-    def add_monitor(self, axes="xz", dimensions=None):
+    def add_monitor(self, axes="xz", mesh_z=200):
         """Creates a monitor associated with the eme object BEFORE the simulation is ran
 
         Parameters
         ----------
         axes : string
             the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'xz', 'xyz', 'x', 'y', 'z'. Currently only 'xz' is implemented. Note, propagation is always in z. 
-        dimensions : tuple
-            the spacial dimensions of the resulting field. Note, if the dimensions are greater than the mesh in axes not along propagation, the fields will be interpolated. (default: mesh density of cross sections and 10 propagation points).
         
         Returns
         -------
         Monitor
             the newly created Monitor object
         """
+
+        # dimensions : tuple
+        #     the spacial dimensions of the resulting field. Note, if the dimensions are greater than the mesh in axes not along propagation, the fields will be interpolated. (default: mesh density of cross sections and 10 propagation points).
         components=['Ex','Ey','Ez','Hx','Hy','Hz','n']
         y = self.layers[0].mode_solvers.mesh
-        z = 200
+        z = mesh_z
         dimensions = [y,z*self.num_periods]
         l = self.get_total_length()
         single_lengths = np.linspace(0,l,z, endpoint=False).tolist()
