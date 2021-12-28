@@ -53,7 +53,7 @@ class MSEMpy(ModeSolver):
         cladding_index=None,
         x=None,
         y=None,
-        mesh=300,
+        mesh=128,
         accuracy=1e-8,
         boundary="0000",
         epsfunc=None,

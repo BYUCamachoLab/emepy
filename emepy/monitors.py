@@ -43,6 +43,7 @@ class Monitor(object):
         self.cur_length = [0 for i in range(len(components))]
         self.components = components
         self.axlims = axlims if axlims else [0,self.lengths[0][-1],0,2.5e-6]
+        self.layers = {}
 
     def __getitem__(self, subscript):
         return self.field[subscript]
