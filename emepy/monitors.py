@@ -7,13 +7,13 @@ class Monitor(object):
     """ Monitor objects store fields during propagation for user visualization. Three types of monitors exist: 3D, 2D, and 1D. 
     """
 
-    def __init__(self, axes="xz", dimensions=(1,1), lengths=[], components=["E"], axlims=None):
+    def __init__(self, axes="xz", dimensions=(1, 1), lengths=[], components=["E"], axlims=None):
         """Monitor class constructor
 
         Parameters
         ----------
         axes : string
-            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Currently only 'xz' is implemented. Note, propagation is always in z. 
+            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z. 
         dimensions : tuple
             the spacial dimensions of the resulting field
         lengths : list
@@ -36,13 +36,23 @@ class Monitor(object):
             self.field = np.zeros(dimensions).astype(complex)
             self.lengths = copy(lengths)
             self.remaining_lengths = copy(lengths)
+        elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+            self.axes = "xyz"
+            self.dimensions = dimensions
+            self.field = np.zeros(dimensions).astype(complex)
+            self.lengths = copy(lengths)
+            self.remaining_lengths = copy(lengths)
         else:
-            raise Exception("Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['yz','xz']".format(axes))
+            raise Exception(
+                "Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['yz','xz','xyz']".format(
+                    axes
+                )
+            )
 
         self.cur_prop_index = [0 for i in range(len(components))]
         self.cur_length = [0 for i in range(len(components))]
         self.components = components
-        self.axlims = axlims if axlims else [0,self.lengths[0][-1],0,2.5e-6]
+        self.axlims = axlims if axlims else [0, self.lengths[0][-1], 0, 2.5e-6]
         self.layers = {}
 
     def __getitem__(self, subscript):
@@ -55,49 +65,173 @@ class Monitor(object):
             self.cur_prop_index[int(subscript[0])] += 1
         else:
             self.remaining_lengths[int(subscript[0])] = []
-            self.cur_prop_index[int(subscript[0])]  += 1
+            self.cur_prop_index[int(subscript[0])] += 1
 
     def __delitem__(self, subscript):
         del self.field[subscript]
 
-    def visualize(self, ax=None, component="Hy"):
+    def get_array(self, component="Hy", axes=None, location=0, z_range=None):
         """ Creates a matplotlib axis displaying the provides field component
 
         Parameters
         ----------
+        axes : string
+            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z. 
+        component : string
+            field component from "['Ex','Ey','Ez','Hx','Hy','Hz','E','H']"
+        location : float
+            if taken from 3D fields, users can specify where to take their 2D slice. If axes is 'xz', location refers to the location in y and 'yz' refers to a location in x.
+        z_range : tuple
+            tuple or list of the form (start, end) representing the range of the z values to extract
+
+        Returns
+        -------
+        numpy array
+            the requested field
+
+        """
+
+        # Default axes is created upon class creation
+        if axes is None:
+            axes = self.axes
+
+        # Only 2D fields can be generated
+        if axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+            raise Exception(
+                "3D fields can be extracted using get_array or visualized on a 2D plane via an axes of xz or yz"
+            )
+
+        # Cannot get plane that was never stored during simulation
+        if (self.axes != axes) and (self.axes != "xyz"):
+            raise Exception(
+                "Different 2D plane was stored during simulation than is being requested. Stored axes: {} different from Requested axes: {}".format(
+                    self.axes, axes
+                )
+            )
+
+        # Ensure z range is in proper format
+        try:
+            if z_range is None:
+                start, end = [self.lengths[0][0], self.lengths[0][-1]]
+            else:
+                start, end = z_range
+        except Exception as _:
+            raise Exception(
+                "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
+            )
+
+        # Identify components; components=['Ex','Ey','Ez','Hx','Hy','Hz','n','E','H']
+        results = {}
+        for i, c in zip(range(len(self.components)), self.components):
+            difference_start = lambda list_value: abs(list_value - start)
+            difference_end = lambda list_value: abs(list_value - end)
+            s = self.lengths[0].index(min(self.lengths[0], key=difference_start))
+            e = self.lengths[0].index(min(self.lengths[0], key=difference_end)) + 1
+            if self.axes == "xyz":
+                if axes == "xz":
+                    results[c] = self.field[i][:, location, s:e]
+                elif axes == "yz":
+                    results[c] = self.field[i][location, :, s:e]
+            elif self.axes in ["xz", "yz"]:
+                results[c] = self.field[i][:, s:e]
+
+        # Create E and H fields
+        if component == "E":
+            results["E"] = np.abs(results["Ex"]) ** 2 + np.abs(results["Ey"]) ** 2 + np.abs(results["Ez"]) ** 2
+        if component == "H":
+            results["H"] = np.abs(results["Hx"]) ** 2 + np.abs(results["Hy"]) ** 2 + np.abs(results["Hz"]) ** 2
+
+        return results[component]
+
+    def visualize(self, ax=None, component="Hy", axes=None, location=0, z_range=None):
+        """ Creates a matplotlib axis displaying the provides field component
+
+        Parameters
+        ----------
+        axes : string
+            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z. 
         ax : matplotlib axis 
             the axis object created when calling plt.figure() or plt.subplots(), if None (default) then the plt interface will be used
         component : string
             field component from "['Ex','Ey','Ez','Hx','Hy','Hz','E','H']"
+        location : float
+            if taken from 3D fields, users can specify where to take their 2D slice. If axes is 'xz', location refers to the location in y and 'yz' refers to a location in x.
+        z_range : tuple
+            tuple or list of the form (start, end) representing the range of the z values to extract
 
         """
 
-        components=['Ex','Ey','Ez','Hx','Hy','Hz','E','H']
+        # Default axes is created upon class creation
+        if axes is None:
+            axes = self.axes
+
+        # Only 2D fields can be generated
+        if axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+            raise Exception(
+                "3D fields can be extracted using get_array or visualized on a 2D plane via an axes of xz or yz"
+            )
+
+        # Cannot get plane that was never stored during simulation
+        if (self.axes != axes) and (self.axes != "xyz"):
+            raise Exception(
+                "Different 2D plane was stored during simulation than is being requested. Stored axes: {} different from Requested axes: {}".format(
+                    self.axes, axes
+                )
+            )
+
+        # Ensure z range is in proper format
+        try:
+            if z_range is None:
+                start, end = [self.lengths[0][0], self.lengths[0][-1]]
+            else:
+                start, end = z_range
+        except Exception as _:
+            raise Exception(
+                "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
+            )
+
+        # Identify components; components=['Ex','Ey','Ez','Hx','Hy','Hz','n','E','H']
         results = {}
-        for i,c in zip(range(len(self.components)),self.components):
-            results[c] = self.field[i]
+        for i, c in zip(range(len(self.components)), self.components):
+            difference_start = lambda list_value: abs(list_value - start)
+            difference_end = lambda list_value: abs(list_value - end)
+            s = self.lengths[0].index(min(self.lengths[0], key=difference_start))
+            e = self.lengths[0].index(min(self.lengths[0], key=difference_end)) + 1
+            if self.axes == "xyz":
+                if axes == "xz":
+                    results[c] = self.field[i][:, location, s:e]
+                elif axes == "yz":
+                    results[c] = self.field[i][location, :, s:e]
+            elif self.axes in ["xz", "yz"]:
+                results[c] = self.field[i][:, s:e]
 
-        results["E"] = np.abs(results["Ex"]) ** 2 + np.abs(results["Ey"]) ** 2 + np.abs(results["Ez"]) ** 2
-        results["H"] = np.abs(results["Hx"]) ** 2 + np.abs(results["Hy"]) ** 2 + np.abs(results["Hz"]) ** 2
+        # Create E and H fields
+        if component == "E":
+            results["E"] = np.abs(results["Ex"]) ** 2 + np.abs(results["Ey"]) ** 2 + np.abs(results["Ez"]) ** 2
+        if component == "H":
+            results["H"] = np.abs(results["Hx"]) ** 2 + np.abs(results["Hy"]) ** 2 + np.abs(results["Hz"]) ** 2
 
+        # Color map lookup table
         cmap_lookup = {
-            'Ex': 'RdBu',
-            'Ey': 'RdBu',
-            'Ez': 'RdBu',
-            'Hx': 'RdBu',
-            'Hy': 'RdBu',
-            'Hz': 'RdBu',
-            'E': 'Blues',
-            'H': 'Blues',
-            'n': 'Greys',
+            "Ex": "RdBu",
+            "Ey": "RdBu",
+            "Ez": "RdBu",
+            "Hx": "RdBu",
+            "Hy": "RdBu",
+            "Hz": "RdBu",
+            "E": "Blues",
+            "H": "Blues",
+            "n": "Greys",
         }
 
-        if ax:  
+        # Create plots
+        self.axlims[0], self.axlims[1] = [start, end]
+        if ax:
             im = ax.imshow(np.real(results[component]), extent=self.axlims, cmap=cmap_lookup[component])
             ax.set_xlabel("z")
             ax.set_ylabel("x")
             ax.set_title(component)
-        else:  
+        else:
             im = plt.imshow(np.real(results[component]), extent=self.axlims, cmap=cmap_lookup[component])
             plt.xlabel("z")
             plt.ylabel("x")
