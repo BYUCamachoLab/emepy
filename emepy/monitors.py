@@ -13,11 +13,11 @@ class Monitor(object):
         dimensions=(1, 1),
         lengths=[],
         components=["E"],
-        axlims=None,
         z_range=None,
         grid_x=None,
         grid_y=None,
         grid_z=None,
+        location=None,
     ):
         """Monitor class constructor
 
@@ -31,8 +31,6 @@ class Monitor(object):
             list of the remaining points in z at which to calculate the fields
         components : list
             list of the field components to store from ('E','H','Ex','Ey','Ez','Hx','Hy','Hz)
-        axlims : list
-            list of the following forat for the axes limits: [x0, xn, y0, yn]
         z_range : tuple
             tuple or list of the form (start, end) representing the range of the z values to extract
         grid_x : numpy array
@@ -44,45 +42,40 @@ class Monitor(object):
         """
 
         # Ensure z range is in proper format
-        try:
-            if z_range is None:
-                self.start, self.end = [lengths[0][0], lengths[0][-1]]
-            else:
-                self.start, self.end = z_range
-        except Exception as _:
-            raise Exception(
-                "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
-            )
+        if not (axes in ["xy", "yx"]):
+            try:
+                if z_range is None:
+                    self.start, self.end = [lengths[0][0], lengths[0][-1]]
+                else:
+                    self.start, self.end = z_range
+            except Exception as _:
+                raise Exception(
+                    "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
+                )
 
         if axes == "xz" or axes == "zx":
             self.axes = "xz"
-            self.dimensions = dimensions
-            self.field = np.zeros(dimensions).astype(complex)
-            self.lengths = copy(lengths)
-            self.remaining_lengths = copy(lengths)
         elif axes == "yz" or axes == "zy":
             self.axes = "yz"
-            self.dimensions = dimensions
-            self.field = np.zeros(dimensions).astype(complex)
-            self.lengths = copy(lengths)
-            self.remaining_lengths = copy(lengths)
         elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
             self.axes = "xyz"
-            self.dimensions = dimensions
-            self.field = np.zeros(dimensions).astype(complex)
-            self.lengths = copy(lengths)
-            self.remaining_lengths = copy(lengths)
+        elif axes in ["xy", "yx"]:
+            self.axes = "xy"
         else:
             raise Exception(
-                "Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['yz','xz','xyz']".format(
+                "Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xy','yz','xz','xyz']".format(
                     axes
                 )
             )
 
+        self.dimensions = dimensions
+        self.field = np.zeros(dimensions).astype(complex)
+        self.lengths = copy(lengths)
+        self.remaining_lengths = copy(lengths)
+
         self.cur_prop_index = [0 for i in range(len(components))]
         self.cur_length = [0 for i in range(len(components))]
         self.components = components
-        self.axlims = axlims if axlims else [0, self.lengths[0][-1], 0, 2.5e-6]
         self.layers = {}
         self.grid_x = grid_x
         self.grid_y = grid_y
@@ -92,12 +85,16 @@ class Monitor(object):
         return self.field[subscript]
 
     def __setitem__(self, subscript, item):
+
         # Only set item if it's in the valid z_range
-        if (self.lengths[0][subscript[-1]] >= self.start) and (self.lengths[0][subscript[-1]] <= self.end):
+        if self.axes in ["xy", "yx"]:
+            self.field[subscript] = item
+        elif (self.lengths[0][subscript[-1]] >= self.start) and (self.lengths[0][subscript[-1]] <= self.end):
             difference_start = lambda list_value: abs(list_value - self.start)
             s = self.lengths[0].index(min(self.lengths[0], key=difference_start))
             subscript = tuple(list(subscript[:-1]) + [subscript[-1] - s])
             self.field[subscript] = item
+
         if len(self.remaining_lengths[int(subscript[0])]) > 1:
             self.remaining_lengths[int(subscript[0])] = self.remaining_lengths[int(subscript[0])][1:]
             self.cur_prop_index[int(subscript[0])] += 1
@@ -121,7 +118,7 @@ class Monitor(object):
         component : string
             field component from "['Ex','Ey','Ez','Hx','Hy','Hz','E','H']"
         location : float
-            if taken from 3D fields, users can specify where to take their 2D slice. If axes is 'xz', location refers to the location in y and 'yz' refers to a location in x.
+            if taken from 3D fields, users can specify where to take their 2D slice. If axes is 'xz', location refers to the location in y and 'yz' refers to a location in x and 'xy' refers to a location in z
         z_range : tuple
             tuple or list of the form (start, end) representing the range of the z values to extract
         grid_x : numpy array
@@ -148,30 +145,39 @@ class Monitor(object):
                 )
             )
 
-        # Ensure z range is in proper format
-        try:
-            if z_range is None:
-                start, end = [self.start, self.end]
-            else:
-                start, end = z_range
-        except Exception as _:
-            raise Exception(
-                "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
-            )
+        if axes in ["xz", "zx", "yz", "zy", "xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+            # Ensure z range is in proper format
+            try:
+                if z_range is None:
+                    start, end = [self.start, self.end]
+                else:
+                    start, end = z_range
+            except Exception as _:
+                raise Exception(
+                    "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
+                )
+
+            # Get start and end
+            difference_start = lambda list_value: abs(list_value - start)
+            difference_end = lambda list_value: abs(list_value - end)
+            s = self.lengths[0].index(min(self.lengths[0], key=difference_start))
+            e = self.lengths[0].index(min(self.lengths[0], key=difference_end)) + 1
+
+            default_grid_z = self.lengths[0][s:e]
+            m = lambda list_value: abs(list_value - self.grid_z[0])
+            m = self.lengths[0].index(min(self.lengths[0], key=m))
+            s -= m
+            e -= m
+
+        elif axes in ["xy", "yx"]:
+            default_grid_z = self.grid_z
+        else:
+            raise Exception("Incorrect axes format")
 
         # Get default x, y, z grids
-        difference_start = lambda list_value: abs(list_value - start)
-        difference_end = lambda list_value: abs(list_value - end)
-        s = self.lengths[0].index(min(self.lengths[0], key=difference_start))
-        e = self.lengths[0].index(min(self.lengths[0], key=difference_end)) + 1
         default_grid_x = self.grid_x
         default_grid_y = self.grid_y
-        default_grid_z = self.lengths[0][s:e]
 
-        m = lambda list_value: abs(list_value - self.grid_z[0])
-        m = self.lengths[0].index(min(self.lengths[0], key=m))
-        s -= m
-        e -= m
         interp_x = False if (grid_x is None) else True
         interp_y = False if (grid_y is None) else True
 
@@ -202,8 +208,11 @@ class Monitor(object):
                     else:
                         results[c] = self.field[i][:, :, s:e]
 
-            elif self.axes in ["xz", "yz"]:
+            elif self.axes in ["xz", "yz", "zx", "zy"]:
                 results[c] = self.field[i][:, s:e]
+
+            elif self.axes in ["xy", "yx"]:
+                results[c] = self.field[i][:, :]
 
         # Create E and H fields
         if component == "E":
@@ -232,6 +241,11 @@ class Monitor(object):
             grid_field.append(x)
             grid_field.append(y)
             grid_field.append(z)
+        elif axes in ["xy", "yx"]:
+            x = default_grid_x if not interp_x else grid_x
+            y = default_grid_y if not interp_y else grid_y
+            grid_field.append(x)
+            grid_field.append(y)
         else:
             raise Exception("Please choose valid axes")
 
@@ -252,7 +266,7 @@ class Monitor(object):
         component : string
             field component from "['Ex','Ey','Ez','Hx','Hy','Hz','E','H']"
         location : float
-            if taken from 3D fields, users can specify where to take their 2D slice. If axes is 'xz', location refers to the location in y and 'yz' refers to a location in x.
+            if taken from 3D fields, users can specify where to take their 2D slice. If axes is 'xz', location refers to the location in y and 'yz' refers to a location in x and 'xy' refers to a location in z.
         z_range : tuple
             tuple or list of the form (start, end) representing the range of the z values to extract
 
@@ -267,7 +281,14 @@ class Monitor(object):
         if axes is None:
             axes = self.axes
 
-        axes = "xz" if axes in ["xz", "zx"] else "yz"
+        if axes in ["xz", "zx"]:
+            axes = "xz"
+        elif axes in ["yz", "zy"]:
+            axes = "yz"
+        elif axes in ["xy", "yx"]:
+            axes = "xy"
+        else:
+            raise Exception("Incorrect axes format")
 
         y, z, field = self.get_array(component=component, axes=axes, location=location, z_range=z_range)
 
@@ -285,16 +306,28 @@ class Monitor(object):
         }
 
         # Create plots
-        if ax:
-            im = ax.imshow(np.real(field), extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
-            ax.set_xlabel("z")
-            ax.set_ylabel(axes[0])
-            ax.set_title(component)
+        if axes in ["xz", "zx", "yz", "zy"]:
+            if ax:
+                im = ax.imshow(np.real(field), extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
+                ax.set_xlabel(axes[1])
+                ax.set_ylabel(axes[0])
+                ax.set_title(component)
+            else:
+                im = plt.imshow(np.real(field), extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
+                plt.xlabel(axes[1])
+                plt.ylabel(axes[0])
+                plt.title(component)
         else:
-            im = plt.imshow(np.real(field), extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
-            plt.xlabel("z")
-            plt.ylabel(axes[0])
-            plt.title(component)
+            if ax:
+                im = ax.imshow(np.real(field).T, extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
+                ax.set_xlabel(axes[0])
+                ax.set_ylabel(axes[1])
+                ax.set_title(component)
+            else:
+                im = plt.imshow(np.real(field).T, extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
+                plt.xlabel(axes[0])
+                plt.ylabel(axes[1])
+                plt.title(component)
 
         return im
 
