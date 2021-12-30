@@ -261,6 +261,37 @@ class EME(object):
         self.s_params = current_layer.s_params
         self.output = np.matmul(current_layer.s_params[0], input_array)
 
+    def get_field(self, mode_set, m, c, curr_s, input_array):
+        # Eigenvalues of all the modes
+        eigenvalues = np.array(
+            [(2 * np.pi) * mode_set.modes[i].neff / (self.wavelength) for i in range(len(mode_set.modes))]
+        ).astype(np.complex128)
+
+        # Phase propagation from the last interfact until the current position
+        phase_prop = np.exp(
+            (self.monitors[m].remaining_lengths[c][0] - self.monitors[m].cur_length[c]) * 1j * eigenvalues
+        )
+
+        # S parameters from mode overlaps and phase prop from previous layers
+        if not (curr_s is None):
+            interface_prop = np.matmul(curr_s.s_parameters()[0], input_array)[-len(phase_prop) :]
+        else:
+            interface_prop = input_array[: len(phase_prop)]
+
+        # Coefficients of each mode
+        mode_coefficients = phase_prop * interface_prop
+
+        # Index doesn't need s param involvement
+        if self.monitors[m].components[c] == "n":
+            field = getattr(mode_set.modes[0], self.monitors[m].components[c])
+        else:
+            # Combine the coefficient defined linear combination of modes to get the field profile
+            field = getattr(mode_set.modes[0], self.monitors[m].components[c]) * mode_coefficients[0]
+            for i in range(1, len(mode_set.modes)):
+                field += getattr(mode_set.modes[i], self.monitors[m].components[c]) * mode_coefficients[i]
+
+        return field
+
     def update_monitors(
         self, location_bonus, adder, mode_set, curr_s=None, not_first=True, input_array=None, periodic=None
     ):
@@ -276,68 +307,75 @@ class EME(object):
                 else:
                     location = location_bonus
 
-                while (
-                    len(self.monitors[m].remaining_lengths[c]) and self.monitors[m].remaining_lengths[c][0] < location
-                ):
-                    dims = self.monitors[m].dimensions
-                    x = dims[1]
-                    y = dims[1]
-                    if len(dims) == 4:
-                        y = dims[2]
+                if self.monitors[m].axes in ["xy", "yx"]:
 
-                    # Case when repeating layers
-                    if not (periodic is None):
-                        mode_set = self.monitors[m].layers[
-                            round(
-                                self.monitors[m].remaining_lengths[c][0] - (periodic + 1) * self.get_total_length(), 14
+                    # Check if not correct location
+                    if (
+                        self.monitors[m].cur_length[c]
+                        <= self.monitors[m].lengths[c][0]
+                        <= self.monitors[m].cur_length[c] + adder
+                    ):
+
+                        # Case when repeating layers
+                        if not (periodic is None):
+                            mode_set = self.monitors[m].layers[0]
+
+                        # Get the field
+                        field = self.get_field(mode_set, m, c, curr_s, input_array)
+
+                        self.monitors[m][c, :, :] = field
+
+                    elif periodic is None:
+                        # If periodic and the correct length is
+                        for n in range(self.num_periods):
+                            if (
+                                self.monitors[m].cur_length[c] + n * self.get_total_length()
+                                <= self.monitors[m].lengths[0]
+                                <= self.monitors[m].cur_length[c] + adder + n * self.get_total_length()
+                            ):
+                                self.monitors[m].layers[0] = mode_set
+                else:
+                    while (
+                        len(self.monitors[m].remaining_lengths[c])
+                        and self.monitors[m].remaining_lengths[c][0] < location
+                    ):
+                        dims = self.monitors[m].dimensions
+                        x = dims[1]
+                        y = dims[1]
+                        if len(dims) == 4:
+                            y = dims[2]
+
+                        # Case when repeating layers
+                        if not (periodic is None):
+                            mode_set = self.monitors[m].layers[
+                                round(
+                                    self.monitors[m].remaining_lengths[c][0] - (periodic + 1) * self.get_total_length(),
+                                    14,
+                                )
+                            ]
+
+                        # Get the field
+                        field = self.get_field(mode_set, m, c, curr_s, input_array)
+
+                        # Only care about the area of the grid of concern
+                        if self.monitors[m].axes == "xz":
+                            field = field[:, int(len(field) / 2)]
+                        elif self.monitors[m].axes == "yz":
+                            field = field[int(len(field) / 2), :]
+                        else:
+                            field = field
+
+                        # Save solved field profiles for referencing from repeated layers
+                        if periodic is None:
+                            self.monitors[m].layers[round(self.monitors[m].remaining_lengths[c][0], 14)] = copy(
+                                mode_set
                             )
-                        ]
 
-                    # Eigenvalues of all the modes
-                    eigenvalues = np.array(
-                        [(2 * np.pi) * mode_set.modes[i].neff / (self.wavelength) for i in range(len(mode_set.modes))]
-                    ).astype(np.complex128)
-
-                    # Phase propagation from the last interfact until the current position
-                    phase_prop = np.exp(
-                        (self.monitors[m].remaining_lengths[c][0] - self.monitors[m].cur_length[c]) * 1j * eigenvalues
-                    )
-
-                    # S parameters from mode overlaps and phase prop from previous layers
-                    if not (curr_s is None):
-                        interface_prop = np.matmul(curr_s.s_parameters()[0], input_array)[-len(phase_prop) :]
-                    else:
-                        interface_prop = input_array[: len(phase_prop)]
-
-                    # Coefficients of each mode
-                    mode_coefficients = phase_prop * interface_prop
-
-                    # Index doesnt need s param involvement
-                    if self.monitors[m].components[c] == "n":
-                        field = getattr(mode_set.modes[0], self.monitors[m].components[c])
-                    else:
-                        # Combine the coefficient defined linear combination of modes to get the field profile
-                        field = getattr(mode_set.modes[0], self.monitors[m].components[c]) * mode_coefficients[0]
-                        for i in range(1, len(mode_set.modes)):
-                            field += getattr(mode_set.modes[i], self.monitors[m].components[c]) * mode_coefficients[i]
-
-                    # Only care about the area of the grid of concern
-                    if self.monitors[m].axes == "xz":
-                        field = field[:, int(len(field) / 2)]
-                    elif self.monitors[m].axes == "yz":
-                        field = field[int(len(field) / 2), :]
-                    else:
-                        field = field
-
-                    # Save solved field profiles for referencing from repeated layers
-                    if periodic is None:
-                        self.monitors[m].layers[round(self.monitors[m].remaining_lengths[c][0], 14)] = copy(mode_set)
-
-                    # Finally, update the monitor
-                    if self.monitors[m].axes in ["xz", "yz"]:
-                        self.monitors[m][c, 0:y, self.monitors[m].cur_prop_index[c]] = field
-                    else:
-                        self.monitors[m][c, 0:x, 0:y, self.monitors[m].cur_prop_index[c]] = field
+                        # Finally, update the monitor
+                        if self.monitors[m].axes in ["xz", "yz"]:
+                            self.monitors[m][c, 0:y, self.monitors[m].cur_prop_index[c]] = field
+                        else:
+                            self.monitors[m][c, 0:x, 0:y, self.monitors[m].cur_prop_index[c]] = field
 
                 # Update the current length
                 self.monitors[m].cur_length[c] += adder
@@ -388,7 +426,7 @@ class EME(object):
     def get_total_length(self):
         return np.sum([layer.length for layer in self.layers])
 
-    def add_monitor(self, axes="xz", mesh_z=200, z_range=None):
+    def add_monitor(self, axes="xz", mesh_z=200, z_range=None, location=None):
         """Creates a monitor associated with the eme object BEFORE the simulation is ran
 
         Parameters
@@ -399,6 +437,8 @@ class EME(object):
             number of mesh points in z (for periodic structures, will be z * num_periods) 
         z_range : tuple
             tuple or list of the form (start, end) representing the range of the z values to extract
+        location : float
+            z coordinate where to save data for a 'xy' monitor
         
         Returns
         -------
@@ -411,44 +451,61 @@ class EME(object):
         x = self.layers[0].mode_solvers.mesh
         y = self.layers[0].mode_solvers.mesh
 
-        # Create lengths
-        l = self.get_total_length()
-        single_lengths = np.linspace(0, l, mesh_z, endpoint=False).tolist()
-        lengths = []
-        for i in range(self.num_periods):
-            lengths += [np.array(j) + i * l for j in single_lengths]
-        lengths = [lengths for i in range(len(components))]
-
-        # Ensure z range is in proper format
-        try:
-            if z_range is None:
-                start, end = [lengths[0][0], lengths[0][-1]]
-            else:
-                start, end = z_range
-        except Exception as _:
-            raise Exception(
-                "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
-            )
-
-        # Fix z mesh if changed by z_range
-        difference_start = lambda list_value: abs(list_value - start)
-        difference_end = lambda list_value: abs(list_value - end)
-        s = min(lengths[0], key=difference_start)
-        e = min(lengths[0], key=difference_end)
-        z = np.sum((s <= lengths[0]) * (e >= lengths[0]))
-
-        # Create monitor dimensions
-        c = len(components)
-        dimensions = (c, y, z) if not (axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]) else (c, x, y, z)
-
-        # Create grids
-        grid_x = self.layers[0].mode_solvers.x
-        grid_y = self.layers[0].mode_solvers.y
-        grid_z = np.linspace(s, e, z)
-
         # Ensure the axes is not still under development
         if axes in ["xz", "zx", "yz", "zy", "xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
-            monitor = Monitor(axes, dimensions, lengths, components, None, z_range, grid_x, grid_y, grid_z)
+
+            # Create lengths
+            l = self.get_total_length()
+            single_lengths = np.linspace(0, l, mesh_z, endpoint=False).tolist()
+            lengths = []
+            for i in range(self.num_periods):
+                lengths += [np.array(j) + i * l for j in single_lengths]
+            lengths = [lengths for i in range(len(components))]
+
+            # Ensure z range is in proper format
+            try:
+                if z_range is None:
+                    start, end = [lengths[0][0], lengths[0][-1]]
+                else:
+                    start, end = z_range
+            except Exception as _:
+                raise Exception(
+                    "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
+                )
+
+            # Fix z mesh if changed by z_range
+            difference_start = lambda list_value: abs(list_value - start)
+            difference_end = lambda list_value: abs(list_value - end)
+            s = min(lengths[0], key=difference_start)
+            e = min(lengths[0], key=difference_end)
+            z = np.sum((s <= lengths[0]) * (e >= lengths[0]))
+
+            # Create monitor dimensions
+            c = len(components)
+            dimensions = (c, y, z) if not (axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]) else (c, x, y, z)
+
+            # Create grids
+            grid_x = self.layers[0].mode_solvers.x
+            grid_y = self.layers[0].mode_solvers.y
+            grid_z = np.linspace(s, e, z)
+
+        elif axes in ["xy", "yx"]:
+
+            # No z_range needed
+            z_range = None
+
+            # Create single length
+            lengths = [[location] for _ in range(len(components))]
+
+            # Create monitor dimensions
+            c = len(components)
+            dimensions = (c, x, y)
+
+            # Create grids
+            grid_x = self.layers[0].mode_solvers.x
+            grid_y = self.layers[0].mode_solvers.y
+            grid_z = np.array([location])
+
         else:
             raise Exception(
                 "Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xz', 'yz', 'xyz']".format(
@@ -456,6 +513,8 @@ class EME(object):
                 )
             )
 
+        # Create monitor
+        monitor = Monitor(axes, dimensions, lengths, components, z_range, grid_x, grid_y, grid_z)
         self.monitors.append(monitor)
         return monitor
 
