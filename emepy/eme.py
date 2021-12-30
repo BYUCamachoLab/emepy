@@ -114,13 +114,17 @@ class EME(object):
 
         self.layers.append(layer)
 
-    def reset(self):
+    def reset(self, full_reset=True):
         """Clears out the layers and s params so the user can reuse the object in memory on a new geometry
         """
 
-        self.layers = []
-        self.interfaces = []
-        self.wavelength = None
+        if full_reset:
+            self.layers = []
+            self.wavelength = None
+        else:
+            for i in range(len(self.layers)):
+                self.layers[i].clear()
+
         self.s_params = None
         self.interface = None
         self.monitors = []
@@ -196,6 +200,8 @@ class EME(object):
 
         self.layers[-1].clear()
         self.s_params = current.s_params
+        for m in range(len(self.monitors)):
+            self.monitors[m].normalize()
 
         return (current.s_params, mode_set1, mode_set2)
 
@@ -382,13 +388,17 @@ class EME(object):
     def get_total_length(self):
         return np.sum([layer.length for layer in self.layers])
 
-    def add_monitor(self, axes="xz", mesh_z=200):
+    def add_monitor(self, axes="xz", mesh_z=200, z_range=None):
         """Creates a monitor associated with the eme object BEFORE the simulation is ran
 
         Parameters
         ----------
         axes : string
             the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'xz', 'xyz', 'x', 'y', 'z'. Currently only 'xz' is implemented. Note, propagation is always in z. 
+        mesh_z : int
+            number of mesh points in z (for periodic structures, will be z * num_periods) 
+        z_range : tuple
+            tuple or list of the form (start, end) representing the range of the z values to extract
         
         Returns
         -------
@@ -396,33 +406,52 @@ class EME(object):
             the newly created Monitor object
         """
 
-        # dimensions : tuple
-        #     the spacial dimensions of the resulting field. Note, if the dimensions are greater than the mesh in axes not along propagation, the fields will be interpolated. (default: mesh density of cross sections and 10 propagation points).
+        # Establish mesh
         components = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"]
         x = self.layers[0].mode_solvers.mesh
         y = self.layers[0].mode_solvers.mesh
-        z = mesh_z
-        dimensions = (
-            [y, z * self.num_periods]
-            if not (axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"])
-            else [x, y, z * self.num_periods]
-        )
+
+        # Create lengths
         l = self.get_total_length()
-        single_lengths = np.linspace(0, l, z, endpoint=False).tolist()
+        single_lengths = np.linspace(0, l, mesh_z, endpoint=False).tolist()
         lengths = []
         for i in range(self.num_periods):
             lengths += [np.array(j) + i * l for j in single_lengths]
         lengths = [lengths for i in range(len(components))]
 
-        if axes == "xz" or axes == "zx":
-            monitor = Monitor(axes, tuple([len(components)] + dimensions), lengths, components)
-        elif axes == "yz" or axes == "zy":
-            monitor = Monitor(axes, tuple([len(components)] + dimensions), lengths, components)
-        elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
-            monitor = Monitor(axes, tuple([len(components)] + dimensions), lengths, components)
+        # Ensure z range is in proper format
+        try:
+            if z_range is None:
+                start, end = [lengths[0][0], lengths[0][-1]]
+            else:
+                start, end = z_range
+        except Exception as _:
+            raise Exception(
+                "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
+            )
+
+        # Fix z mesh if changed by z_range
+        difference_start = lambda list_value: abs(list_value - start)
+        difference_end = lambda list_value: abs(list_value - end)
+        s = min(lengths[0], key=difference_start)
+        e = min(lengths[0], key=difference_end)
+        z = np.sum((s <= lengths[0]) * (e >= lengths[0]))
+
+        # Create monitor dimensions
+        c = len(components)
+        dimensions = (c, y, z) if not (axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]) else (c, x, y, z)
+
+        # Create grids
+        grid_x = self.layers[0].mode_solvers.x
+        grid_y = self.layers[0].mode_solvers.y
+        grid_z = np.linspace(s, e, z)
+
+        # Ensure the axes is not still under development
+        if axes in ["xz", "zx", "yz", "zy", "xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+            monitor = Monitor(axes, dimensions, lengths, components, None, z_range, grid_x, grid_y, grid_z)
         else:
             raise Exception(
-                "Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xz', 'yz']".format(
+                "Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xz', 'yz', 'xyz']".format(
                     axes
                 )
             )
