@@ -55,9 +55,16 @@ class Mode(object):
         self.n = n
         self.width = width
         self.thickness = thickness
-        if True in [self.Ex is None,self.Ey is None,self.Ez is None,self.Hx is None,self.Hy is None,self.Hz is None]:
-            self.H = np.sqrt(np.abs(self.Hx)**2 + np.abs(self.Hy)**2 + np.abs(self.Hz)**2)
-            self.E = np.sqrt(np.abs(self.Ex)**2 + np.abs(self.Ey)**2 + np.abs(self.Ez)**2)
+        if True in [
+            self.Ex is None,
+            self.Ey is None,
+            self.Ez is None,
+            self.Hx is None,
+            self.Hy is None,
+            self.Hz is None,
+        ]:
+            self.H = np.sqrt(np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2)
+            self.E = np.sqrt(np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2)
         if self.n is None:
             eps_func = tools.get_epsfunc(
                 self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
@@ -233,7 +240,7 @@ class Mode(object):
         cross = cross.reshape((size, size))
 
         # cross = mode1.Ex * np.conj(mode2.Hy) - mode1.Ey * np.conj(mode2.Hx)
-        return np.trapz(np.trapz(cross, mode1.x), mode1.y)#/np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
+        return np.trapz(np.trapz(cross, mode1.x), mode1.y)  # /np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
 
     def inner_product(self, mode2):
         """Takes the inner product between self and the provided Mode
@@ -249,7 +256,7 @@ class Mode(object):
             the inner product between the modes
         """
 
-        return self._inner_product(self, mode2) #/ self._inner_product(self, self)
+        return self._inner_product(self, mode2)  # / self._inner_product(self, self)
 
     def __str__(self):
         return "Mode Object with effective index of " + str(self.neff)
@@ -394,9 +401,7 @@ class Mode(object):
         """Plots the index of refraction profile"""
         n = self.n
 
-        plt.imshow(
-            np.sqrt(np.real(n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6]
-        )
+        plt.imshow(np.sqrt(np.real(n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6])
         plt.colorbar()
         plt.title("Index of Refraction")
         plt.xlabel("x (µm)")
@@ -411,7 +416,13 @@ class Mode(object):
         cladding_index = tools.SiO2(self.wl * 1e6)
         if self.n is None:
             self.epsfunc = tools.get_epsfunc(
-                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6), compute=True
+                self.width,
+                self.thickness,
+                2.5e-6,
+                2.5e-6,
+                tools.Si(self.wl * 1e6),
+                tools.SiO2(self.wl * 1e6),
+                compute=True,
             )
         else:
             self.epsfunc = lambda x, y: self.n[: len(x), : len(y)]
@@ -1568,13 +1579,13 @@ class Mode(object):
         self.Ez = Ezs[0]
         self.x = (self.x[1:] + self.x[:-1]) / 2.0
         self.y = (self.y[1:] + self.y[:-1]) / 2.0
-        self.x = self.x - self.x[int(len(self.x)/2)]
-        self.y = self.y - self.y[int(len(self.y)/2)]
-        self.H = np.sqrt(np.abs(self.Hx)**2 + np.abs(self.Hy)**2 + np.abs(self.Hz)**2)
-        self.E = np.sqrt(np.abs(self.Ex)**2 + np.abs(self.Ey)**2 + np.abs(self.Ez)**2)
+        self.x = self.x - self.x[int(len(self.x) / 2)]
+        self.y = self.y - self.y[int(len(self.y) / 2)]
+        self.H = np.sqrt(np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2)
+        self.E = np.sqrt(np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2)
         eps_func = tools.get_epsfunc(
-                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
-            )
+            self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+        )
         self.n = eps_func(self.x, self.y)
 
         # self.Hz = np.zeros((self.Hx.shape[0],self.Hx.shape[1]),dtype="complex")

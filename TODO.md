@@ -6,6 +6,7 @@
 - Allow custom monitor location extraction 
 - Allow custom monitor extraction in any plane
 - Allow interpolation onto custom monitor grid
+- Normalize fields
 
 ### Simulation
 - Allow simulation x and y to have different dimensions

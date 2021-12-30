@@ -10,21 +10,26 @@ import EMpy
 
 import pickle
 
+
 class ModeSolver(object):
     """The ModeSolver object is the heart of finding eigenmodes for use in eigenmode expansion or simple examination. This parent class should be inherited and used as a wrapper for certain modules such as EMpy, Lumerical, Pickled data, Neural Networks, etc. 
     """
+
     def __init__(self, **kwargs):
         """ModeSolver class constructor
         """
         raise NotImplementedError
+
     def solve(self):
         """Solves the eigenmode solver for the specific eigenmodes of desire
         """
         raise NotImplementedError
+
     def clear(self):
         """Clears the modesolver's eigenmodes to make memory
         """
         raise NotImplementedError
+
     def get_mode(self, mode_num):
         """Must extract the mode of choice
 
@@ -36,11 +41,10 @@ class ModeSolver(object):
         raise NotImplementedError
 
 
-
-
 class MSEMpy(ModeSolver):
     """Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide. 
     """
+
     def __init__(
         self,
         wl,
@@ -119,9 +123,9 @@ class MSEMpy(ModeSolver):
         if cladding_index is None:
             self.cladding_index = tools.SiO2(wl * 1e6)
         if x is None:
-            self.x = np.linspace(-0.5*cladding_width, 0.5*cladding_width, mesh)
+            self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
         if y is None:
-            self.y = np.linspace(-0.5*cladding_width, 0.5*cladding_width, mesh)
+            self.y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
         if epsfunc is None:
             self.epsfunc = tools.get_epsfunc(
                 self.width,
@@ -132,7 +136,7 @@ class MSEMpy(ModeSolver):
                 self.cladding_index,
                 profile=self.n,
                 nx=self.x,
-                ny=self.y
+                ny=self.y,
             )
 
     def solve(self):
@@ -146,9 +150,8 @@ class MSEMpy(ModeSolver):
     def clear(self):
         """Clears the modesolver's eigenmodes to make memory
         """
+
         self.solver = None
-        self.x = None
-        self.y = None
         return self
 
     def get_mode(self, mode_num=0):
@@ -172,15 +175,30 @@ class MSEMpy(ModeSolver):
         Hy = self.solver.modes[mode_num].get_field("Hy", self.x, self.y)
         Hz = self.solver.modes[mode_num].get_field("Hz", self.x, self.y)
         neff = self.solver.modes[mode_num].neff
-        n = self.epsfunc(self.x,self.y)
+        n = self.epsfunc(self.x, self.y)
 
-        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness,n=n)
+        return Mode(
+            x=self.x,
+            y=self.y,
+            wl=self.wl,
+            neff=neff,
+            Hx=Hx,
+            Hy=Hy,
+            Hz=Hz,
+            Ex=Ex,
+            Ey=Ey,
+            Ez=Ez,
+            width=self.width,
+            thickness=self.thickness,
+            n=n,
+        )
 
 
 class MSPickle(object):
     """Pickle Modesolver. See Modesolver. Pickle should serialize a list of Mode objects that can be opened here. 
     """
-    def __init__(self, filename, index=None, width=None, thickness=None,**kwargs):
+
+    def __init__(self, filename, index=None, width=None, thickness=None, **kwargs):
         """MSPickle class constructor
 
             Parameters
