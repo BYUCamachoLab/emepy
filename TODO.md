@@ -1,11 +1,6 @@
 # TODO
 
 ### Monitors 
-- Allow 3D monitor collection
-- Allow custom monitor location collection 
-- Allow custom monitor location extraction 
-- Allow custom monitor extraction in any plane
-- Allow interpolation onto custom monitor grid
 - Normalize fields
 
 ### Simulation
