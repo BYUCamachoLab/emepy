@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from copy import copy
+from scipy.interpolate import griddata
 
 
 class Monitor(object):
@@ -108,7 +109,7 @@ class Monitor(object):
     def normalize(self):
         self.field[:-1] /= 1  # np.max(np.abs(self.field[:-1, :, 0]))
 
-    def get_array(self, component="Hy", axes=None, location=0, z_range=None, grid_x=None, grid_y=None):
+    def get_array(self, component="Hy", axes=None, location=None, z_range=None, grid_x=None, grid_y=None):
         """ Creates a matplotlib axis displaying the provides field component
 
         Parameters
@@ -189,24 +190,34 @@ class Monitor(object):
             if self.axes == "xyz":
                 # xz plane
                 if axes in ["xz", "zx"]:
-                    if interp_x:
-                        continue
+                    if not (location is None):
+                        d = lambda list_value: abs(list_value - location)
+                        index = list(default_grid_x).index(min(default_grid_x, key=d))
                     else:
-                        results[c] = self.field[i][:, location, s:e]
+                        index = int(len(self.field[i][0]) / 2)
+                    results[c] = self.field[i][:, index, s:e]
 
                 # yz plane
                 elif axes in ["yz", "zy"]:
-                    if interp_y:
-                        continue
+                    if not (location is None):
+                        d = lambda list_value: abs(list_value - location)
+                        index = list(default_grid_y).index(min(default_grid_y, key=d))
                     else:
-                        results[c] = self.field[i][location, :, s:e]
+                        index = int(len(self.field[i]) / 2)
+                    results[c] = self.field[i][index, :, s:e]
+
+                # xy plane
+                elif axes in ["xy", "yx"]:
+                    if not (location is None):
+                        d = lambda list_value: abs(list_value - location)
+                        index = list(default_grid_z).index(min(default_grid_z, key=d))
+                    else:
+                        index = 0
+                    results[c] = self.field[i][:, :, index]
 
                 # xyz volume
                 elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
-                    if interp_x or interp_y:
-                        continue
-                    else:
-                        results[c] = self.field[i][:, :, s:e]
+                    results[c] = self.field[i][:, :, s:e]
 
             elif self.axes in ["xz", "yz", "zx", "zy"]:
                 results[c] = self.field[i][:, s:e]
@@ -223,34 +234,62 @@ class Monitor(object):
         # List to return
         grid_field = []
 
+        # Custom 2D interpolation function
+        def custom_interp2d(field, old_a, old_b, new_a, new_b):
+            aa, bb = np.meshgrid(new_a, new_b)
+            aa_old, bb_old = np.meshgrid(old_a, old_b)
+            points = np.array((aa_old.flatten(), bb_old.flatten())).T
+            real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
+            imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
+            return real + 1j * imag
+
+        # Custom 3D interpolation function
+        def custom_interp3d(field, old_a, old_b, old_c, new_a, new_b, new_c):
+            aa, bb, cc = np.meshgrid(new_a, new_b, new_c)
+            aa_old, bb_old, cc_old = np.meshgrid(old_a, old_b, old_c)
+            points = np.array((aa_old.flatten(), bb_old.flatten(), cc_old.flatten())).T
+            return griddata(points, np.real(field), (aa, bb, cc)).astype(np.complex128) + 1j * griddata(
+                points, np.real(field), (aa, bb)
+            ).astype(np.complex128)
+
         # Add to return list the grid
         if axes in ["xz", "zx"]:
             x = default_grid_x if not interp_x else grid_x
             z = default_grid_z
-            grid_field.append(x)
-            grid_field.append(z)
+            grid_field.append(np.array(x))
+            grid_field.append(np.array(z))
+            if interp_x:
+                results[component] = custom_interp2d(results[component], default_grid_z, default_grid_x, z, x)
         elif axes in ["yz", "zy"]:
             y = default_grid_y if not interp_y else grid_y
             z = default_grid_z
-            grid_field.append(y)
-            grid_field.append(z)
+            grid_field.append(np.array(y))
+            grid_field.append(np.array(z))
+            if interp_y:
+                results[component] = custom_interp2d(results[component], default_grid_z, default_grid_y, z, y)
         elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
             x = default_grid_x if not interp_x else grid_x
             y = default_grid_y if not interp_y else grid_y
             z = default_grid_z
-            grid_field.append(x)
-            grid_field.append(y)
-            grid_field.append(z)
+            grid_field.append(np.array(x))
+            grid_field.append(np.array(y))
+            grid_field.append(np.array(z))
+            if interp_x or interp_y:
+                results[component] = custom_interp3d(
+                    results[component], default_grid_x, default_grid_y, default_grid_z, x, y, z
+                )
         elif axes in ["xy", "yx"]:
             x = default_grid_x if not interp_x else grid_x
             y = default_grid_y if not interp_y else grid_y
-            grid_field.append(x)
-            grid_field.append(y)
+            grid_field.append(np.array(x))
+            grid_field.append(np.array(y))
+            if interp_x or interp_y:
+                results[component] = custom_interp2d(results[component], default_grid_x, default_grid_y, x, y)
         else:
             raise Exception("Please choose valid axes")
 
         # Add to return list the field
-        grid_field.append(results[component])
+        grid_field.append(np.array(results[component]))
 
         return grid_field
 

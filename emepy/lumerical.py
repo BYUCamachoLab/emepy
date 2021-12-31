@@ -4,7 +4,10 @@
 
 from emepy.eme import EME
 from emepy.fd import ModeSolver
-import lumapi as lm
+import importlib
+
+if not (importlib.util.find_spec("lumapi") is None):
+    import lumapi as lm
 import numpy as np
 from scipy.interpolate import interp1d
 import os
@@ -17,12 +20,13 @@ import EMpy
 
 import pickle
 
+
 class LumEME(EME):
     """
         This class is a wrapper for EME, it performs the same operations but uses Lumerical MODE to solve for the modes at the interfaces
     """
 
-    def __init__(self,  layers=[], num_periods=1):
+    def __init__(self, layers=[], num_periods=1):
         super().__init__(layers, num_periods)
 
         # open file
@@ -30,7 +34,6 @@ class LumEME(EME):
             os.remove("api.lms")
         self.mode = lm.MODE(hide=True)
         self.mode.save("api.lms")
-
 
     def close(self):
         if os.path.isfile("api.lms"):
@@ -40,13 +43,15 @@ class LumEME(EME):
 
         if os.path.isfile("api.lms"):
             os.remove("api.lms")
-        
+
         if os.path.isfile("api_p0.log"):
             os.remove("api_p0.log")
+
 
 class MSLumerical(ModeSolver):
     """Outdated Lumerical Modesolver. Uses the lumapi Lumerical API. See Modesolver. Parameterizes the cross section as a rectangular waveguide. 
     """
+
     def __init__(
         self,
         wl,
@@ -99,7 +104,7 @@ class MSLumerical(ModeSolver):
         self.num_modes = num_modes
         self.cladding_width = cladding_width
         self.cladding_thickness = cladding_thickness
-        self.mesh = mesh #- 1
+        self.mesh = mesh  # - 1
         self.mode = mode
         self.close_after = False
         self.eme_modes = eme_modes
@@ -118,6 +123,9 @@ class MSLumerical(ModeSolver):
 
             self.mode = lm.MODE(hide=True)
             self.mode.save("api.lms")
+
+        self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+        self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
 
     def solve(self):
         """Solves for the eigenmodes
@@ -162,29 +170,29 @@ class MSLumerical(ModeSolver):
 
             # set up EME for FDE extraction
             eme = self.mode.addeme()
-            self.mode.set("wavelength",self.wl)
-            self.mode.set("mesh cells y",mesh)
-            self.mode.set("mesh cells z",mesh)
-            self.mode.set("x min",-1e-6)
-            self.mode.set("y",0)
-            self.mode.set("y span",2e-6)
-            self.mode.set("z",0)
-            self.mode.set("z span",2e-6)
-            self.mode.set("allow custom eigensolver settings",1)
-            self.mode.set("cells",1)
-            self.mode.set("group spans",2e-6)
-            self.mode.set("modes",num_modes)
+            self.mode.set("wavelength", self.wl)
+            self.mode.set("mesh cells y", mesh)
+            self.mode.set("mesh cells z", mesh)
+            self.mode.set("x min", -1e-6)
+            self.mode.set("y", 0)
+            self.mode.set("y span", 2e-6)
+            self.mode.set("z", 0)
+            self.mode.set("z span", 2e-6)
+            self.mode.set("allow custom eigensolver settings", 1)
+            self.mode.set("cells", 1)
+            self.mode.set("group spans", 2e-6)
+            self.mode.set("modes", num_modes)
             if self.PML:
-                self.mode.set("y min bc","PML")
-                self.mode.set("y max bc","PML")
-                self.mode.set("z min bc","PML")
-                self.mode.set("z max bc","PML")
+                self.mode.set("y min bc", "PML")
+                self.mode.set("y max bc", "PML")
+                self.mode.set("z min bc", "PML")
+                self.mode.set("z max bc", "PML")
 
             # run
             self.mode.run()
-            
+
             # get modes
-            results = self.mode.getresult("EME::Cells::cell_1","mode fields")
+            results = self.mode.getresult("EME::Cells::cell_1", "mode fields")
             neff = []
             gridx = results["y"]
             gridx = gridx.reshape(gridx.shape[0])
@@ -195,15 +203,15 @@ class MSLumerical(ModeSolver):
             self.mesh = mesh
             field = []
             for mode_num in range(1, num_modes + 1):
-                neff.append(self.mode.getresult("EME::Cells::cell_1","neff")["neff"].flatten()[mode_num-1])
-                E = results["E" + str(mode_num)].reshape(mesh,mesh,3)
-                H = results["H" + str(mode_num)].reshape(mesh,mesh,3)
-                Ex = E[:,:,1]
-                Ey = E[:,:,2]
-                Ez = E[:,:,0]
-                Hx = H[:,:,1]
-                Hy = H[:,:,2]
-                Hz = H[:,:,0]
+                neff.append(self.mode.getresult("EME::Cells::cell_1", "neff")["neff"].flatten()[mode_num - 1])
+                E = results["E" + str(mode_num)].reshape(mesh, mesh, 3)
+                H = results["H" + str(mode_num)].reshape(mesh, mesh, 3)
+                Ex = E[:, :, 1]
+                Ey = E[:, :, 2]
+                Ez = E[:, :, 0]
+                Hx = H[:, :, 1]
+                Hy = H[:, :, 2]
+                Hz = H[:, :, 0]
                 field.append([Hx, Hy, Hz, Ex, Ey, Ez])
 
         else:
@@ -211,11 +219,11 @@ class MSLumerical(ModeSolver):
             # set up FDE
             fde = self.mode.addfde()
             fde.y = 0
-            fde.y_span = 2e-6#clad_width / 2
+            fde.y_span = 2e-6  # clad_width / 2
             fde.solver_type = "2D X normal"
             fde.x = 0
             fde.z = 0
-            fde.z_span = 2e-6#clad_thickness / 2
+            fde.z_span = 2e-6  # clad_thickness / 2
             fde.mesh_cells_y = mesh
             fde.mesh_cells_z = mesh
             self.mode.run
@@ -324,9 +332,20 @@ class MSLumerical(ModeSolver):
         Hy = field[1]
         Hz = field[2]
         neff = self.neffs[mode_num]
-        mode = Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez,width=self.width,thickness=self.thickness)
-
+        mode = Mode(
+            x=self.x,
+            y=self.y,
+            wl=self.wl,
+            neff=neff,
+            Hx=Hx,
+            Hy=Hy,
+            Hz=Hz,
+            Ex=Ex,
+            Ey=Ey,
+            Ez=Ez,
+            width=self.width,
+            thickness=self.thickness,
+        )
 
         return mode
 
-    

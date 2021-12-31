@@ -485,8 +485,8 @@ class EME(object):
             dimensions = (c, y, z) if not (axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]) else (c, x, y, z)
 
             # Create grids
-            grid_x = self.layers[0].mode_solvers.x
-            grid_y = self.layers[0].mode_solvers.y
+            grid_x = self.layers[0].mode_solvers.after_x
+            grid_y = self.layers[0].mode_solvers.after_y
             grid_z = np.linspace(s, e, z)
 
         elif axes in ["xy", "yx"]:
