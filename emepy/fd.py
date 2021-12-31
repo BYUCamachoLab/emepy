@@ -139,6 +139,9 @@ class MSEMpy(ModeSolver):
                 ny=self.y,
             )
 
+        self.after_x = self.x
+        self.after_y = self.y
+
     def solve(self):
         """Solves for the eigenmodes
         """

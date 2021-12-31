@@ -4,7 +4,9 @@ emepy/__init__.py
 emepy/ann.py
 emepy/eme.py
 emepy/fd.py
+emepy/lumerical.py
 emepy/mode.py
+emepy/monitors.py
 emepy/tools.py
 emepy.egg-info/PKG-INFO
 emepy.egg-info/SOURCES.txt

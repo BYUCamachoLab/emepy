@@ -207,6 +207,8 @@ class MSNeuralNetwork(ModeSolver):
         self.num_modes = 1
         self.x = ann.x
         self.y = ann.y
+        self.after_x = 0.5*(self.x[:-1]+self.x[1:])
+        self.after_y = 0.5*(self.y[:-1]+self.y[1:])
         self.mesh = len(self.x) - 1
 
 
