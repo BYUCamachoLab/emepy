@@ -23,6 +23,11 @@ EME
 
    .. automethod:: __init__
 
+.. autoclass:: emepy.lumerical.LumEME
+   :members:
+
+   .. automethod:: __init__
+
 .. autoclass:: emepy.eme.Current
    :members:
 
@@ -56,7 +61,7 @@ ModeSolver
 
    .. automethod:: __init__
 
-.. autoclass:: emepy.fd.MSLumerical
+.. autoclass:: emepy.lumerical.MSLumerical
    :members:
 
    .. automethod:: __init__
@@ -70,6 +75,15 @@ ModeSolver
    :members:
 
    .. automethod:: __init__
+
+Monitors
+--------
+
+.. autoclass:: emepy.monitors.Monitor
+   :members:
+
+   .. automethod:: __init__
+
 
 Neural Network Acceleration
 ---------------------------
@@ -97,3 +111,7 @@ Tools
 .. autofunction:: emepy.tools.Si
 
 .. autofunction:: emepy.tools.SiO2
+
+.. autofunction:: emepy.tools.into_chunks
+
+.. autofunction:: emepy.tools.from_chunks
