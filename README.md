@@ -1,4 +1,4 @@
-# EMEPy v2.0: Eigenmode Expansion Tool for Python 
+# EMEPy 0.2.3 Eigenmode Expansion Tool for Python
 
 ### An open source tool for simulating EM fields in python using the Eigenmode Expansion Method (EME). Employs neural networks as a means for accelerating the cross sectional field profile generation process.
 
@@ -15,7 +15,7 @@ Or collect the most recent publication to pip
 ## Docs
 
 Read the docs [here](https://emepy.readthedocs.io/en/latest/).
-    
+
 ## BibTeX citation
 
     @misc{hammond_emepy_2020,
