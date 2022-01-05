@@ -1,6 +1,6 @@
 # TODO
 
-### Monitors 
+### Monitors
 - Normalize fields
 
 ### Simulation
@@ -22,7 +22,7 @@
 ### Docs
 - All new structures
 - Monitors
-- New Lumerical api 
+- New Lumerical api
 - New custom grid flexibility
 
 ### Coding Standard
@@ -32,5 +32,5 @@
 
 ### Long Term
 - GDS Import
-- GDS Output 
+- GDS Output
 - Inverse Design
