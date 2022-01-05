@@ -8,6 +8,9 @@ examples/benchmarks/taper/*.png
 examples/benchmarks/bragg/*.eps
 examples/benchmarks/bragg/*.png
 
+# vscode
+**.vscode
+
 # pycache
 **/__pycache__
 
