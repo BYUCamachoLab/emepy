@@ -1,7 +1,0 @@
-simphony
-numpy
-matplotlib
-scipy
-sklearn
-pandas
-electromagneticpython@ git+git://github.com/lbolla/EMpy@4bf1b01#egg=electromagneticpython
