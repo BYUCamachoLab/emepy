@@ -5,8 +5,7 @@ from scipy.interpolate import griddata
 
 
 class Monitor(object):
-    """ Monitor objects store fields during propagation for user visualization. Three types of monitors exist: 3D, 2D, and 1D. 
-    """
+    """Monitor objects store fields during propagation for user visualization. Three types of monitors exist: 3D, 2D, and 1D."""
 
     def __init__(
         self,
@@ -25,7 +24,7 @@ class Monitor(object):
         Parameters
         ----------
         axes : string
-            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z. 
+            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z.
         dimensions : tuple
             the spacial dimensions of the resulting field
         lengths : list
@@ -90,14 +89,18 @@ class Monitor(object):
         # Only set item if it's in the valid z_range
         if self.axes in ["xy", "yx"]:
             self.field[subscript] = item
-        elif (self.lengths[0][subscript[-1]] >= self.start) and (self.lengths[0][subscript[-1]] <= self.end):
+        elif (self.lengths[0][subscript[-1]] >= self.start) and (
+            self.lengths[0][subscript[-1]] <= self.end
+        ):
             difference_start = lambda list_value: abs(list_value - self.start)
             s = self.lengths[0].index(min(self.lengths[0], key=difference_start))
             subscript = tuple(list(subscript[:-1]) + [subscript[-1] - s])
             self.field[subscript] = item
 
         if len(self.remaining_lengths[int(subscript[0])]) > 1:
-            self.remaining_lengths[int(subscript[0])] = self.remaining_lengths[int(subscript[0])][1:]
+            self.remaining_lengths[int(subscript[0])] = self.remaining_lengths[
+                int(subscript[0])
+            ][1:]
             self.cur_prop_index[int(subscript[0])] += 1
         else:
             self.remaining_lengths[int(subscript[0])] = []
@@ -109,13 +112,21 @@ class Monitor(object):
     def normalize(self):
         self.field[:-1] /= 1  # np.max(np.abs(self.field[:-1, :, 0]))
 
-    def get_array(self, component="Hy", axes=None, location=None, z_range=None, grid_x=None, grid_y=None):
-        """ Creates a matplotlib axis displaying the provides field component
+    def get_array(
+        self,
+        component="Hy",
+        axes=None,
+        location=None,
+        z_range=None,
+        grid_x=None,
+        grid_y=None,
+    ):
+        """Creates a matplotlib axis displaying the provides field component
 
         Parameters
         ----------
         axes : string
-            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z. 
+            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z.
         component : string
             field component from "['Ex','Ey','Ez','Hx','Hy','Hz','E','H']"
         location : float
@@ -227,9 +238,17 @@ class Monitor(object):
 
         # Create E and H fields
         if component == "E":
-            results["E"] = np.abs(results["Ex"]) ** 2 + np.abs(results["Ey"]) ** 2 + np.abs(results["Ez"]) ** 2
+            results["E"] = (
+                np.abs(results["Ex"]) ** 2
+                + np.abs(results["Ey"]) ** 2
+                + np.abs(results["Ez"]) ** 2
+            )
         if component == "H":
-            results["H"] = np.abs(results["Hx"]) ** 2 + np.abs(results["Hy"]) ** 2 + np.abs(results["Hz"]) ** 2
+            results["H"] = (
+                np.abs(results["Hx"]) ** 2
+                + np.abs(results["Hy"]) ** 2
+                + np.abs(results["Hz"]) ** 2
+            )
 
         # List to return
         grid_field = []
@@ -239,8 +258,12 @@ class Monitor(object):
             aa, bb = np.meshgrid(new_a, new_b)
             aa_old, bb_old = np.meshgrid(old_a, old_b)
             points = np.array((aa_old.flatten(), bb_old.flatten())).T
-            real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
-            imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
+            real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(
+                np.complex128
+            )
+            imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(
+                np.complex128
+            )
             return real + 1j * imag
 
         # Custom 3D interpolation function
@@ -248,9 +271,9 @@ class Monitor(object):
             aa, bb, cc = np.meshgrid(new_a, new_b, new_c)
             aa_old, bb_old, cc_old = np.meshgrid(old_a, old_b, old_c)
             points = np.array((aa_old.flatten(), bb_old.flatten(), cc_old.flatten())).T
-            return griddata(points, np.real(field), (aa, bb, cc)).astype(np.complex128) + 1j * griddata(
-                points, np.real(field), (aa, bb)
-            ).astype(np.complex128)
+            return griddata(points, np.real(field), (aa, bb, cc)).astype(
+                np.complex128
+            ) + 1j * griddata(points, np.real(field), (aa, bb)).astype(np.complex128)
 
         # Add to return list the grid
         if axes in ["xz", "zx"]:
@@ -259,14 +282,18 @@ class Monitor(object):
             grid_field.append(np.array(x))
             grid_field.append(np.array(z))
             if interp_x:
-                results[component] = custom_interp2d(results[component], default_grid_z, default_grid_x, z, x)
+                results[component] = custom_interp2d(
+                    results[component], default_grid_z, default_grid_x, z, x
+                )
         elif axes in ["yz", "zy"]:
             y = default_grid_y if not interp_y else grid_y
             z = default_grid_z
             grid_field.append(np.array(y))
             grid_field.append(np.array(z))
             if interp_y:
-                results[component] = custom_interp2d(results[component], default_grid_z, default_grid_y, z, y)
+                results[component] = custom_interp2d(
+                    results[component], default_grid_z, default_grid_y, z, y
+                )
         elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
             x = default_grid_x if not interp_x else grid_x
             y = default_grid_y if not interp_y else grid_y
@@ -276,7 +303,13 @@ class Monitor(object):
             grid_field.append(np.array(z))
             if interp_x or interp_y:
                 results[component] = custom_interp3d(
-                    results[component], default_grid_x, default_grid_y, default_grid_z, x, y, z
+                    results[component],
+                    default_grid_x,
+                    default_grid_y,
+                    default_grid_z,
+                    x,
+                    y,
+                    z,
                 )
         elif axes in ["xy", "yx"]:
             x = default_grid_x if not interp_x else grid_x
@@ -284,7 +317,9 @@ class Monitor(object):
             grid_field.append(np.array(x))
             grid_field.append(np.array(y))
             if interp_x or interp_y:
-                results[component] = custom_interp2d(results[component], default_grid_x, default_grid_y, x, y)
+                results[component] = custom_interp2d(
+                    results[component], default_grid_x, default_grid_y, x, y
+                )
         else:
             raise Exception("Please choose valid axes")
 
@@ -294,13 +329,13 @@ class Monitor(object):
         return grid_field
 
     def visualize(self, ax=None, component="Hy", axes=None, location=0, z_range=None):
-        """ Creates a matplotlib axis displaying the provides field component
+        """Creates a matplotlib axis displaying the provides field component
 
         Parameters
         ----------
         axes : string
-            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z. 
-        ax : matplotlib axis 
+            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'yz', 'xyz', 'x', 'y', 'z'. Note, propagation is always in z.
+        ax : matplotlib axis
             the axis object created when calling plt.figure() or plt.subplots(), if None (default) then the plt interface will be used
         component : string
             field component from "['Ex','Ey','Ez','Hx','Hy','Hz','E','H']"
@@ -329,7 +364,9 @@ class Monitor(object):
         else:
             raise Exception("Incorrect axes format")
 
-        y, z, field = self.get_array(component=component, axes=axes, location=location, z_range=z_range)
+        y, z, field = self.get_array(
+            component=component, axes=axes, location=location, z_range=z_range
+        )
 
         # Color map lookup table
         cmap_lookup = {
@@ -347,26 +384,41 @@ class Monitor(object):
         # Create plots
         if axes in ["xz", "zx", "yz", "zy"]:
             if ax:
-                im = ax.imshow(np.real(field), extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
+                im = ax.imshow(
+                    np.real(field),
+                    extent=[z[0], z[-1], y[0], y[-1]],
+                    cmap=cmap_lookup[component],
+                )
                 ax.set_xlabel(axes[1])
                 ax.set_ylabel(axes[0])
                 ax.set_title(component)
             else:
-                im = plt.imshow(np.real(field), extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
+                im = plt.imshow(
+                    np.real(field),
+                    extent=[z[0], z[-1], y[0], y[-1]],
+                    cmap=cmap_lookup[component],
+                )
                 plt.xlabel(axes[1])
                 plt.ylabel(axes[0])
                 plt.title(component)
         else:
             if ax:
-                im = ax.imshow(np.real(field).T, extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
+                im = ax.imshow(
+                    np.real(field).T,
+                    extent=[z[0], z[-1], y[0], y[-1]],
+                    cmap=cmap_lookup[component],
+                )
                 ax.set_xlabel(axes[0])
                 ax.set_ylabel(axes[1])
                 ax.set_title(component)
             else:
-                im = plt.imshow(np.real(field).T, extent=[z[0], z[-1], y[0], y[-1]], cmap=cmap_lookup[component])
+                im = plt.imshow(
+                    np.real(field).T,
+                    extent=[z[0], z[-1], y[0], y[-1]],
+                    cmap=cmap_lookup[component],
+                )
                 plt.xlabel(axes[0])
                 plt.ylabel(axes[1])
                 plt.title(component)
 
         return im
-

@@ -4,14 +4,14 @@ import pickle
 import random
 import EMpy
 from emepy import tools
-from EMpy.modesolvers.FD import stretchmesh
 
 
 class Mode(object):
-    """Object that holds the field profiles and effective index for an eigenmode
-    """
+    """Object that holds the field profiles and effective index for an eigenmode"""
 
-    def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n=None, width=None, thickness=None):
+    def __init__(
+        self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n=None, width=None, thickness=None
+    ):
         """Constructor for Mode Object
 
         Parameters
@@ -63,11 +63,20 @@ class Mode(object):
             self.Hy is None,
             self.Hz is None,
         ]:
-            self.H = np.sqrt(np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2)
-            self.E = np.sqrt(np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2)
+            self.H = np.sqrt(
+                np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2
+            )
+            self.E = np.sqrt(
+                np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2
+            )
         if self.n is None:
             eps_func = tools.get_epsfunc(
-                self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+                self.width,
+                self.thickness,
+                2.5e-6,
+                2.5e-6,
+                tools.Si(self.wl * 1e6),
+                tools.SiO2(self.wl * 1e6),
             )
             self.n = eps_func(self.x, self.y)
 
@@ -82,7 +91,12 @@ class Mode(object):
             if true, will show a colorbar for each field
         """
 
-        self /= max([np.abs(np.real(np.amax(i))) for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]])
+        self /= max(
+            [
+                np.abs(np.real(np.amax(i)))
+                for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]
+            ]
+        )
 
         if operation == "Imaginary":
             Hx = np.imag(self.Hx).T
@@ -113,7 +127,9 @@ class Mode(object):
             Ey = np.real(self.Ey).T
             Ez = np.real(self.Ez).T
         else:
-            raise Exception("Invalid operation entered. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real')")
+            raise Exception(
+                "Invalid operation entered. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real')"
+            )
 
         plt.subplot(2, 3, 4, adjustable="box", aspect=Ex.shape[0] / Ex.shape[1])
         v = max(abs(Ex.min()), abs(Ex.max()))
@@ -122,7 +138,12 @@ class Mode(object):
             cmap="RdBu",
             vmin=-v,
             vmax=v,
-            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+            extent=[
+                self.x[0] * 1e6,
+                self.x[-1] * 1e6,
+                self.y[0] * 1e6,
+                self.y[-1] * 1e6,
+            ],
         )
         plt.title(operation + "(Ex)")
         if colorbar:
@@ -137,7 +158,12 @@ class Mode(object):
             cmap="RdBu",
             vmin=-v,
             vmax=v,
-            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+            extent=[
+                self.x[0] * 1e6,
+                self.x[-1] * 1e6,
+                self.y[0] * 1e6,
+                self.y[-1] * 1e6,
+            ],
         )
         plt.title(operation + "(Ey)")
         if colorbar:
@@ -152,7 +178,12 @@ class Mode(object):
             cmap="RdBu",
             vmin=-v,
             vmax=v,
-            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+            extent=[
+                self.x[0] * 1e6,
+                self.x[-1] * 1e6,
+                self.y[0] * 1e6,
+                self.y[-1] * 1e6,
+            ],
         )
         plt.title(operation + "(Ez)")
         if colorbar:
@@ -167,7 +198,12 @@ class Mode(object):
             cmap="RdBu",
             vmin=-v,
             vmax=v,
-            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+            extent=[
+                self.x[0] * 1e6,
+                self.x[-1] * 1e6,
+                self.y[0] * 1e6,
+                self.y[-1] * 1e6,
+            ],
         )
         plt.title(operation + "(Hx)")
         if colorbar:
@@ -182,7 +218,12 @@ class Mode(object):
             cmap="RdBu",
             vmin=-v,
             vmax=v,
-            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+            extent=[
+                self.x[0] * 1e6,
+                self.x[-1] * 1e6,
+                self.y[0] * 1e6,
+                self.y[-1] * 1e6,
+            ],
         )
         plt.title(operation + "(Hy)")
         if colorbar:
@@ -197,7 +238,12 @@ class Mode(object):
             cmap="RdBu",
             vmin=-v,
             vmax=v,
-            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+            extent=[
+                self.x[0] * 1e6,
+                self.x[-1] * 1e6,
+                self.y[0] * 1e6,
+                self.y[-1] * 1e6,
+            ],
         )
         plt.title(operation + "(Hz)")
         if colorbar:
@@ -213,13 +259,13 @@ class Mode(object):
         Parameters
         ----------
         mode1 : Mode
-            first eigenmode in the operation 
+            first eigenmode in the operation
         mode2 : Mode
             second eigenmode in the operation
 
         Returns
         -------
-        number 
+        number
             the inner product between the two input modes
         """
 
@@ -240,7 +286,9 @@ class Mode(object):
         cross = cross.reshape((size, size))
 
         # cross = mode1.Ex * np.conj(mode2.Hy) - mode1.Ey * np.conj(mode2.Hx)
-        return np.trapz(np.trapz(cross, mode1.x), mode1.y)  # /np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
+        return np.trapz(
+            np.trapz(cross, mode1.x), mode1.y
+        )  # /np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
 
     def inner_product(self, mode2):
         """Takes the inner product between self and the provided Mode
@@ -252,7 +300,7 @@ class Mode(object):
 
         Returns
         -------
-        number 
+        number
             the inner product between the modes
         """
 
@@ -336,16 +384,14 @@ class Mode(object):
         return self
 
     def normalize(self):
-        """Normalizes the Mode to power 1.
-        """
+        """Normalizes the Mode to power 1."""
         self.zero_phase()
         factor = self.inner_product(self)
         self /= np.sqrt(factor)
         return
 
     def zero_phase(self):
-        """Changes the phase such that the z components are all imaginary and the xy components are all real.
-        """
+        """Changes the phase such that the z components are all imaginary and the xy components are all real."""
 
         index = int(self.Hy.shape[0] / 2)
         phase = np.angle(np.array(self.Hy))[index][index]
@@ -354,32 +400,27 @@ class Mode(object):
             self *= -1
 
     def get_fields(self):
-        """Returns an array [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez].
-        """
+        """Returns an array [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez]."""
 
         return [self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez]
 
     def get_H(self):
-        """Returns an array [self.Hx, self.Hy, self.Hz].
-        """
+        """Returns an array [self.Hx, self.Hy, self.Hz]."""
 
         return [self.Hx, self.Hy, self.Hz]
 
     def get_E(self):
-        """Returns an array [self.Ex, self.Ey, self.Ez].
-        """
+        """Returns an array [self.Ex, self.Ey, self.Ez]."""
 
         return [self.Ex, self.Ey, self.Ez]
 
     def get_neff(self):
-        """Returns the effective index as a complex number.
-        """
+        """Returns the effective index as a complex number."""
 
         return self.neff
 
     def get_wavelength(self):
-        """Returns the wavelength.
-        """
+        """Returns the wavelength."""
 
         return self.wl
 
@@ -388,20 +429,30 @@ class Mode(object):
 
         Parameters
         ----------
-        path : string 
+        path : string
             The path (including name) to save the file.
         """
 
         if path:
             pickle.dump(self, open(path, "wb+"))
         else:
-            pickle.dump(self, open("./ModeObject_" + str(random.random()) + ".pk", "wb+"))
+            pickle.dump(
+                self, open("./ModeObject_" + str(random.random()) + ".pk", "wb+")
+            )
 
     def plot_material(self):
         """Plots the index of refraction profile"""
         n = self.n
 
-        plt.imshow(np.sqrt(np.real(n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6])
+        plt.imshow(
+            np.sqrt(np.real(n)).T,
+            extent=[
+                self.x[0] * 1e6,
+                self.x[-1] * 1e6,
+                self.y[0] * 1e6,
+                self.y[-1] * 1e6,
+            ],
+        )
         plt.colorbar()
         plt.title("Index of Refraction")
         plt.xlabel("x (µm)")
@@ -639,14 +690,20 @@ class Mode(object):
                     * (
                         0.5
                         * ezz4
-                        * ((1 - exx1 / ezz1) / n / w - exy1 / ezz1 * (2.0 / n ** 2 - 2 / n ** 2 * s / (n + s)))
+                        * (
+                            (1 - exx1 / ezz1) / n / w
+                            - exy1 / ezz1 * (2.0 / n ** 2 - 2 / n ** 2 * s / (n + s))
+                        )
                         / exx1
                         * ezz1
                         * w
                         + (ezz4 - ezz1) * s / n / (n + s)
                         + 0.5
                         * ezz1
-                        * (-(1 - exx4 / ezz4) / n / e - exy4 / ezz4 * (2.0 / n ** 2 - 2 / n ** 2 * s / (n + s)))
+                        * (
+                            -(1 - exx4 / ezz4) / n / e
+                            - exy4 / ezz4 * (2.0 / n ** 2 - 2 / n ** 2 * s / (n + s))
+                        )
                         / exx4
                         * ezz4
                         * e
@@ -714,14 +771,20 @@ class Mode(object):
                     * (
                         0.5
                         * ezz3
-                        * (-(1 - exx2 / ezz2) / s / w - exy2 / ezz2 * (2.0 / s ** 2 - 2 / s ** 2 * n / (n + s)))
+                        * (
+                            -(1 - exx2 / ezz2) / s / w
+                            - exy2 / ezz2 * (2.0 / s ** 2 - 2 / s ** 2 * n / (n + s))
+                        )
                         / exx2
                         * ezz2
                         * w
                         - (ezz3 - ezz2) * n / s / (n + s)
                         + 0.5
                         * ezz2
-                        * ((1 - exx3 / ezz3) / s / e - exy3 / ezz3 * (2.0 / s ** 2 - 2 / s ** 2 * n / (n + s)))
+                        * (
+                            (1 - exx3 / ezz3) / s / e
+                            - exy3 / ezz3 * (2.0 / s ** 2 - 2 / s ** 2 * n / (n + s))
+                        )
                         / exx3
                         * ezz3
                         * e
@@ -746,7 +809,12 @@ class Mode(object):
                 (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
                 * (
                     0.5 * n * ezz4 * ezz3 / eyy4 * (2.0 / e ** 2 - eyx4 / ezz4 / n / e)
-                    + 0.5 * s * ezz3 * ezz4 / eyy3 * (2.0 / e ** 2 + eyx3 / ezz3 / s / e)
+                    + 0.5
+                    * s
+                    * ezz3
+                    * ezz4
+                    / eyy3
+                    * (2.0 / e ** 2 + eyx3 / ezz3 / s / e)
                 )
                 / ezz4
                 / ezz3
@@ -796,7 +864,12 @@ class Mode(object):
                 (-n * ezz4 * ezz3 / eyy4 - s * ezz3 * ezz4 / eyy3)
                 * (
                     0.5 * n * ezz1 * ezz2 / eyy1 * (2.0 / w ** 2 + eyx1 / ezz1 / n / w)
-                    + 0.5 * s * ezz2 * ezz1 / eyy2 * (2.0 / w ** 2 - eyx2 / ezz2 / s / w)
+                    + 0.5
+                    * s
+                    * ezz2
+                    * ezz1
+                    / eyy2
+                    * (2.0 / w ** 2 - eyx2 / ezz2 / s / w)
                 )
                 / ezz4
                 / ezz3
@@ -812,7 +885,13 @@ class Mode(object):
                 * eyy2
                 * e
                 + (
-                    0.5 * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e) * ezz4 * (1 - exx1 / ezz1) / n / exx1 * ezz1
+                    0.5
+                    * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
+                    * ezz4
+                    * (1 - exx1 / ezz1)
+                    / n
+                    / exx1
+                    * ezz1
                     + 0.5
                     * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
                     * ezz3
@@ -845,13 +924,23 @@ class Mode(object):
                         * ezz1
                         * ezz2
                         / eyy1
-                        * (-2.0 / w ** 2 - 2 * eyy1 / ezz1 / n ** 2 + k ** 2 * eyy1 - eyx1 / ezz1 / n / w)
+                        * (
+                            -2.0 / w ** 2
+                            - 2 * eyy1 / ezz1 / n ** 2
+                            + k ** 2 * eyy1
+                            - eyx1 / ezz1 / n / w
+                        )
                         + 0.5
                         * s
                         * ezz2
                         * ezz1
                         / eyy2
-                        * (-2.0 / w ** 2 - 2 * eyy2 / ezz2 / s ** 2 + k ** 2 * eyy2 + eyx2 / ezz2 / s / w)
+                        * (
+                            -2.0 / w ** 2
+                            - 2 * eyy2 / ezz2 / s ** 2
+                            + k ** 2 * eyy2
+                            + eyx2 / ezz2 / s / w
+                        )
                     )
                     + (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
                     * (
@@ -860,13 +949,23 @@ class Mode(object):
                         * ezz4
                         * ezz3
                         / eyy4
-                        * (-2.0 / e ** 2 - 2 * eyy4 / ezz4 / n ** 2 + k ** 2 * eyy4 + eyx4 / ezz4 / n / e)
+                        * (
+                            -2.0 / e ** 2
+                            - 2 * eyy4 / ezz4 / n ** 2
+                            + k ** 2 * eyy4
+                            + eyx4 / ezz4 / n / e
+                        )
                         + 0.5
                         * s
                         * ezz3
                         * ezz4
                         / eyy3
-                        * (-2.0 / e ** 2 - 2 * eyy3 / ezz3 / s ** 2 + k ** 2 * eyy3 - eyx3 / ezz3 / s / e)
+                        * (
+                            -2.0 / e ** 2
+                            - 2 * eyy3 / ezz3 / s ** 2
+                            + k ** 2 * eyy3
+                            - eyx3 / ezz3 / s / e
+                        )
                     )
                 )
                 / ezz4
@@ -888,7 +987,7 @@ class Mode(object):
                         0.5
                         * ezz4
                         * (
-                            -k ** 2 * exy1
+                            -(k ** 2) * exy1
                             - (1 - exx1 / ezz1) / n / w
                             - exy1 / ezz1 * (-2.0 / n ** 2 - 2 / n ** 2 * (n - s) / s)
                         )
@@ -899,7 +998,7 @@ class Mode(object):
                         + 0.5
                         * ezz1
                         * (
-                            -k ** 2 * exy4
+                            -(k ** 2) * exy4
                             + (1 - exx4 / ezz4) / n / e
                             - exy4 / ezz4 * (-2.0 / n ** 2 - 2 / n ** 2 * (n - s) / s)
                         )
@@ -912,7 +1011,7 @@ class Mode(object):
                         0.5
                         * ezz3
                         * (
-                            -k ** 2 * exy2
+                            -(k ** 2) * exy2
                             + (1 - exx2 / ezz2) / s / w
                             - exy2 / ezz2 * (-2.0 / s ** 2 + 2 / s ** 2 * (n - s) / n)
                         )
@@ -923,7 +1022,7 @@ class Mode(object):
                         + 0.5
                         * ezz2
                         * (
-                            -k ** 2 * exy3
+                            -(k ** 2) * exy3
                             - (1 - exx3 / ezz3) / s / e
                             - exy3 / ezz3 * (-2.0 / s ** 2 + 2 / s ** 2 * (n - s) / n)
                         )
@@ -1092,7 +1191,12 @@ class Mode(object):
                 + (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
                 * (
                     0.5 * ezz4 * (2.0 / n ** 2 + exy1 / ezz1 / n / w) / exx1 * ezz1 * w
-                    + 0.5 * ezz1 * (2.0 / n ** 2 - exy4 / ezz4 / n / e) / exx4 * ezz4 * e
+                    + 0.5
+                    * ezz1
+                    * (2.0 / n ** 2 - exy4 / ezz4 / n / e)
+                    / exx4
+                    * ezz4
+                    * e
                 )
                 / ezz3
                 / ezz2
@@ -1142,7 +1246,12 @@ class Mode(object):
                 - (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
                 * (
                     0.5 * ezz3 * (2.0 / s ** 2 - exy2 / ezz2 / s / w) / exx2 * ezz2 * w
-                    + 0.5 * ezz2 * (2.0 / s ** 2 + exy3 / ezz3 / s / e) / exx3 * ezz3 * e
+                    + 0.5
+                    * ezz2
+                    * (2.0 / s ** 2 + exy3 / ezz3 / s / e)
+                    / exx3
+                    * ezz3
+                    * e
                 )
                 / ezz3
                 / ezz2
@@ -1174,13 +1283,19 @@ class Mode(object):
                         * ezz4
                         * ezz3
                         / eyy4
-                        * (-(1 - eyy4 / ezz4) / n / e - eyx4 / ezz4 * (2.0 / e ** 2 - 2 / e ** 2 * w / (e + w)))
+                        * (
+                            -(1 - eyy4 / ezz4) / n / e
+                            - eyx4 / ezz4 * (2.0 / e ** 2 - 2 / e ** 2 * w / (e + w))
+                        )
                         + 0.5
                         * s
                         * ezz3
                         * ezz4
                         / eyy3
-                        * ((1 - eyy3 / ezz3) / s / e - eyx3 / ezz3 * (2.0 / e ** 2 - 2 / e ** 2 * w / (e + w)))
+                        * (
+                            (1 - eyy3 / ezz3) / s / e
+                            - eyx3 / ezz3 * (2.0 / e ** 2 - 2 / e ** 2 * w / (e + w))
+                        )
                         + (ezz4 - ezz3) * w / e / (e + w)
                     )
                 )
@@ -1237,14 +1352,20 @@ class Mode(object):
                         * ezz1
                         * ezz2
                         / eyy1
-                        * ((1 - eyy1 / ezz1) / n / w - eyx1 / ezz1 * (2.0 / w ** 2 - 2 / w ** 2 * e / (e + w)))
+                        * (
+                            (1 - eyy1 / ezz1) / n / w
+                            - eyx1 / ezz1 * (2.0 / w ** 2 - 2 / w ** 2 * e / (e + w))
+                        )
                         - (ezz1 - ezz2) * e / w / (e + w)
                         + 0.5
                         * s
                         * ezz2
                         * ezz1
                         / eyy2
-                        * (-(1 - eyy2 / ezz2) / s / w - eyx2 / ezz2 * (2.0 / w ** 2 - 2 / w ** 2 * e / (e + w)))
+                        * (
+                            -(1 - eyy2 / ezz2) / s / w
+                            - eyx2 / ezz2 * (2.0 / w ** 2 - 2 / w ** 2 * e / (e + w))
+                        )
                     )
                     + (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
                     * (
@@ -1307,7 +1428,7 @@ class Mode(object):
                         * ezz2
                         / eyy1
                         * (
-                            -k ** 2 * eyx1
+                            -(k ** 2) * eyx1
                             - (1 - eyy1 / ezz1) / n / w
                             - eyx1 / ezz1 * (-2.0 / w ** 2 + 2 / w ** 2 * (e - w) / e)
                         )
@@ -1318,7 +1439,7 @@ class Mode(object):
                         * ezz1
                         / eyy2
                         * (
-                            -k ** 2 * eyx2
+                            -(k ** 2) * eyx2
                             + (1 - eyy2 / ezz2) / s / w
                             - eyx2 / ezz2 * (-2.0 / w ** 2 + 2 / w ** 2 * (e - w) / e)
                         )
@@ -1331,7 +1452,7 @@ class Mode(object):
                         * ezz3
                         / eyy4
                         * (
-                            -k ** 2 * eyx4
+                            -(k ** 2) * eyx4
                             + (1 - eyy4 / ezz4) / n / e
                             - eyx4 / ezz4 * (-2.0 / e ** 2 - 2 / e ** 2 * (e - w) / w)
                         )
@@ -1341,7 +1462,7 @@ class Mode(object):
                         * ezz4
                         / eyy3
                         * (
-                            -k ** 2 * eyx3
+                            -(k ** 2) * eyx3
                             - (1 - eyy3 / ezz3) / s / e
                             - eyx3 / ezz3 * (-2.0 / e ** 2 - 2 / e ** 2 * (e - w) / w)
                         )
@@ -1366,13 +1487,23 @@ class Mode(object):
                     * (
                         0.5
                         * ezz4
-                        * (-2.0 / n ** 2 - 2 * exx1 / ezz1 / w ** 2 + k ** 2 * exx1 - exy1 / ezz1 / n / w)
+                        * (
+                            -2.0 / n ** 2
+                            - 2 * exx1 / ezz1 / w ** 2
+                            + k ** 2 * exx1
+                            - exy1 / ezz1 / n / w
+                        )
                         / exx1
                         * ezz1
                         * w
                         + 0.5
                         * ezz1
-                        * (-2.0 / n ** 2 - 2 * exx4 / ezz4 / e ** 2 + k ** 2 * exx4 + exy4 / ezz4 / n / e)
+                        * (
+                            -2.0 / n ** 2
+                            - 2 * exx4 / ezz4 / e ** 2
+                            + k ** 2 * exx4
+                            + exy4 / ezz4 / n / e
+                        )
                         / exx4
                         * ezz4
                         * e
@@ -1381,13 +1512,23 @@ class Mode(object):
                     * (
                         0.5
                         * ezz3
-                        * (-2.0 / s ** 2 - 2 * exx2 / ezz2 / w ** 2 + k ** 2 * exx2 + exy2 / ezz2 / s / w)
+                        * (
+                            -2.0 / s ** 2
+                            - 2 * exx2 / ezz2 / w ** 2
+                            + k ** 2 * exx2
+                            + exy2 / ezz2 / s / w
+                        )
                         / exx2
                         * ezz2
                         * w
                         + 0.5
                         * ezz2
-                        * (-2.0 / s ** 2 - 2 * exx3 / ezz3 / e ** 2 + k ** 2 * exx3 - exy3 / ezz3 / s / e)
+                        * (
+                            -2.0 / s ** 2
+                            - 2 * exx3 / ezz3 / e ** 2
+                            + k ** 2 * exx3
+                            - exy3 / ezz3 / s / e
+                        )
                         / exx3
                         * ezz3
                         * e
@@ -1551,12 +1692,12 @@ class Mode(object):
             v = n.reshape(nx, ny)[:-1, :-1]
 
             # in xc e yc
-            Dx = neff * EMpy.utils.centered2d(Hy) + (Hz[:-1, 1:] + Hz[1:, 1:] - Hz[:-1, :-1] - Hz[1:, :-1]) / (
-                2j * k * v
-            )
-            Dy = -neff * EMpy.utils.centered2d(Hx) - (Hz[1:, :-1] + Hz[1:, 1:] - Hz[:-1, 1:] - Hz[:-1, :-1]) / (
-                2j * k * h
-            )
+            Dx = neff * EMpy.utils.centered2d(Hy) + (
+                Hz[:-1, 1:] + Hz[1:, 1:] - Hz[:-1, :-1] - Hz[1:, :-1]
+            ) / (2j * k * v)
+            Dy = -neff * EMpy.utils.centered2d(Hx) - (
+                Hz[1:, :-1] + Hz[1:, 1:] - Hz[:-1, 1:] - Hz[:-1, :-1]
+            ) / (2j * k * h)
             Dz = (
                 (Hy[1:, :-1] + Hy[1:, 1:] - Hy[:-1, 1:] - Hy[:-1, :-1]) / (2 * h)
                 - (Hx[:-1, 1:] + Hx[1:, 1:] - Hx[:-1, :-1] - Hx[1:, :-1]) / (2 * v)
@@ -1573,7 +1714,9 @@ class Mode(object):
 
         self.Hx = (Hx[1:, 1:] + Hx[1:, :-1] + Hx[:-1, 1:] + Hx[:-1, :-1]) / 4.0 + 0j
         self.Hy = (Hy[1:, 1:] + Hy[1:, :-1] + Hy[:-1, 1:] + Hy[:-1, :-1]) / 4.0 + 0j
-        self.Hz = (Hzs[0][1:, 1:] + Hzs[0][1:, :-1] + Hzs[0][:-1, 1:] + Hzs[0][:-1, :-1]) / 4.0 + 0j
+        self.Hz = (
+            Hzs[0][1:, 1:] + Hzs[0][1:, :-1] + Hzs[0][:-1, 1:] + Hzs[0][:-1, :-1]
+        ) / 4.0 + 0j
         self.Ex = Exs[0]
         self.Ey = Eys[0]
         self.Ez = Ezs[0]
@@ -1581,10 +1724,19 @@ class Mode(object):
         self.y = (self.y[1:] + self.y[:-1]) / 2.0
         self.x = self.x - self.x[int(len(self.x) / 2)]
         self.y = self.y - self.y[int(len(self.y) / 2)]
-        self.H = np.sqrt(np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2)
-        self.E = np.sqrt(np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2)
+        self.H = np.sqrt(
+            np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2
+        )
+        self.E = np.sqrt(
+            np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2
+        )
         eps_func = tools.get_epsfunc(
-            self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+            self.width,
+            self.thickness,
+            2.5e-6,
+            2.5e-6,
+            tools.Si(self.wl * 1e6),
+            tools.SiO2(self.wl * 1e6),
         )
         self.n = eps_func(self.x, self.y)
 
@@ -1598,8 +1750,7 @@ class Mode(object):
         tmp = self.epsfunc(xc, yc)
 
         def _reshape(tmp):
-            """pads the array by duplicating edge values
-            """
+            """pads the array by duplicating edge values"""
             tmp = np.c_[tmp[:, 0:1], tmp, tmp[:, -1:]]
             tmp = np.r_[tmp[0:1, :], tmp, tmp[-1:, :]]
             return tmp
@@ -1621,4 +1772,3 @@ class Mode(object):
             raise ValueError("Invalid eps")
 
         return epsxx, epsxy, epsyx, epsyy, epszz
-
