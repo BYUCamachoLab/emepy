@@ -1,17 +1,25 @@
 import numpy as np
-import pandas as pd
 import scipy
 from EMpy.modesolvers.FD import stretchmesh
-import pickle as pk
 import os
-from matplotlib import pyplot as plt
 from scipy.interpolate import griddata
 
-def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index, cladding_index, compute=False,profile=None,nx=None,ny=None):
-    """Returns the epsfunc for given parameters
-    """
 
-    # Case 1 : width and thickness are defined 
+def get_epsfunc(
+    width,
+    thickness,
+    cladding_width,
+    cladding_thickness,
+    core_index,
+    cladding_index,
+    compute=False,
+    profile=None,
+    nx=None,
+    ny=None,
+):
+    """Returns the epsfunc for given parameters"""
+
+    # Case 1 : width and thickness are defined
     def epsfunc_1(x_, y_):
         """Return a matrix describing a 2d material.
 
@@ -55,23 +63,26 @@ def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index
         n = profile
         xx, yy = np.meshgrid(x_, y_)
         n = np.interp(x_, nx, n).astype(complex)
-        n = np.repeat(n, len(y_)).reshape((len(n),len(y_)))
-        n = np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j) ** 2
-         
-        return n 
+        n = np.repeat(n, len(y_)).reshape((len(n), len(y_)))
+        n = (
+            np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j)
+            ** 2
+        )
+
+        return n
 
     # Case 3 : 2D n is defined
     def epsfunc_3(x_, y_):
 
         xxn, yyn = np.meshgrid(nx, ny)
-        points = np.array( (xxn.flatten(), yyn.flatten()) ).T
+        points = np.array((xxn.flatten(), yyn.flatten())).T
         n = profile.flatten()
         xx, yy = np.meshgrid(x_, y_)
-        n_real = griddata( points, np.real(n), (xx,yy) )
-        n_imag = griddata( points, np.imag(n), (xx,yy) )
-        n = (n_real+1j*n_imag) ** 2
-         
-        return n 
+        n_real = griddata(points, np.real(n), (xx, yy))
+        n_imag = griddata(points, np.imag(n), (xx, yy))
+        n = (n_real + 1j * n_imag) ** 2
+
+        return n
 
     if not (width is None) and not (thickness is None):
         return epsfunc_1
@@ -82,7 +93,9 @@ def get_epsfunc(width, thickness, cladding_width, cladding_thickness, core_index
     elif (width is None) and (thickness is None) and not (profile is None):
         return epsfunc_3
 
-    raise Exception("Need to provide width & thickness, or 1D profile and thickness, or 2D profile")
+    raise Exception(
+        "Need to provide width & thickness, or 1D profile and thickness, or 2D profile"
+    )
 
 
 Si_lambda = [
@@ -373,7 +386,7 @@ SiO2_n = [
 def Si(wavelength):
     """Return the refractive index for Silicon given the wavelength in microns.
 
-    Parameters 
+    Parameters
     ----------
     wavelength : number
         wavelength (microns)
@@ -393,7 +406,7 @@ def SiO2(wavelength):
 
     Parameters
     ----------
-    wavelength : number 
+    wavelength : number
         the optical wavelength (microns)
 
     Returns
@@ -417,15 +430,16 @@ def into_chunks(location, name, chunk_size=20000000):
         the name of the serialized smaller components (will have _chunk_# appended to it)
     """
     CHUNK_SIZE = chunk_size
-    f = open(location, 'rb')
+    f = open(location, "rb")
     chunk = f.read(CHUNK_SIZE)
     count = 0
-    while chunk: #loop until the chunk is empty (the file is exhausted)
-        with open(name + '_chunk_' + str(count), 'wb+') as w:
+    while chunk:  # loop until the chunk is empty (the file is exhausted)
+        with open(name + "_chunk_" + str(count), "wb+") as w:
             w.write(chunk)
         count += 1
-        chunk = f.read(CHUNK_SIZE) #read the next chunk
+        chunk = f.read(CHUNK_SIZE)  # read the next chunk
     f.close()
+
 
 def from_chunks(location, name):
     """Takes a directory of serialized chunks that were made using into_chunks and combines them back into a large serialized file
@@ -433,16 +447,16 @@ def from_chunks(location, name):
     Parameters
     ----------
     location : string
-        the path of the directory where the chunks are located 
+        the path of the directory where the chunks are located
     name : string
         the name of the serialized file to create (make sure to include file extension if it matters)
     """
     if location[-1] != "/":
         location += "/"
-    f = open(name, 'wb+')
+    f = open(name, "wb+")
     direc = os.listdir(location)
     keys = [int(d[9:]) for d in direc]
     dic = dict(zip(keys, direc))
-    for i in sorted (dic):
-        f.write(open(location+dic[i], 'rb').read())
+    for i in sorted(dic):
+        f.write(open(location + dic[i], "rb").read())
     f.close()

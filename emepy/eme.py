@@ -1,7 +1,6 @@
 import numpy as np
 from simphony import Model
 from simphony.pins import Pin
-from simphony.tools import wl2freq
 from simphony.models import Subcircuit
 from matplotlib import pyplot as plt
 from emepy.monitors import Monitor
@@ -9,16 +8,15 @@ from copy import copy
 
 
 class Layer(object):
-    """Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures.
-    """
+    """Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures."""
 
     def __init__(self, mode_solvers, num_modes, wavelength, length):
         """Layer class constructor
-        
+
         Parameters
         ----------
         mode_solvers : list [tuple (ModeSolver, int)], Modesolver
-            List of tuples that contain ModeSolver objects and the number of modes that corresponds to each. Should be in order from fundamental mode to least significant mode. If only one ModeSolver is needed, can simply be that object instead of a list. 
+            List of tuples that contain ModeSolver objects and the number of modes that corresponds to each. Should be in order from fundamental mode to least significant mode. If only one ModeSolver is needed, can simply be that object instead of a list.
         num_modes : int
             Number of total modes for the layer.
         wavelength : number
@@ -34,8 +32,7 @@ class Layer(object):
         self.activated_layer = None
 
     def activate_layer(self):
-        """Solves for the modes in the layer and creates an ActivatedLayer object
-        """
+        """Solves for the modes in the layer and creates an ActivatedLayer object"""
 
         modes = []
 
@@ -53,7 +50,7 @@ class Layer(object):
         self.activated_layer = ActivatedLayer(modes, self.wavelength, self.length)
 
     def get_activated_layer(self):
-        """Gets the activated layer if it exists or calls activate_layer first 
+        """Gets the activated layer if it exists or calls activate_layer first
 
         Returns
         -------
@@ -83,8 +80,7 @@ class Layer(object):
 
 
 class EME(object):
-    """The EME class is the heart of the package. It provides the algorithm that cascades sections modes together to provide the s-parameters for a geometric structure. The object is dependent on the Layer objects that are fed inside.
-    """
+    """The EME class is the heart of the package. It provides the algorithm that cascades sections modes together to provide the s-parameters for a geometric structure. The object is dependent on the Layer objects that are fed inside."""
 
     def __init__(self, layers=[], num_periods=1):
         """EME class constructor
@@ -115,8 +111,7 @@ class EME(object):
         self.layers.append(layer)
 
     def reset(self, full_reset=True):
-        """Clears out the layers and s params so the user can reuse the object in memory on a new geometry
-        """
+        """Clears out the layers and s params so the user can reuse the object in memory on a new geometry"""
 
         if full_reset:
             self.layers = []
@@ -130,13 +125,13 @@ class EME(object):
         self.monitors = []
 
     def propagate_period(self, input_array):
-        """The propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values. 
+        """The propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values.
 
         Returns
         -------
         s_params
             The s_params acquired during propagation
-            
+
         mode_set1
             The set of Mode objects that were solved for on the input layer
 
@@ -152,13 +147,21 @@ class EME(object):
 
         # Update the monitors
         self.update_monitors(
-            self.layers[0].length, self.layers[0].length, mode_set1, not_first=False, input_array=input_array
+            self.layers[0].length,
+            self.layers[0].length,
+            mode_set1,
+            not_first=False,
+            input_array=input_array,
         )
 
-        interface = self.interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
+        interface = self.interface(
+            self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer()
+        )
         interface.solve()
         self.layers[0].clear()
-        current.update_s(self.cascade(Current(self.wavelength, current), interface), interface)
+        current.update_s(
+            self.cascade(Current(self.wavelength, current), interface), interface
+        )
         interface.clear()
 
         # Propagate the middle layers
@@ -173,15 +176,23 @@ class EME(object):
 
             # Update the monitors
             self.update_monitors(
-                self.layers[index].length, self.layers[index].length, layer1, current, input_array=input_array
+                self.layers[index].length,
+                self.layers[index].length,
+                layer1,
+                current,
+                input_array=input_array,
             )
 
             interface = self.interface(layer1, layer2)
             interface.solve()
 
-            current.update_s(self.cascade(Current(self.wavelength, current), layer1), layer1)
+            current.update_s(
+                self.cascade(Current(self.wavelength, current), layer1), layer1
+            )
             layer1_.clear()
-            current.update_s(self.cascade(Current(self.wavelength, current), interface), interface)
+            current.update_s(
+                self.cascade(Current(self.wavelength, current), interface), interface
+            )
             interface.clear()
 
         # Gather and return the s params and edge layers
@@ -189,12 +200,18 @@ class EME(object):
 
         # Update the monitors
         self.update_monitors(
-            self.layers[-1].length, self.layers[-1].length, mode_set2, current, input_array=input_array
+            self.layers[-1].length,
+            self.layers[-1].length,
+            mode_set2,
+            current,
+            input_array=input_array,
         )
 
         # Propagate final two layers
         current.update_s(
-            self.cascade(Current(self.wavelength, current), self.layers[-1].get_activated_layer()),
+            self.cascade(
+                Current(self.wavelength, current), self.layers[-1].get_activated_layer()
+            ),
             self.layers[-1].get_activated_layer(),
         )
 
@@ -215,7 +232,15 @@ class EME(object):
         """
 
         if input_array is None:
-            input_array = np.array([1] + [0 for i in range(self.layers[0].num_modes - 1 + self.layers[-1].num_modes)])
+            input_array = np.array(
+                [1]
+                + [
+                    0
+                    for i in range(
+                        self.layers[0].num_modes - 1 + self.layers[-1].num_modes
+                    )
+                ]
+            )
 
         # Check for layers
         if not len(self.layers):
@@ -264,17 +289,24 @@ class EME(object):
     def get_field(self, mode_set, m, c, curr_s, input_array):
         # Eigenvalues of all the modes
         eigenvalues = np.array(
-            [(2 * np.pi) * mode_set.modes[i].neff / (self.wavelength) for i in range(len(mode_set.modes))]
+            [
+                (2 * np.pi) * mode_set.modes[i].neff / (self.wavelength)
+                for i in range(len(mode_set.modes))
+            ]
         ).astype(np.complex128)
 
         # Phase propagation from the last interfact until the current position
         phase_prop = np.exp(
-            (self.monitors[m].remaining_lengths[c][0] - self.monitors[m].cur_length[c]) * 1j * eigenvalues
+            (self.monitors[m].remaining_lengths[c][0] - self.monitors[m].cur_length[c])
+            * 1j
+            * eigenvalues
         )
 
         # S parameters from mode overlaps and phase prop from previous layers
         if not (curr_s is None):
-            interface_prop = np.matmul(curr_s.s_parameters()[0], input_array)[-len(phase_prop) :]
+            interface_prop = np.matmul(curr_s.s_parameters()[0], input_array)[
+                -len(phase_prop) :
+            ]
         else:
             interface_prop = input_array[: len(phase_prop)]
 
@@ -286,19 +318,34 @@ class EME(object):
             field = getattr(mode_set.modes[0], self.monitors[m].components[c])
         else:
             # Combine the coefficient defined linear combination of modes to get the field profile
-            field = getattr(mode_set.modes[0], self.monitors[m].components[c]) * mode_coefficients[0]
+            field = (
+                getattr(mode_set.modes[0], self.monitors[m].components[c])
+                * mode_coefficients[0]
+            )
             for i in range(1, len(mode_set.modes)):
-                field += getattr(mode_set.modes[i], self.monitors[m].components[c]) * mode_coefficients[i]
+                field += (
+                    getattr(mode_set.modes[i], self.monitors[m].components[c])
+                    * mode_coefficients[i]
+                )
 
         return field
 
     def update_monitors(
-        self, location_bonus, adder, mode_set, curr_s=None, not_first=True, input_array=None, periodic=None
+        self,
+        location_bonus,
+        adder,
+        mode_set,
+        curr_s=None,
+        not_first=True,
+        input_array=None,
+        periodic=None,
     ):
 
         # Update the monitors
         for m in range(len(self.monitors)):  # Loop the monitors
-            for c in range(len(self.monitors[m].components)):  # Loop the field components
+            for c in range(
+                len(self.monitors[m].components)
+            ):  # Loop the field components
 
                 if not (periodic is None):
                     location = (periodic + 2) * self.get_total_length()
@@ -329,9 +376,12 @@ class EME(object):
                         # If periodic and the correct length is
                         for n in range(self.num_periods):
                             if (
-                                self.monitors[m].cur_length[c] + n * self.get_total_length()
+                                self.monitors[m].cur_length[c]
+                                + n * self.get_total_length()
                                 <= self.monitors[m].lengths[0]
-                                <= self.monitors[m].cur_length[c] + adder + n * self.get_total_length()
+                                <= self.monitors[m].cur_length[c]
+                                + adder
+                                + n * self.get_total_length()
                             ):
                                 self.monitors[m].layers[0] = mode_set
                 else:
@@ -349,7 +399,8 @@ class EME(object):
                         if not (periodic is None):
                             mode_set = self.monitors[m].layers[
                                 round(
-                                    self.monitors[m].remaining_lengths[c][0] - (periodic + 1) * self.get_total_length(),
+                                    self.monitors[m].remaining_lengths[c][0]
+                                    - (periodic + 1) * self.get_total_length(),
                                     14,
                                 )
                             ]
@@ -367,15 +418,19 @@ class EME(object):
 
                         # Save solved field profiles for referencing from repeated layers
                         if periodic is None:
-                            self.monitors[m].layers[round(self.monitors[m].remaining_lengths[c][0], 14)] = copy(
-                                mode_set
-                            )
+                            self.monitors[m].layers[
+                                round(self.monitors[m].remaining_lengths[c][0], 14)
+                            ] = copy(mode_set)
 
                         # Finally, update the monitor
                         if self.monitors[m].axes in ["xz", "yz"]:
-                            self.monitors[m][c, 0:y, self.monitors[m].cur_prop_index[c]] = field
+                            self.monitors[m][
+                                c, 0:y, self.monitors[m].cur_prop_index[c]
+                            ] = field
                         else:
-                            self.monitors[m][c, 0:x, 0:y, self.monitors[m].cur_prop_index[c]] = field
+                            self.monitors[m][
+                                c, 0:x, 0:y, self.monitors[m].cur_prop_index[c]
+                            ] = field
 
                 # Update the current length
                 self.monitors[m].cur_length[c] += adder
@@ -410,7 +465,7 @@ class EME(object):
         return first.circuit.s_parameters(np.array([self.wavelength]))
 
     def s_parameters(self, freqs=None):
-        """Returns the s_parameters if they exist. If they don't exist yet, propagate() will be called first. 
+        """Returns the s_parameters if they exist. If they don't exist yet, propagate() will be called first.
 
         Returns
         -------
@@ -432,14 +487,14 @@ class EME(object):
         Parameters
         ----------
         axes : string
-            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'xz', 'xyz', 'x', 'y', 'z'. Currently only 'xz' is implemented. Note, propagation is always in z. 
+            the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'xz', 'xyz', 'x', 'y', 'z'. Currently only 'xz' is implemented. Note, propagation is always in z.
         mesh_z : int
-            number of mesh points in z (for periodic structures, will be z * num_periods) 
+            number of mesh points in z (for periodic structures, will be z * num_periods)
         z_range : tuple
             tuple or list of the form (start, end) representing the range of the z values to extract
         location : float
             z coordinate where to save data for a 'xy' monitor
-        
+
         Returns
         -------
         Monitor
@@ -482,7 +537,11 @@ class EME(object):
 
             # Create monitor dimensions
             c = len(components)
-            dimensions = (c, y, z) if not (axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]) else (c, x, y, z)
+            dimensions = (
+                (c, y, z)
+                if not (axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"])
+                else (c, x, y, z)
+            )
 
             # Create grids
             grid_x = self.layers[0].mode_solvers.after_x
@@ -514,19 +573,22 @@ class EME(object):
             )
 
         # Create monitor
-        monitor = Monitor(axes, dimensions, lengths, components, z_range, grid_x, grid_y, grid_z)
+        monitor = Monitor(
+            axes, dimensions, lengths, components, z_range, grid_x, grid_y, grid_z
+        )
         self.monitors.append(monitor)
         return monitor
 
     def draw(self):
-        """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. Currently, the drawing is very rough. This will change in the future. 
-        """
+        """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. Currently, the drawing is very rough. This will change in the future."""
 
         # Simple drawing to debug geometry
         plt.figure()
         lengths = [0.0] + [i.length for i in self.layers]
         lengths = [sum(lengths[: i + 1]) for i in range(len(lengths))]
-        widths = [self.layers[0].mode_solvers.width] + [i.mode_solvers.width for i in self.layers]
+        widths = [self.layers[0].mode_solvers.width] + [
+            i.mode_solvers.width for i in self.layers
+        ]
         lengths_ = lengths
         widths_ = widths
         for i in range(1, self.num_periods):
@@ -547,17 +609,16 @@ class EME(object):
 
 
 class Current(Model):
-    """The object that the EME uses to track the s_parameters and cascade them as they come along to save memory
-    """
+    """The object that the EME uses to track the s_parameters and cascade them as they come along to save memory"""
 
     def __init__(self, wavelength, s, **kwargs):
         """Current class constructor
 
         Parameters
         ----------
-        wavelength : number 
+        wavelength : number
             the wavelength of the simulation
-        s : numpy array 
+        s : numpy array
             the starting scattering matrix
         """
         self.left_ports = s.left_ports
@@ -608,14 +669,13 @@ class Current(Model):
         Returns
         -------
         numpy array
-            the scattering matrix 
+            the scattering matrix
         """
         return self.s_params
 
 
 class ActivatedLayer(Model):
-    """ActivatedLayer is produced by the Layer class after the ModeSolvers calculate eigenmodes. This is used to create interfaces. This inherits from Simphony's Model class. 
-    """
+    """ActivatedLayer is produced by the Layer class after the ModeSolvers calculate eigenmodes. This is used to create interfaces. This inherits from Simphony's Model class."""
 
     def __init__(self, modes, wavelength, length, **kwargs):
         """ActivatedLayer class constructor
@@ -627,7 +687,7 @@ class ActivatedLayer(Model):
         wavelength : number
             the wavelength of the eigenmodes
         length : number
-            the length of the layer object that produced the eigenmodes. This number is used for phase propagation. 
+            the length of the layer object that produced the eigenmodes. This number is used for phase propagation.
         """
 
         self.num_modes = len(modes)
@@ -649,31 +709,40 @@ class ActivatedLayer(Model):
         super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self):
-        """Normalizes all of the eigenmodes such that the overlap with its self, power, is 1. 
-        """
+        """Normalizes all of the eigenmodes such that the overlap with its self, power, is 1."""
 
         for mode in range(len(self.modes)):
             self.modes[mode].normalize()
 
     def calculate_s_params(self):
-        """Calculates the s params for the phase propagation and returns it. 
+        """Calculates the s params for the phase propagation and returns it.
 
         Returns
         -------
         numpy array
-            the scattering matrix for phase propagation. 
+            the scattering matrix for phase propagation.
         """
 
-        eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes]) / (self.wavelength)
+        eigenvalues1 = (
+            (2 * np.pi)
+            * np.array([mode.neff for mode in self.modes])
+            / (self.wavelength)
+        )
 
         propagation_matrix1 = np.diag(
-            np.exp(self.length * 1j * np.array(eigenvalues1.tolist() + eigenvalues1.tolist()))
+            np.exp(
+                self.length
+                * 1j
+                * np.array(eigenvalues1.tolist() + eigenvalues1.tolist())
+            )
         )
         num_cols = len(propagation_matrix1)
         rows = np.array(np.split(propagation_matrix1, num_cols))
         first_half = [rows[j + num_cols // 2][0] for j in range(num_cols // 2)]
         second_half = [rows[j][0] for j in range(num_cols // 2)]
-        propagation_matrix = np.array(first_half + second_half).reshape((1, 2 * self.num_modes, 2 * self.num_modes))
+        propagation_matrix = np.array(first_half + second_half).reshape(
+            (1, 2 * self.num_modes, 2 * self.num_modes)
+        )
 
         self.right_ports = self.num_modes
         self.left_ports = self.num_modes
@@ -687,15 +756,14 @@ class ActivatedLayer(Model):
         Returns
         -------
         numpy array
-            the scattering matrix 
+            the scattering matrix
         """
 
         return self.s_params
 
 
 class PeriodicLayer(Model):
-    """PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods. 
-    """
+    """PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods."""
 
     def __init__(self, left_modes, right_modes, s_params, **kwargs):
         """PeriodicLayer class constructor
@@ -706,7 +774,7 @@ class PeriodicLayer(Model):
             list of the eigenmodes on the left side of the layer
         right_modes : list [Mode]
             list of the eigenmodes on the right side of the layer
-        s_params : 
+        s_params :
             the scattering matrix that represents the layer, which includes both propagation and mode overlaps
         """
 
@@ -729,8 +797,7 @@ class PeriodicLayer(Model):
         super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self):
-        """Normalizes all of the eigenmodes such that the overlap with its self, power, is 1. 
-        """
+        """Normalizes all of the eigenmodes such that the overlap with its self, power, is 1."""
 
         for mode in range(len(self.left_modes)):
             self.left_modes[mode].normalize()
@@ -743,15 +810,14 @@ class PeriodicLayer(Model):
         Returns
         -------
         numpy array
-            the scattering matrix 
+            the scattering matrix
         """
 
         return self.s_params
 
 
 class InterfaceSingleMode(Model):
-    """The InterfaceSingleMode class represents the interface between two different layers. This class is an approximation to speed up the process and can ONLY be used during single mode EME. 
-    """
+    """The InterfaceSingleMode class represents the interface between two different layers. This class is an approximation to speed up the process and can ONLY be used during single mode EME."""
 
     def __init__(self, layer1, layer2, **kwargs):
         """InterfaceSingleMode class constructor
@@ -787,14 +853,13 @@ class InterfaceSingleMode(Model):
         Returns
         -------
         numpy array
-            the scattering matrix 
+            the scattering matrix
         """
 
         return self.s
 
     def solve(self):
-        """Solves for the scattering matrix based on transmission and reflection
-        """
+        """Solves for the scattering matrix based on transmission and reflection"""
 
         s = np.zeros((2 * self.num_modes, 2 * self.num_modes), dtype=complex)
 
@@ -849,15 +914,14 @@ class InterfaceSingleMode(Model):
         return -r, t
 
     def clear(self):
-        """Clears the scattering matrix in the object
-        """
+        """Clears the scattering matrix in the object"""
 
         self.s = None
 
 
 class InterfaceMultiMode(Model):
     """
-        The InterfaceMultiMode class represents the interface between two different layers. 
+    The InterfaceMultiMode class represents the interface between two different layers.
     """
 
     def __init__(self, layer1, layer2, **kwargs):
@@ -894,14 +958,13 @@ class InterfaceMultiMode(Model):
         Returns
         -------
         numpy array
-            the scattering matrix 
+            the scattering matrix
         """
 
         return self.s
 
     def solve(self):
-        """Solves for the scattering matrix based on transmission and reflection
-        """
+        """Solves for the scattering matrix based on transmission and reflection"""
 
         s = np.zeros((self.num_ports, self.num_ports), dtype=complex)
 
@@ -951,13 +1014,19 @@ class InterfaceMultiMode(Model):
         A = np.array(
             [
                 [
-                    right.modes[k].inner_product(left.modes[i]) + left.modes[i].inner_product(right.modes[k])
+                    right.modes[k].inner_product(left.modes[i])
+                    + left.modes[i].inner_product(right.modes[k])
                     for k in range(self.num_ports - curr_ports)
                 ]
                 for i in range(curr_ports)
             ]
         )
-        b = np.array([0 if i != p else 2 * left.modes[p].inner_product(left.modes[p]) for i in range(curr_ports)])
+        b = np.array(
+            [
+                0 if i != p else 2 * left.modes[p].inner_product(left.modes[p])
+                for i in range(curr_ports)
+            ]
+        )
         x = np.matmul(np.linalg.pinv(A), b)
 
         return x
@@ -986,7 +1055,10 @@ class InterfaceMultiMode(Model):
             [
                 np.sum(
                     [
-                        (right.modes[k].inner_product(left.modes[i]) - left.modes[i].inner_product(right.modes[k]))
+                        (
+                            right.modes[k].inner_product(left.modes[i])
+                            - left.modes[i].inner_product(right.modes[k])
+                        )
                         * x[k]
                         for k in range(self.num_ports - curr_ports)
                     ]
@@ -999,7 +1071,6 @@ class InterfaceMultiMode(Model):
         return rs
 
     def clear(self):
-        """Clears the scattering matrix in the object
-        """
+        """Clears the scattering matrix in the object"""
 
         self.s_params = None

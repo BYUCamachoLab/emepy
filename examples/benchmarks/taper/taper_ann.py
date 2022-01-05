@@ -1,20 +1,14 @@
-import emepy
 from emepy.eme import Layer, EME
-from emepy.mode import Mode
 from emepy.ann import ANN, MSNeuralNetwork
 import time
 
 import numpy as np
-import pylab
 
-def taper_ann(print_s = True, start = 0, finish = 10):
+
+def taper_ann(print_s=True, start=0, finish=10):
 
     # This dictionary stores the information used by the benchmark scripts
-    taper_ann_dict = {
-        "density": [],
-        "time": [],
-        "s_params": []
-    }
+    taper_ann_dict = {"density": [], "time": [], "s_params": []}
 
     # Cross sectional parameters (computational complexity determined here)
     ModeSolver = MSNeuralNetwork  # Choose a modesolver object that will calculate the 2D field profile
@@ -70,20 +64,22 @@ def taper_ann(print_s = True, start = 0, finish = 10):
         t1 = time.time()
         eme.propagate()  # Run the eme
         t2 = time.time()
-        taper_ann_dict["time"].append(t2-t1)
+        taper_ann_dict["time"].append(t2 - t1)
         taper_ann_dict["density"].append(taper_density)
         taper_ann_dict["s_params"].append(eme.s_parameters())
 
         if print_s:
-            print(taper_density,": ",np.abs(eme.s_parameters()))  # Extract s_parameters
+            print(
+                taper_density, ": ", np.abs(eme.s_parameters())
+            )  # Extract s_parameters
 
     return taper_ann_dict
+
 
 def main():
 
     taper_ann()
 
+
 if __name__ == "__main__":
     main()
-
-
