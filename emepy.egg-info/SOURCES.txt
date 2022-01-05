@@ -1,4 +1,6 @@
+LICENSE
 README.md
+setup.cfg
 setup.py
 emepy/__init__.py
 emepy/ann.py
