@@ -22,7 +22,7 @@ copyright = "2020, Ian Hammond"
 author = "Ian Hammond"
 
 # The full version, including alpha/beta/rc tags
-release = "0.2.3"
+release = "0.2.4"
 
 extensions = [
     "recommonmark",
