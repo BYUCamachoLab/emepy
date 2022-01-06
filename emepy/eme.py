@@ -523,10 +523,12 @@ class EME(object):
                     start, end = [lengths[0][0], lengths[0][-1]]
                 else:
                     start, end = z_range
-            except Exception as _:
+            except Exception as e:
                 raise Exception(
-                    "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
-                )
+                    "z_range should be a tuple or list of the form (start, end) "
+                    "representing the range of the z values to extract where start"
+                    "and end are floats such as (0, 1e-6) for a 1 µm range"
+                ) from e
 
             # Fix z mesh if changed by z_range
             difference_start = lambda list_value: abs(list_value - start)

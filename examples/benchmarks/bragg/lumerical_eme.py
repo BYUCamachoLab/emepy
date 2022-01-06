@@ -61,7 +61,7 @@ def lumerical_eme(args):
         core2.material = "Si (Silicon) - Palik"
 
         # setup eme
-        eme = mode.addeme()
+        mode.addeme()
         mode.set("wavelength", vwavelength)
         mode.set("mesh cells y", vmesh)
         mode.set("mesh cells z", vmesh)

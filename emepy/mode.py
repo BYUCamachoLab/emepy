@@ -463,8 +463,6 @@ class Mode(object):
 
         from scipy.sparse import coo_matrix
 
-        core_index = tools.Si(self.wl * 1e6)
-        cladding_index = tools.SiO2(self.wl * 1e6)
         if self.n is None:
             self.epsfunc = tools.get_epsfunc(
                 self.width,
