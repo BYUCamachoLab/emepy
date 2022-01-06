@@ -48,10 +48,12 @@ class Monitor(object):
                     self.start, self.end = [lengths[0][0], lengths[0][-1]]
                 else:
                     self.start, self.end = z_range
-            except Exception as _:
+            except Exception as e:
                 raise Exception(
-                    "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
-                )
+                    "z_range should be a tuple or list of the form (start, end)"
+                    " representing the range of the z values to extract where start "
+                    "and end are floats such as (0, 1e-6) for a 1 µm range"
+                ) from e
 
         if axes == "xz" or axes == "zx":
             self.axes = "xz"
@@ -63,9 +65,8 @@ class Monitor(object):
             self.axes = "xy"
         else:
             raise Exception(
-                "Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xy','yz','xz','xyz']".format(
-                    axes
-                )
+                f"Monitor setup {axes} has not yet been implemented. Please choose from"
+                " the following implemented monitor types: ['xy','yz','xz','xyz']"
             )
 
         self.dimensions = dimensions
@@ -164,19 +165,27 @@ class Monitor(object):
                     start, end = [self.start, self.end]
                 else:
                     start, end = z_range
-            except Exception as _:
+            except Exception as e:
                 raise Exception(
-                    "z_range should be a tuple or list of the form (start, end) representing the range of the z values to extract where start and end are floats such as (0, 1e-6) for a 1 µm range"
-                )
+                    "z_range should be a tuple or list of the form (start, end)"
+                    "representing the range of the z values to extract where start"
+                    "and end are floats such as (0, 1e-6) for a 1 µm range"
+                ) from e
 
             # Get start and end
-            difference_start = lambda list_value: abs(list_value - start)
-            difference_end = lambda list_value: abs(list_value - end)
+            def difference_start(list_value):
+                return abs(list_value - start)
+
+            def difference_end(list_value):
+                return abs(list_value - end)
+
             s = self.lengths[0].index(min(self.lengths[0], key=difference_start))
             e = self.lengths[0].index(min(self.lengths[0], key=difference_end)) + 1
-
             default_grid_z = self.lengths[0][s:e]
-            m = lambda list_value: abs(list_value - self.grid_z[0])
+
+            def m(list_value):
+                return abs(list_value - self.grid_z[0])
+
             m = self.lengths[0].index(min(self.lengths[0], key=m))
             s -= m
             e -= m
@@ -201,8 +210,11 @@ class Monitor(object):
             if self.axes == "xyz":
                 # xz plane
                 if axes in ["xz", "zx"]:
-                    if not (location is None):
-                        d = lambda list_value: abs(list_value - location)
+                    if location:
+
+                        def d(list_value):
+                            return abs(list_value - location)
+
                         index = list(default_grid_x).index(min(default_grid_x, key=d))
                     else:
                         index = int(len(self.field[i][0]) / 2)
@@ -210,8 +222,11 @@ class Monitor(object):
 
                 # yz plane
                 elif axes in ["yz", "zy"]:
-                    if not (location is None):
-                        d = lambda list_value: abs(list_value - location)
+                    if location:
+
+                        def d(list_value):
+                            return abs(list_value - location)
+
                         index = list(default_grid_y).index(min(default_grid_y, key=d))
                     else:
                         index = int(len(self.field[i]) / 2)
@@ -219,8 +234,11 @@ class Monitor(object):
 
                 # xy plane
                 elif axes in ["xy", "yx"]:
-                    if not (location is None):
-                        d = lambda list_value: abs(list_value - location)
+                    if location:
+
+                        def d(list_value):
+                            return abs(list_value - location)
+
                         index = list(default_grid_z).index(min(default_grid_z, key=d))
                     else:
                         index = 0

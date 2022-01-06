@@ -28,8 +28,5 @@ jobs:
         pip install tox tox-gh-actions pur
         make update
         make install
-    - name: Lint with flake8
-      run: |
-        tox -e flake8
     - name: Test with tox
       run: tox -e py
