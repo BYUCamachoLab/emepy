@@ -161,7 +161,7 @@ class MSLumerical(ModeSolver):
         if self.eme_modes:
 
             # set up EME for FDE extraction
-            eme = self.mode.addeme()
+            self.mode.addeme()
             self.mode.set("wavelength", self.wl)
             self.mode.set("mesh cells y", mesh)
             self.mode.set("mesh cells z", mesh)

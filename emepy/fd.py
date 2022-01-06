@@ -213,9 +213,7 @@ class MSPickle(object):
         """Solves for the eigenmodes by loading them from the pickle file"""
 
         with open(self.filename, "rb") as f:
-            self.mode = (
-                pickle.load(f)[self.index] if not self.index is None else pickle.load(f)
-            )
+            self.mode = pickle.load(f)[self.index] if self.index else pickle.load(f)
 
         self.x = self.mode.x
         self.y = self.mode.y

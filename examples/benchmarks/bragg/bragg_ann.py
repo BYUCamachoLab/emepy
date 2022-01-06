@@ -13,7 +13,7 @@ def bragg_ann(args):
     wl_lower = args.wl_lower  # Lower wavelength bound
     wl_upper = args.wl_upper  # Upper wavelength bound
     num_modes = args.num_modes  # Number of Modes
-    mesh = args.mesh  # Number of mesh points
+    # mesh = args.mesh  # Number of mesh points
     width1 = args.width1  # Width of first core block
     width2 = args.width2  # Width of second core block
     thickness = args.thickness  # Thicnkess of the core
