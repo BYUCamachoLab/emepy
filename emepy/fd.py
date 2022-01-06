@@ -132,12 +132,13 @@ class MSEMpy(ModeSolver):
 
         self.after_x = self.x
         self.after_y = self.y
+        self.n = self.epsfunc(self.x, self.y)
 
     def solve(self):
         """Solves for the eigenmodes"""
-        self.solver = EMpy.modesolvers.FD.VFDModeSolver(
-            self.wl, self.x, self.y, self.epsfunc, self.boundary
-        ).solve(self.num_modes, self.accuracy)
+        self.solver = EMpy.modesolvers.FD.VFDModeSolver(self.wl, self.x, self.y, self.epsfunc, self.boundary).solve(
+            self.num_modes, self.accuracy
+        )
         return self
 
     def clear(self):
