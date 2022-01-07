@@ -1,7 +1,0 @@
-simphony
-numpy
-matplotlib
-scipy
-sklearn
-pandas
-electromagneticpython

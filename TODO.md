@@ -1,11 +1,6 @@
 # TODO
 
-### Monitors 
-- Allow 3D monitor collection
-- Allow custom monitor location collection 
-- Allow custom monitor location extraction 
-- Allow custom monitor extraction in any plane
-- Allow interpolation onto custom monitor grid
+### Monitors
 - Normalize fields
 
 ### Simulation
@@ -27,7 +22,7 @@
 ### Docs
 - All new structures
 - Monitors
-- New Lumerical api 
+- New Lumerical api
 - New custom grid flexibility
 
 ### Coding Standard
@@ -37,5 +32,5 @@
 
 ### Long Term
 - GDS Import
-- GDS Output 
+- GDS Output
 - Inverse Design

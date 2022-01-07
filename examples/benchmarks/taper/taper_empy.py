@@ -1,23 +1,19 @@
-import emepy
 from emepy.eme import Layer, EME
-from emepy.mode import Mode
 from emepy.fd import MSEMpy
 import time
 
 import numpy as np
-import pylab
 
-def taper_empy(print_s = True, start = 0, finish = 10):
+
+def taper_empy(print_s=True, start=0, finish=10):
 
     # This dictionary stores the information used by the benchmark scripts
-    taper_empy_dict = {
-        "density": [],
-        "time": [],
-        "s_params": []
-    }
+    taper_empy_dict = {"density": [], "time": [], "s_params": []}
 
     # Cross sectional parameters (computational complexity determined here)
-    ModeSolver = MSEMpy  # Choose a modesolver object that will calculate the 2D field profile
+    ModeSolver = (
+        MSEMpy  # Choose a modesolver object that will calculate the 2D field profile
+    )
     num_modes = 1
     mesh = 128
 
@@ -40,12 +36,7 @@ def taper_empy(print_s = True, start = 0, finish = 10):
         eme.reset()
 
         # first layer is a straight waveguide
-        mode1 = ModeSolver(
-            wavelength,
-            width1,
-            thickness1,
-            mesh=mesh
-        )
+        mode1 = ModeSolver(wavelength, width1, thickness1, mesh=mesh)
         straight1 = Layer(mode1, num_modes, wavelength, wg_length)
         eme.add_layer(straight1)
 
@@ -56,7 +47,7 @@ def taper_empy(print_s = True, start = 0, finish = 10):
 
         # add the taper layers
         for i in range(taper_density):
-            solver = ModeSolver(wavelength, widths[i], thicknesses[i],mesh=mesh)
+            solver = ModeSolver(wavelength, widths[i], thicknesses[i], mesh=mesh)
             taper_layer = Layer(solver, num_modes, wavelength, taper_length_per)
             eme.add_layer(taper_layer)
 
@@ -70,21 +61,23 @@ def taper_empy(print_s = True, start = 0, finish = 10):
         t1 = time.time()
         eme.propagate()  # Run the eme
         t2 = time.time()
-        taper_empy_dict["time"].append(t2-t1)
+        taper_empy_dict["time"].append(t2 - t1)
         taper_empy_dict["density"].append(taper_density)
         taper_empy_dict["s_params"].append(eme.s_parameters())
 
         if print_s:
-            print(taper_density,": ",np.abs(eme.s_parameters()))  # Extract s_parameters
+            print(
+                taper_density, ": ", np.abs(eme.s_parameters())
+            )  # Extract s_parameters
 
     return taper_empy_dict
+
 
 def main():
 
     taper_empy()
 
+
 if __name__ == "__main__":
 
     main()
-
-
