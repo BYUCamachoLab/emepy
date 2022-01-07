@@ -207,7 +207,7 @@ class Mode(object):
 
         plt.tight_layout()
 
-    def _inner_product(self, mode1, mode2):
+    def _inner_product(self, mode1, mode2, mask=None):
         """Helper function that takes the inner product between Modes mode1 and mode2
 
         Parameters
@@ -223,23 +223,28 @@ class Mode(object):
             the inner product between the two input modes
         """
 
-        res = mode1.Ex.shape[0] * mode1.Ex.shape[1]
-        Ex = mode1.Ex.reshape(1, res)
-        Ey = mode1.Ey.reshape(1, res)
-        Ez = mode1.Ez.reshape(1, res)
-        L = np.stack([Ex, Ey, Ez], axis=-1)[0]
+        # res = mode1.Ex.shape[0] * mode1.Ex.shape[1]
+        # Ex = mode1.Ex.reshape(1, res)
+        # Ey = mode1.Ey.reshape(1, res)
+        # Ez = mode1.Ez.reshape(1, res)
+        # L = np.stack([Ex, Ey, Ez], axis=-1)[0]
 
-        res = mode2.Hx.shape[0] * mode2.Hx.shape[1]
-        Hx = np.conj(mode2.Hx).reshape(1, res)
-        Hy = np.conj(mode2.Hy).reshape(1, res)
-        Hz = np.conj(mode2.Hz).reshape(1, res)
-        R = np.stack([Hx, Hy, Hz], axis=-1)[0]
+        # res = mode2.Hx.shape[0] * mode2.Hx.shape[1]
+        # Hx = np.conj(mode2.Hx).reshape(1, res)
+        # Hy = np.conj(mode2.Hy).reshape(1, res)
+        # Hz = np.conj(mode2.Hz).reshape(1, res)
+        # R = np.stack([Hx, Hy, Hz], axis=-1)[0]
 
-        cross = np.cross(L, R)[:, 2]
-        size = int(np.sqrt(cross.shape[0]))
-        cross = cross.reshape((size, size))
+        # cross = np.cross(L, R)[:, 2]
+        # size = int(np.sqrt(cross.shape[0]))
+        # cross = cross.reshape((size, size))
+        mask = np.ones(mode1.Ex.shape) if mask is None else mask
+        Ex = mode1.Ex * mask
+        Hy = np.conj(mode2.Hy) * mask
+        Ey = mode1.Ey * mask
+        Hx = np.conj(mode2.Hx) * mask
 
-        # cross = mode1.Ex * np.conj(mode2.Hy) - mode1.Ey * np.conj(mode2.Hx)
+        cross = Ex * Hy - Ey * Hx
         return np.trapz(np.trapz(cross, mode1.x), mode1.y)  # /np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
 
     def inner_product(self, mode2):

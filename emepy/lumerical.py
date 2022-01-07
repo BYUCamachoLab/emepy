@@ -158,7 +158,7 @@ class MSLumerical(ModeSolver):
         # core.index = core_index
         core.material = "Si (Silicon) - Palik"
 
-        if self.eme_modes:
+        if self.eme_modes or self.PML:
 
             # set up EME for FDE extraction
             eme = self.mode.addeme()
