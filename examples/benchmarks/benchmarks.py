@@ -3,9 +3,10 @@ from taper.taper_benchmark import main as taper
 
 
 def main():
-    
+
     bragg()
     taper()
+
 
 if __name__ == "__main__":
 

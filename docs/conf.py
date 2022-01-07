@@ -22,16 +22,14 @@ copyright = "2020, Ian Hammond"
 author = "Ian Hammond"
 
 # The full version, including alpha/beta/rc tags
-release = "2.0"
+release = "0.2.4"
 
-# -- General configuration ---------------------------------------------------
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
-import sphinx_rtd_theme
-
-extensions = ["recommonmark", "sphinx_rtd_theme", "sphinx.ext.napoleon", "sphinx.ext.autodoc"]
+extensions = [
+    "recommonmark",
+    "sphinx_rtd_theme",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autodoc",
+]
 
 
 # Add any paths that contain templates here, relative to this directory.
