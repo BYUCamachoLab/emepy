@@ -1016,14 +1016,6 @@ class InterfaceMultiMode(Model):
         )
         b = np.array([0 if i != p else 2 * left.modes[p].inner_product(left.modes[p]) for i in range(curr_ports)])
         x = np.matmul(np.linalg.pinv(A), b)
-        print(
-            np.abs(
-                [
-                    [right.modes[k].inner_product(left.modes[i]) for k in range(self.num_ports - curr_ports)]
-                    for i in range(curr_ports)
-                ]
-            )
-        )
 
         return x
 
