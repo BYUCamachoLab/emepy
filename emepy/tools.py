@@ -1,6 +1,5 @@
 import numpy as np
 import scipy
-from EMpy.modesolvers.FD import stretchmesh
 import os
 from scipy.interpolate import griddata
 
@@ -35,11 +34,7 @@ def get_epsfunc(
         numpy array
             2d-matrix
         """
-        layer = int(len(x_) / 20)
-        nlayers = [layer, layer, layer, layer]
-        factor = 1 + 2j
-        x, y, _, _, _, _ = stretchmesh(x_, y_, nlayers, factor)
-        xx, yy = np.meshgrid(x, y)
+        xx, yy = np.meshgrid(x_, y_)
         if compute:
             n = np.where(
                 (np.abs(np.real(xx.T) - cladding_width * 0.5) <= width * 0.5)
@@ -61,8 +56,8 @@ def get_epsfunc(
     def epsfunc_2(x_, y_):
 
         n = profile
-        xx, yy = np.meshgrid(x_, y_)
-        n = np.interp(x_, nx, n).astype(complex)
+        xx, yy = np.meshgrid(np.real(x_), np.real(y_))
+        n = np.interp(np.real(x_), np.real(nx), n).astype(complex)
         n = np.repeat(n, len(y_)).reshape((len(n), len(y_)))
         n = (
             np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j)
@@ -74,10 +69,10 @@ def get_epsfunc(
     # Case 3 : 2D n is defined
     def epsfunc_3(x_, y_):
 
-        xxn, yyn = np.meshgrid(nx, ny)
+        xxn, yyn = np.meshgrid(np.real(nx), np.real(ny))
         points = np.array((xxn.flatten(), yyn.flatten())).T
         n = profile.flatten()
-        xx, yy = np.meshgrid(x_, y_)
+        xx, yy = np.meshgrid(np.real(x_), np.real(y_))
         n_real = griddata(points, np.real(n), (xx, yy))
         n_imag = griddata(points, np.imag(n), (xx, yy))
         n = (n_real + 1j * n_imag) ** 2
