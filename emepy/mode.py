@@ -75,8 +75,8 @@ class Mode(object):
 
         Parameters
         ----------
-        operation : string
-            the operation to perform on the fields from ("Real", "Imaginary", "Abs", "Abs^2") (default:"Real")
+        operation : string or function
+            the operation to perform on the fields from ("Real", "Imaginary", "Abs", "Abs^2") (default:"Real") or a function such as np.abs
         colorbar : bool
             if true, will show a colorbar for each field
         normalize : bool
@@ -118,8 +118,19 @@ class Mode(object):
             Ey = np.real(temp.Ey).T
             Ez = np.real(temp.Ez).T
         else:
-            raise Exception("Invalid operation entered. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real')")
+            try:
+                Hx = operation(temp.Hx).T
+                Hy = operation(temp.Hy).T
+                Hz = operation(temp.Hz).T
+                Ex = operation(temp.Ex).T
+                Ey = operation(temp.Ey).T
+                Ez = operation(temp.Ez).T
+            except:
+                raise Exception(
+                    "Invalid operation provided. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real') or provide a function"
+                )
 
+        operation = operation.__name__
         plt.subplot(2, 3, 4, adjustable="box", aspect=Ex.shape[0] / Ex.shape[1])
         v = max(abs(Ex.min()), abs(Ex.max()))
         plt.imshow(
@@ -287,13 +298,13 @@ class Mode(object):
 
         # Increase core by 5% to capture slight leaks
         if num_pixels is None:
-            num_pixels = int(len(self.x)*0.05)
+            num_pixels = int(len(self.x) * 0.05)
 
         mask = np.where(self.n > np.mean(self.n), 1, 0)
-        kernel = np.ones((num_pixels+1, num_pixels+1))
-        mask = convolve2d(mask, kernel,'same')
+        kernel = np.ones((num_pixels + 1, num_pixels + 1))
+        mask = convolve2d(mask, kernel, "same")
         mask = np.where(mask > 0, 1, 0)
-        ratio = self._inner_product(self, self, mask=mask) /  self._inner_product(self, self, mask=None) 
+        ratio = self._inner_product(self, self, mask=mask) / self._inner_product(self, self, mask=None)
         return ratio
 
     def __str__(self):

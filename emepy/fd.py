@@ -3,6 +3,7 @@ import numpy as np
 from emepy.mode import Mode
 from emepy import tools
 import EMpy
+from EMpy.modesolvers.FD import stretchmesh
 
 import pickle
 
@@ -53,6 +54,7 @@ class MSEMpy(ModeSolver):
         boundary="0000",
         epsfunc=None,
         n=None,
+        PML=False,
         **kwargs
     ):
         """MSEMpy class constructor
@@ -91,6 +93,8 @@ class MSEMpy(ModeSolver):
             the function which defines the permittivity based on a grid (see EMpy library) (default:"0000")
         n : numpy array
             2D profile of the refractive index
+        PML : boolean
+            if True, will use PML boundaries. Default : False, PEC
         """
 
         self.wl = wl
@@ -108,6 +112,7 @@ class MSEMpy(ModeSolver):
         self.boundary = boundary
         self.epsfunc = epsfunc
         self.n = n
+        self.PML = PML
 
         if core_index is None:
             self.core_index = tools.Si(wl * 1e6)
@@ -117,6 +122,16 @@ class MSEMpy(ModeSolver):
             self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
         if y is None:
             self.y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+        if self.PML:  # Create a PML at least half a wavelength long
+            dx = np.diff(self.x)
+            dy = np.diff(self.y)
+            layer_xp = int(np.abs(0.5 * self.wl / dx[-1]))
+            layer_xn = int(np.abs(0.5 * self.wl / dx[0]))
+            layer_yp = int(np.abs(0.5 * self.wl / dy[-1]))
+            layer_yn = int(np.abs(0.5 * self.wl / dy[0]))
+            nlayers = [layer_yp, layer_yn, layer_xp, layer_xn]
+            factor = 1 + 2j
+            self.x, self.y, _, _, _, _ = stretchmesh(self.x, self.y, nlayers, factor)
         if epsfunc is None:
             self.epsfunc = tools.get_epsfunc(
                 self.width,
@@ -161,12 +176,12 @@ class MSEMpy(ModeSolver):
             the eigenmode of index mode_num
         """
 
-        Ex = self.solver.modes[mode_num].get_field("Ex", self.x, self.y)
-        Ey = self.solver.modes[mode_num].get_field("Ey", self.x, self.y)
-        Ez = self.solver.modes[mode_num].get_field("Ez", self.x, self.y)
-        Hx = self.solver.modes[mode_num].get_field("Hx", self.x, self.y)
-        Hy = self.solver.modes[mode_num].get_field("Hy", self.x, self.y)
-        Hz = self.solver.modes[mode_num].get_field("Hz", self.x, self.y)
+        Ex = self.solver.modes[mode_num].get_field("Ex")
+        Ey = self.solver.modes[mode_num].get_field("Ey")
+        Ez = self.solver.modes[mode_num].get_field("Ez")
+        Hx = self.solver.modes[mode_num].get_field("Hx")
+        Hy = self.solver.modes[mode_num].get_field("Hy")
+        Hz = self.solver.modes[mode_num].get_field("Hz")
         neff = self.solver.modes[mode_num].neff
         n = self.epsfunc(self.x, self.y)
 

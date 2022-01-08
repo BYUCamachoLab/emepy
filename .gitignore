@@ -76,6 +76,9 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Debug
+**/debug.py
+
 # Translations
 *.mo
 *.pot
