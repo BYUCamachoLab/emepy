@@ -4,6 +4,7 @@ import pickle
 import random
 import EMpy
 from emepy import tools
+from scipy.signal import convolve2d
 
 
 class Mode(object):
@@ -235,6 +236,7 @@ class Mode(object):
         Hx = np.conj(mode2.Hx) * mask
 
         cross = Ex * Hy - Ey * Hx
+
         return np.trapz(np.trapz(cross, mode1.x), mode1.y)  # /np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
 
     def inner_product(self, mode2):
@@ -253,7 +255,7 @@ class Mode(object):
 
         return self._inner_product(self, mode2)  # / self._inner_product(self, self)
 
-    def check_spurious(self, threshold=0.3):
+    def check_spurious(self, threshold=0.05):
         """Takes in a mode and determine whether the mode is likely spurious based on the ratio of confined to not confined power
 
         Parameters
@@ -267,13 +269,32 @@ class Mode(object):
             True if likely spurious 
         """
 
+        return self.get_confined_power() < threshold
+
+    def get_confined_power(self, num_pixels=None):
+        """Takes in a mode and returns the percentage of power confined in the core
+
+        Parameters
+        ----------
+        num_pixels : int
+            number of pixels outside of the core to expand the mask to capture power just outside the core
+
+        Returns
+        -------
+        float
+            Percentage of confined power
+        """
+
+        # Increase core by 5% to capture slight leaks
+        if num_pixels is None:
+            num_pixels = int(len(self.x)*0.05)
+
         mask = np.where(self.n > np.mean(self.n), 1, 0)
-        plt.figure()
-        plt.imshow(np.real(mask))
-        plt.show()
-        quit()
+        kernel = np.ones((num_pixels+1, num_pixels+1))
+        mask = convolve2d(mask, kernel,'same')
+        mask = np.where(mask > 0, 1, 0)
         ratio = self._inner_product(self, self, mask=mask) /  self._inner_product(self, self, mask=None) 
-        return ratio < threshold
+        return ratio
 
     def __str__(self):
         return "Mode Object with effective index of " + str(self.neff)

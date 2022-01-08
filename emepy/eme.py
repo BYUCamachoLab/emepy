@@ -70,10 +70,6 @@ class Layer(object):
 
         modes = []
 
-        # plt.figure()
-        # plt.imshow(np.real(self.mode_solvers.n))
-        # plt.show()
-
         if type(self.mode_solvers) != list:
             for mode in range(self.mode_solvers.num_modes):
                 modes.append(
@@ -338,6 +334,12 @@ class EME(object):
 
         if not n_only:
             self.s_params = current_layer.s_params
+            while input_array.shape[0] > current_layer.s_params[0].shape[0]: # Temp solution, deal with later
+                input_array = input_array[:-1]
+            if input_array.shape[0] < current_layer.s_params[0].shape[0]:
+                temp = np.zeros(current_layer.s_params[0].shape[0])
+                temp[:input_array.shape[0]] = input_array
+                input_array = temp
             self.output = np.matmul(current_layer.s_params[0], input_array)
 
     def get_field(self, mode_set, m, c, curr_s, input_array):
@@ -357,6 +359,12 @@ class EME(object):
 
             # S parameters from mode overlaps and phase prop from previous layers
             if not (curr_s is None):
+                while input_array.shape[0] > curr_s.s_parameters()[0].shape[0]: # Temp solution, deal with later
+                    input_array = input_array[:-1]
+                if input_array.shape[0] < curr_s.s_parameters()[0].shape[0]:
+                    temp = np.zeros(curr_s.s_parameters()[0].shape[0])
+                    temp[:input_array.shape[0]] = input_array
+                    input_array = temp
                 interface_prop = np.matmul(curr_s.s_parameters()[0], input_array)[-len(phase_prop) :]
             else:
                 interface_prop = input_array[: len(phase_prop)]
@@ -701,6 +709,7 @@ class ActivatedLayer(Model):
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)]
         if not n_only:
             self.normalize_fields()
+            self.purge_spurious()
             self.s_params = self.calculate_s_params()
 
         # create the pins for the model
@@ -717,6 +726,17 @@ class ActivatedLayer(Model):
 
         for mode in range(len(self.modes)):
             self.modes[mode].normalize()
+
+    def purge_spurious(self):
+        """Purges all spurious modes in the dataset to prevent EME failure for high mode simulations"""
+
+        for mode in range(len(self.modes))[::-1]:
+            if self.modes[mode].check_spurious():
+                self.modes.pop(mode)
+                self.left_pins.pop(-1)
+                self.right_pins.pop(-1)
+                self.num_modes -= 1
+
 
     def calculate_s_params(self):
         """Calculates the s params for the phase propagation and returns it.
@@ -759,7 +779,7 @@ class ActivatedLayer(Model):
 class PeriodicLayer(Model):
     """PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods."""
 
-    def __init__(self, left_modes, right_modes, s_params, **kwargs):
+    def __init__(self, left_modes, right_modes, s_params, n_only=False, **kwargs):
         """PeriodicLayer class constructor
 
         Parameters
@@ -776,10 +796,12 @@ class PeriodicLayer(Model):
         self.right_modes = right_modes
         self.left_ports = len(self.left_modes)
         self.right_ports = len(self.right_modes)
-        self.normalize_fields()
         self.left_pins = ["left" + str(i) for i in range(len(self.left_modes))]
         self.right_pins = ["right" + str(i) for i in range(len(self.right_modes))]
         self.s_params = s_params
+        if not n_only:
+            self.normalize_fields()
+            # self.purge_spurious()
 
         # create the pins for the model
         pins = []
@@ -789,6 +811,19 @@ class PeriodicLayer(Model):
             pins.append(Pin(self, name))
 
         super().__init__(**kwargs, pins=pins)
+
+    def purge_spurious(self):
+        """Purges all spurious modes in the dataset to prevent EME failure for high mode simulations"""
+
+        for mode in range(len(self.left_modes))[::-1]:
+            if self.left_modes[mode].check_spurious():
+                self.left_modes.pop(mode)
+                self.left_pins.pop(-1)
+
+        for mode in range(len(self.right_modes))[::-1]:
+            if self.right_modes[mode].check_spurious():
+                self.right_modes.pop(mode)
+                self.right_pins.pop(-1)
 
     def normalize_fields(self):
         """Normalizes all of the eigenmodes such that the overlap with its self, power, is 1."""
