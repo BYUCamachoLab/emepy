@@ -5,19 +5,20 @@
 
 ### Simulation
 - Allow simulation x and y to have different dimensions
-- Make more allowable dimensions >> 2.5µm
-- Check for spurious modes
-- Allow overlaps and EME propagation of various modes of different geometries
+- Implement EMpy PML
 
 ### Circuit
 - Implement multiple/custom ports
 - Implement easy use with simphony by users for circuit compatibility
+- Consider Sax for autograd
+
+### GDS Modules
+- Implement
 
 ### Examples
 - MMI
 - 2x2 power splitter
 - Full circuit
-- GDS Export Compatibility
 
 ### Docs
 - All new structures
@@ -31,6 +32,4 @@
 - Add comments throughout to make the algorithm more clear
 
 ### Long Term
-- GDS Import
-- GDS Output
 - Inverse Design
