@@ -2,6 +2,7 @@ import numpy as np
 import scipy
 import os
 from scipy.interpolate import griddata
+import EMpy
 
 
 def get_epsfunc(
@@ -412,6 +413,27 @@ def SiO2(wavelength):
 
     f = scipy.interpolate.interp1d(SiO2_lambda, SiO2_n)
     return f([wavelength, wavelength])[0]
+
+def interp(x, y, x0, y0, f, centered):
+    """Interpolate a 2D complex array."""
+
+    if centered:
+        # electric fields and intensity are centered
+        x0 = EMpy.utils.centered1d(x0)
+        y0 = EMpy.utils.centered1d(y0)
+
+
+    f1r = np.zeros((len(x0), len(y)))
+    f1i = np.zeros((len(x0), len(y)))
+    for ix0 in range(len(x0)):
+        f1r[ix0, :] = np.interp(y, y0, np.real(f[ix0, :]))
+        f1i[ix0, :] = np.interp(y, y0, np.imag(f[ix0, :]))
+    fr = np.zeros((len(x), len(y)))
+    fi = np.zeros((len(x), len(y)))
+    for iy in range(len(y)):
+        fr[:, iy] = np.interp(x, x0, f1r[:, iy])
+        fi[:, iy] = np.interp(x, x0, f1i[:, iy])
+    return fr + 1j * fi
 
 
 def into_chunks(location, name, chunk_size=20000000):

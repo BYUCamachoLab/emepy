@@ -334,11 +334,11 @@ class EME(object):
 
         if not n_only:
             self.s_params = current_layer.s_params
-            while input_array.shape[0] > current_layer.s_params[0].shape[0]: # Temp solution, deal with later
+            while input_array.shape[0] > current_layer.s_params[0].shape[0]:  # Temp solution, deal with later
                 input_array = input_array[:-1]
             if input_array.shape[0] < current_layer.s_params[0].shape[0]:
                 temp = np.zeros(current_layer.s_params[0].shape[0])
-                temp[:input_array.shape[0]] = input_array
+                temp[: input_array.shape[0]] = input_array
                 input_array = temp
             self.output = np.matmul(current_layer.s_params[0], input_array)
 
@@ -359,11 +359,11 @@ class EME(object):
 
             # S parameters from mode overlaps and phase prop from previous layers
             if not (curr_s is None):
-                while input_array.shape[0] > curr_s.s_parameters()[0].shape[0]: # Temp solution, deal with later
+                while input_array.shape[0] > curr_s.s_parameters()[0].shape[0]:  # Temp solution, deal with later
                     input_array = input_array[:-1]
                 if input_array.shape[0] < curr_s.s_parameters()[0].shape[0]:
                     temp = np.zeros(curr_s.s_parameters()[0].shape[0])
-                    temp[:input_array.shape[0]] = input_array
+                    temp[: input_array.shape[0]] = input_array
                     input_array = temp
                 interface_prop = np.matmul(curr_s.s_parameters()[0], input_array)[-len(phase_prop) :]
             else:
@@ -736,7 +736,6 @@ class ActivatedLayer(Model):
                 self.left_pins.pop(-1)
                 self.right_pins.pop(-1)
                 self.num_modes -= 1
-
 
     def calculate_s_params(self):
         """Calculates the s params for the phase propagation and returns it.
