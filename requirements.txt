@@ -10,3 +10,4 @@ pandas>=1.3.2
 electromagneticpython @ git+git://github.com/lbolla/EMpy@4bf1b01#egg=electromagneticpython
 torch
 torchvision
+tdqm

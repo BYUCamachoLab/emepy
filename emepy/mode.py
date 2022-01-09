@@ -248,7 +248,9 @@ class Mode(object):
 
         cross = Ex * Hy - Ey * Hx
 
-        return np.trapz(np.trapz(cross, mode1.x), mode1.y)  # /np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
+        return np.trapz(
+            np.trapz(cross, np.real(mode1.x)), np.real(mode1.y)
+        )  # /np.trapz(np.trapz(cross, mode1.x), mode1.y) ### HEY
 
     def inner_product(self, mode2):
         """Takes the inner product between self and the provided Mode
