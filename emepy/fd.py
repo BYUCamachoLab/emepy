@@ -129,9 +129,9 @@ class MSEMpy(ModeSolver):
             layer_xn = int(np.abs(0.5 * self.wl / dx[0]))
             layer_yp = int(np.abs(0.5 * self.wl / dy[-1]))
             layer_yn = int(np.abs(0.5 * self.wl / dy[0]))
-            nlayers = [layer_yp, layer_yn, layer_xp, layer_xn]
+            self.nlayers = [layer_yp, layer_yn, layer_xp, layer_xn]
             factor = 1 + 2j
-            self.x, self.y, _, _, _, _ = stretchmesh(self.x, self.y, nlayers, factor)
+            self.x, self.y, _, _, _, _ = stretchmesh(self.x, self.y, self.nlayers, factor)
         if epsfunc is None:
             self.epsfunc = tools.get_epsfunc(
                 self.width,
@@ -178,21 +178,42 @@ class MSEMpy(ModeSolver):
 
         x = self.solver.modes[mode_num].get_x()
         y = self.solver.modes[mode_num].get_y()
-        x0 = np.real(x)
-        y0 = np.real(y)
-        Ex = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Ex"), True)
-        Ey = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Ey"), True)
-        Ez = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Ez"), True)
-        Hx = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Hx"), False)
-        Hy = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Hy"), False)
-        Hz = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Hz"), False)
+        x0, y0 = [np.real(x), np.real(y)]
+        diffx, diffy = [np.diff(x0), np.diff(y0)]
+        x0_new, y0_new = [np.ones(len(x) + 1), np.ones(len(y) + 1)]
+        x0_new[0:-1], y0_new[0:-1] = [x0, y0]
+        x0_new[-1], y0_new[-1] = [x0[-1] + diffx[-1], y0[-1] + diffy[-1]]
+
+        if not self.PML:
+            self.nlayers = [1, 0, 1, 0]
+        Ex = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ex"), True)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Ey = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ey"), True)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Ez = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ez"), True)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Hx = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hx"), False)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Hy = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hy"), False)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Hz = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hz"), False)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        self.x = x0_new[self.nlayers[1] : -self.nlayers[0]]
+        self.y = y0_new[self.nlayers[3] : -self.nlayers[2]]
 
         neff = self.solver.modes[mode_num].neff
         n = self.epsfunc(self.x, self.y)
 
+
         return Mode(
-            x=x,
-            y=y,
+            x=self.x,
+            y=self.y,
             wl=self.wl,
             neff=neff,
             Hx=Hx,

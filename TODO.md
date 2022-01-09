@@ -10,7 +10,6 @@
 ### Circuit
 - Implement multiple/custom ports
 - Implement easy use with simphony by users for circuit compatibility
-- Consider Sax for autograd
 
 ### GDS Modules
 - Implement
@@ -21,10 +20,6 @@
 - Full circuit
 
 ### Docs
-- All new structures
-- Monitors
-- New Lumerical api
-- New custom grid flexibility
 
 ### Coding Standard
 - Rename variables in monitor updating code to make sense to users
@@ -32,4 +27,5 @@
 - Add comments throughout to make the algorithm more clear
 
 ### Long Term
+- Consider Sax for autograd
 - Inverse Design

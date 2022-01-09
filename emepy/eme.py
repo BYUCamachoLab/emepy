@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 from simphony import Model
 from simphony.pins import Pin
 from simphony.models import Subcircuit
@@ -6,6 +7,7 @@ from matplotlib import pyplot as plt
 from emepy.monitors import Monitor
 from copy import copy
 from emepy.mode import Mode
+from emepy.fd import MSEMpy
 
 
 class Layer(object):
@@ -209,7 +211,7 @@ class EME(object):
             interface.clear()
 
         # Propagate the middle layers
-        for index in range(1, len(self.layers) - 1):
+        for index in tqdm(range(1, len(self.layers) - 1)):
 
             if n_only:
                 layer1_ = self.layers[index]
@@ -513,7 +515,7 @@ class EME(object):
     def get_total_length(self):
         return np.sum([layer.length for layer in self.layers])
 
-    def add_monitor(self, axes="xz", mesh_z=200, z_range=None, location=None, components=None):
+    def add_monitor(self, axes="xz", mesh_z=200, z_range=None, location=None, components=None, excempt=True):
         """Creates a monitor associated with the eme object BEFORE the simulation is ran
 
         Parameters
@@ -535,8 +537,26 @@ class EME(object):
 
         # Establish mesh
         components = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"] if components is None else components
-        x = self.layers[0].mode_solvers.mesh
-        y = self.layers[0].mode_solvers.mesh
+        if excempt and (self.layers[0].mode_solvers.PML and isinstance(self.layers[0].mode_solvers, MSEMpy)):
+            x = (
+                len(
+                    self.layers[0].mode_solvers.x[
+                        self.layers[0].mode_solvers.nlayers[1] : -self.layers[0].mode_solvers.nlayers[0]
+                    ]
+                )
+                + 1
+            )
+            y = (
+                len(
+                    self.layers[0].mode_solvers.y[
+                        self.layers[0].mode_solvers.nlayers[3] : -self.layers[0].mode_solvers.nlayers[2]
+                    ]
+                )
+                + 1
+            )
+        else:
+            x = len(self.layers[0].mode_solvers.x)
+            y = len(self.layers[0].mode_solvers.y)
 
         # Ensure the axes is not still under development
         if axes in ["xz", "zx", "yz", "zy", "xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
@@ -612,7 +632,7 @@ class EME(object):
 
         temp_storage = self.monitors
         self.monitors = []
-        monitor = self.add_monitor(axes="xz", components=["n"], z_range=z_range)
+        monitor = self.add_monitor(axes="xz", components=["n"], z_range=z_range, excempt=False)
         self.propagate(n_only=True)
         im = monitor.visualize(component="n")
         self.monitors = temp_storage
