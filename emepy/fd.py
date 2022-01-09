@@ -4,7 +4,7 @@ from emepy.mode import Mode
 from emepy import tools
 import EMpy
 from EMpy.modesolvers.FD import stretchmesh
-
+from emepy.tools import interp
 import pickle
 
 
@@ -176,18 +176,23 @@ class MSEMpy(ModeSolver):
             the eigenmode of index mode_num
         """
 
-        Ex = self.solver.modes[mode_num].get_field("Ex")
-        Ey = self.solver.modes[mode_num].get_field("Ey")
-        Ez = self.solver.modes[mode_num].get_field("Ez")
-        Hx = self.solver.modes[mode_num].get_field("Hx")
-        Hy = self.solver.modes[mode_num].get_field("Hy")
-        Hz = self.solver.modes[mode_num].get_field("Hz")
+        x = self.solver.modes[mode_num].get_x()
+        y = self.solver.modes[mode_num].get_y()
+        x0 = np.real(x)
+        y0 = np.real(y)
+        Ex = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Ex"), True)
+        Ey = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Ey"), True)
+        Ez = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Ez"), True)
+        Hx = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Hx"), False)
+        Hy = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Hy"), False)
+        Hz = interp(x0, y0, x0, y0, self.solver.modes[mode_num].get_field("Hz"), False)
+
         neff = self.solver.modes[mode_num].neff
         n = self.epsfunc(self.x, self.y)
 
         return Mode(
-            x=self.x,
-            y=self.y,
+            x=x,
+            y=y,
             wl=self.wl,
             neff=neff,
             Hx=Hx,

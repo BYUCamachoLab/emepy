@@ -404,39 +404,39 @@ class Monitor(object):
             if ax:
                 im = ax.imshow(
                     np.real(field),
-                    extent=[z[0], z[-1], y[0], y[-1]],
+                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
                 )
-                ax.set_xlabel(axes[1])
-                ax.set_ylabel(axes[0])
+                ax.set_xlabel(np.real(axes[1]))
+                ax.set_ylabel(np.real(axes[0]))
                 ax.set_title(component)
             else:
                 im = plt.imshow(
                     np.real(field),
-                    extent=[z[0], z[-1], y[0], y[-1]],
+                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
                 )
-                plt.xlabel(axes[1])
-                plt.ylabel(axes[0])
+                plt.xlabel(np.real(axes[1]))
+                plt.ylabel(np.real(axes[0]))
                 plt.title(component)
         else:
             if ax:
                 im = ax.imshow(
                     np.real(field).T,
-                    extent=[z[0], z[-1], y[0], y[-1]],
+                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
                 )
-                ax.set_xlabel(axes[0])
-                ax.set_ylabel(axes[1])
+                ax.set_xlabel(np.real(axes[0]))
+                ax.set_ylabel(np.real(axes[1]))
                 ax.set_title(component)
             else:
                 im = plt.imshow(
                     np.real(field).T,
-                    extent=[z[0], z[-1], y[0], y[-1]],
+                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
                 )
-                plt.xlabel(axes[0])
-                plt.ylabel(axes[1])
+                plt.xlabel(np.real(axes[0]))
+                plt.ylabel(np.real(axes[1]))
                 plt.title(component)
 
         return im

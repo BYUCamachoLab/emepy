@@ -239,7 +239,7 @@ class Mode(object):
             the inner product between the two input modes
         """
 
-        mask = np.ones(mode1.Ex.shape) if mask is None else mask
+        mask = 1 if mask is None else mask
 
         Ex = mode1.Ex * mask
         Hy = np.conj(mode2.Hy) * mask
@@ -266,13 +266,15 @@ class Mode(object):
 
         return self._inner_product(self, mode2)  # / self._inner_product(self, self)
 
-    def check_spurious(self, threshold=0.05):
+    def check_spurious(self, threshold_power=0.05, threshold_neff=0.9):
         """Takes in a mode and determine whether the mode is likely spurious based on the ratio of confined to not confined power
 
         Parameters
         ----------
-        threshold : float
+        threshold_power : float
             threshold of power percentage of Pz in the core to total
+        threshold_neff : float
+            threshold of real to abs neff percentage
 
         Returns 
         -------
@@ -280,7 +282,9 @@ class Mode(object):
             True if likely spurious 
         """
 
-        return self.get_confined_power() < threshold
+        power_bool = self.get_confined_power() < threshold_power
+        neff_bool = (np.real(self.neff) / np.abs(self.neff)) < threshold_neff
+        return power_bool or neff_bool
 
     def get_confined_power(self, num_pixels=None):
         """Takes in a mode and returns the percentage of power confined in the core
