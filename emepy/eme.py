@@ -141,7 +141,7 @@ class EME(object):
         """
 
         self.reset()
-        self.layers = layers
+        self.layers = layers[:]
         self.num_periods = num_periods
         self.s_params = None
         self.monitors = []
@@ -172,6 +172,7 @@ class EME(object):
         self.interface = None
         self.monitors = []
 
+
     def propagate_period(self, input_array, n_only=False):
         """The propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values.
 
@@ -186,6 +187,7 @@ class EME(object):
         mode_set2
             The set of Mode objects that were solved for on the output layer
         """
+
 
         if n_only:
             mode_set1 = self.layers[0].get_n_only()
