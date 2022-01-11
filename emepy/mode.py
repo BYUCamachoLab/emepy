@@ -130,7 +130,10 @@ class Mode(object):
                     "Invalid operation provided. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real') or provide a function"
                 )
 
-        operation = operation.__name__
+        if hasattr(operation, "__name__"):
+            operation = operation.__name__
+        else:
+            operation = str(operation)
         plt.subplot(2, 3, 4, adjustable="box", aspect=Ex.shape[0] / Ex.shape[1])
         v = max(abs(Ex.min()), abs(Ex.max()))
         plt.imshow(
