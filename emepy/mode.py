@@ -1617,14 +1617,20 @@ class Mode(object):
             Eys.append(Ey)
             Ezs.append(Ez)
 
-        self.Hx = (Hx[1:, 1:] + Hx[1:, :-1] + Hx[:-1, 1:] + Hx[:-1, :-1]) / 4.0 + 0j
-        self.Hy = (Hy[1:, 1:] + Hy[1:, :-1] + Hy[:-1, 1:] + Hy[:-1, :-1]) / 4.0 + 0j
-        self.Hz = (Hzs[0][1:, 1:] + Hzs[0][1:, :-1] + Hzs[0][:-1, 1:] + Hzs[0][:-1, :-1]) / 4.0 + 0j
+        # self.Hx = (Hx[1:, 1:] + Hx[1:, :-1] + Hx[:-1, 1:] + Hx[:-1, :-1]) / 4.0 + 0j
+        # self.Hy = (Hy[1:, 1:] + Hy[1:, :-1] + Hy[:-1, 1:] + Hy[:-1, :-1]) / 4.0 + 0j
+        # self.Hz = (Hzs[0][1:, 1:] + Hzs[0][1:, :-1] + Hzs[0][:-1, 1:] + Hzs[0][:-1, :-1]) / 4.0 + 0j
+        self.Hx = Hxs[0]
+        self.Hy = Hys[0]
+        self.Hz = Hzs[0]
         self.Ex = Exs[0]
         self.Ey = Eys[0]
         self.Ez = Ezs[0]
-        self.x = (self.x[1:] + self.x[:-1]) / 2.0
-        self.y = (self.y[1:] + self.y[:-1]) / 2.0
+        x_ = (self.x[1:] + self.x[:-1]) / 2.0
+        y_ = (self.y[1:] + self.y[:-1]) / 2.0
+        self.Ex = tools.interp(self.x, self.y, x_, y_, Exs[0], False)
+        self.Ey = tools.interp(self.x, self.y, x_, y_, Eys[0], False)
+        self.Ez = tools.interp(self.x, self.y, x_, y_, Ezs[0], False)
         self.x = self.x - self.x[int(len(self.x) / 2)]
         self.y = self.y - self.y[int(len(self.y) / 2)]
         self.H = np.sqrt(np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2)

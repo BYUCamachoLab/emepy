@@ -249,6 +249,7 @@ class MSPickle(object):
         self.index = index
         self.width = width
         self.thickness = thickness
+        self.PML = False
 
     def solve(self):
         """Solves for the eigenmodes by loading them from the pickle file"""

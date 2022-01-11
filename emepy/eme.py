@@ -537,7 +537,7 @@ class EME(object):
             the newly created Monitor object
         """
 
-        # Establish mesh
+        # Establish mesh # Current workaround...not final
         components = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"] if components is None else components
         if excempt and (self.layers[0].mode_solvers.PML and isinstance(self.layers[0].mode_solvers, MSEMpy)):
             x = (

@@ -5,11 +5,10 @@
 
 ### Simulation
 - Allow simulation x and y to have different dimensions
-- Implement EMpy PML
+- Fix EMpy PML
 
 ### Circuit
 - Implement multiple/custom ports
-- Implement easy use with simphony by users for circuit compatibility
 
 ### GDS Modules
 - Implement
