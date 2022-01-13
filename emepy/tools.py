@@ -3,6 +3,7 @@ import scipy
 import os
 from scipy.interpolate import griddata
 import EMpy
+import collections
 
 
 def get_epsfunc(
@@ -92,6 +93,28 @@ def get_epsfunc(
     raise Exception(
         "Need to provide width & thickness, or 1D profile and thickness, or 2D profile"
     )
+
+def create_polygon(x, y, n):
+
+    x0, y0 = [range(len(n)), range(len(n[0]))]
+    diff =  np.abs(np.diff(n,axis=1))
+    where = np.argwhere(diff > np.mean(n))
+    x0 -= np.mean(where[:,0])
+    y0 -= np.mean(where[:,1])
+    diff = diff[1:,:]+diff[:-1,:]
+    diff2 = np.abs(np.diff(n,axis=0))
+    diff2 = diff2[:,1:]+diff2[:,:-1]
+    diff = diff+diff2
+    diff = np.where(diff,1,0)
+
+    newd = {}
+    for i in np.argwhere(diff):
+        angle = np.angle(x0[i[0]]+1j*y0[i[1]])
+        newd[angle] = [x[i[0]],y[i[1]]]
+
+    od = collections.OrderedDict(sorted(newd.items()))
+
+    return np.array(list(od.values())).astype(float)
 
 
 Si_lambda = [
