@@ -4,7 +4,7 @@ import os
 from scipy.interpolate import griddata
 import EMpy
 import collections
-
+from matplotlib import pyplot as plt
 
 def get_epsfunc(
     width,
@@ -94,13 +94,15 @@ def get_epsfunc(
         "Need to provide width & thickness, or 1D profile and thickness, or 2D profile"
     )
 
-def create_polygon(x, y, n):
+def create_polygon(x, y, n, detranslate=True):
 
-    x0, y0 = [range(len(n)), range(len(n[0]))]
+    x0, y0 = [x.copy(), y.copy()]
     diff =  np.abs(np.diff(n,axis=1))
     where = np.argwhere(diff > np.mean(n))
-    x0 -= np.mean(where[:,0])
-    y0 -= np.mean(where[:,1])
+    tx = np.mean(x[where[:,0]]) 
+    ty = np.mean(y[where[:,1]]) 
+    x0 -= tx
+    y0 -= ty
     diff = diff[1:,:]+diff[:-1,:]
     diff2 = np.abs(np.diff(n,axis=0))
     diff2 = diff2[:,1:]+diff2[:,:-1]
@@ -110,11 +112,17 @@ def create_polygon(x, y, n):
     newd = {}
     for i in np.argwhere(diff):
         angle = np.angle(x0[i[0]]+1j*y0[i[1]])
-        newd[angle] = [x[i[0]],y[i[1]]]
+        if detranslate:
+            newd[angle] = [y0[i[1]]-ty,x0[i[0]]-tx]
+        else:
+            newd[angle] = [y0[i[1]],x0[i[0]]]
 
     od = collections.OrderedDict(sorted(newd.items()))
-
-    return np.array(list(od.values())).astype(float)
+    
+    if detranslate:
+        return np.array(list(od.values())).astype(float)
+    else:
+        return [np.array(list(od.values())).astype(float), tx, ty]
 
 
 Si_lambda = [
