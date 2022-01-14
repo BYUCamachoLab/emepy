@@ -27,7 +27,7 @@ class LumEME(EME):
         # open file
         if os.path.isfile("api.lms"):
             os.remove("api.lms")
-        self.mode = lm.MODE(hide=False)
+        self.mode = lm.MODE(hide=True)
         self.mode.save("api.lms")
 
     def close(self):
@@ -107,10 +107,17 @@ class MSLumerical(ModeSolver):
         self.polygons = polygons
         self.core_index = tools.Si(wl * 1e6) if core_index is None else core_index
         self.cladding_index = tools.SiO2(wl * 1e6) if cladding_index is None else cladding_index
-        self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
-        self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
-        self.x = self.after_x
-        self.y = self.after_y        
+        if self.PML:
+            self.num_pml_layers = int(5 * self.mesh / 4.0)
+            self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.num_pml_layers)
+            self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.num_pml_layers)
+            self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+            self.y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+        else:
+            self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+            self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+            self.x = self.after_x
+            self.y = self.after_y        
         if self.mode is None:
             self.close_after = True
 
@@ -159,11 +166,15 @@ class MSLumerical(ModeSolver):
         
         else:
             for i,p in enumerate(self.polygons):
-                poly = self.mode.addpoly()
-                poly.name = str("poly{}".format(i))
-                poly.vertices = p
-                poly.index = self.core_index
-                time.sleep(30)
+                self.mode.addpoly()
+                self.mode.set("name", str("poly{}".format(i)))
+                self.mode.set("vertices", p[0])
+                self.mode.set("z span", self.thickness)
+                self.mode.set("first axis", "y")
+                self.mode.set("rotation 1", 90)
+                self.mode.set("y", p[1])
+                self.mode.set("z", p[2])
+                self.mode.set("index", self.core_index)
 
         if self.eme_modes or self.PML:
 
@@ -186,6 +197,7 @@ class MSLumerical(ModeSolver):
                 self.mode.set("y max bc", "PML")
                 self.mode.set("z min bc", "PML")
                 self.mode.set("z max bc", "PML")
+                self.mode.set("pml layers",self.num_pml_layers)
 
             # run
             self.mode.run()
@@ -198,7 +210,7 @@ class MSLumerical(ModeSolver):
             gridy = results["z"]
             gridy = gridy.reshape(gridy.shape[0])
             grid = [gridx, gridy]
-            mesh = len(gridx)
+            mesh = len(gridx) 
             self.mesh = mesh 
             field = []
             for mode_num in range(1, self.num_modes + 1):
@@ -216,7 +228,7 @@ class MSLumerical(ModeSolver):
                 Hy = H[:, :, 2]
                 Hz = H[:, :, 0]
                 field.append([Hx, Hy, Hz, Ex, Ey, Ez])
-            self.n = results["index"].reshape(mesh, mesh)
+            self.n = results["index"].reshape(mesh, mesh,3)[:,:,0]
 
         else:
 
