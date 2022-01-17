@@ -108,14 +108,14 @@ class MSLumerical(ModeSolver):
         self.core_index = tools.Si(wl * 1e6) if core_index is None else core_index
         self.cladding_index = tools.SiO2(wl * 1e6) if cladding_index is None else cladding_index
         if self.PML:
-            self.num_pml_layers = int(5 * self.mesh / 4.0)
-            self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.num_pml_layers)
-            self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.num_pml_layers)
-            self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
-            self.y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+            self.num_pml_layers = int(self.mesh / 8.0)
+            self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh+2*self.num_pml_layers-1)
+            self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh+2*self.num_pml_layers-1)
+            self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
+            self.y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
         else:
-            self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
-            self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+            self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
+            self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
             self.x = self.after_x
             self.y = self.after_y        
         if self.mode is None:
@@ -201,6 +201,7 @@ class MSLumerical(ModeSolver):
 
             # run
             self.mode.run()
+            self.mode.emepropagate()
 
             # get modes
             results = self.mode.getresult("EME::Cells::cell_1", "mode fields")
@@ -242,7 +243,6 @@ class MSLumerical(ModeSolver):
             fde.z_span = self.cladding_thickness  # clad_thickness / 2
             fde.mesh_cells_y = self.mesh - 1
             fde.mesh_cells_z = self.mesh - 1
-            self.mode.run
 
             self.mode.set("number of trial modes", self.num_modes)
             self.mode.set("wavelength", self.wl)
