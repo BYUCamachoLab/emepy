@@ -557,8 +557,8 @@ class EME(object):
                 + 1
             )
         else:
-            x = len(self.layers[0].mode_solvers.x)
-            y = len(self.layers[0].mode_solvers.y)
+            x = len(self.layers[0].mode_solvers.after_x)
+            y = len(self.layers[0].mode_solvers.after_y)
 
         # Ensure the axes is not still under development
         if axes in ["xz", "zx", "yz", "zy", "xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
