@@ -65,7 +65,6 @@ def get_epsfunc(
             np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j)
             ** 2
         )
-
         return n
 
     # Case 3 : 2D n is defined

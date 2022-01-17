@@ -34,13 +34,13 @@ class LumEME(EME):
         if os.path.isfile("api.lms"):
             os.remove("api.lms")
 
-    def __del__(self):
+    # def __del__(self):
 
-        if os.path.isfile("api.lms"):
-            os.remove("api.lms")
+        # if os.path.isfile("api.lms"):
+        #     os.remove("api.lms")
 
-        if os.path.isfile("api_p0.log"):
-            os.remove("api_p0.log")
+        # if os.path.isfile("api_p0.log"):
+        #     os.remove("api_p0.log")
 
 
 class MSLumerical(ModeSolver):
@@ -109,8 +109,8 @@ class MSLumerical(ModeSolver):
         self.cladding_index = tools.SiO2(wl * 1e6) if cladding_index is None else cladding_index
         if self.PML:
             self.num_pml_layers = int(self.mesh / 8.0)
-            self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh+2*self.num_pml_layers-1)
-            self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh+2*self.num_pml_layers-1)
+            self.after_x = np.linspace(-0.5 * cladding_width*(1+1/4), 0.5 * cladding_width*(1+1/4), self.mesh+2*self.num_pml_layers-1)
+            self.after_y = np.linspace(-0.5 * cladding_width*(1+1/4), 0.5 * cladding_width*(1+1/4), self.mesh+2*self.num_pml_layers-1)
             self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
             self.y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
         else:
@@ -144,9 +144,9 @@ class MSLumerical(ModeSolver):
         cladding.x = 0
         cladding.x_span = length
         cladding.y = 0
-        cladding.y_span = self.cladding_width * 1.1
+        cladding.y_span = self.cladding_width * 2.0
         cladding.z = 0
-        cladding.z_span = self.cladding_thickness * 1.1
+        cladding.z_span = self.cladding_thickness * 2.0
         cladding.index = self.cladding_index
         # cladding.material = "SiO2 (Glass) - Palik"
 
