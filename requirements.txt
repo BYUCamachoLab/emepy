@@ -1,13 +1,13 @@
 # Defining the exact version will make sure things don't break
-matplotlib>=3.3.4
+Pillow
+matplotlib
 numpy
-scipy>=1.5.4
-simphony>=0.4.0
-sklearn>=0.0
+scipy
+simphony
+sklearn
 pandas
-electromagneticpython @ git+git://github.com/lbolla/EMpy@4bf1b01#egg=electromagneticpython
-electromagneticpythongpu @ git+git://github.com/hammy4815/EMpy_gpu@master#egg=electromagneticpythongpu
 torch
 torchvision
 tdqm
-scikit-cuda
+# electromagneticpython @ git+git://github.com/lbolla/EMpy@4bf1b01#egg=electromagneticpython
+# electromagneticpythongpu @ git+git://github.com/hammy4815/EMpy_gpu@master#egg=electromagneticpythongpu

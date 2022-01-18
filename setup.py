@@ -14,8 +14,10 @@ def read(filename):
 
 
 def get_install_requires():
+    with open("requirements_direct.txt", "r") as f:
+        direct = [line.strip() for line in f.readlines() if not line.startswith("-")]
     with open("requirements.txt", "r") as f:
-        return [line.strip() for line in f.readlines() if not line.startswith("-")]
+        return direct + [line.strip() for line in f.readlines() if not line.startswith("-")]
 
 
 setup(
