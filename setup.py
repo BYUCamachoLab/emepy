@@ -31,7 +31,7 @@ setup(
     author="Ian Hammond",
     author_email="ihammond@byu.edu",
     description="Eigenmode Expansion Python",
-    long_description=read("README.md"),
+    # long_description=read("README.md"),
     packages=find_packages(exclude=("tests",)),
     install_requires=get_install_requires(),
     python_requires=">=3.6",
