@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pickle
 import random
-import EMpy
+import EMpy_gpu
 from emepy import tools
 from scipy.signal import convolve2d
 
@@ -1600,10 +1600,10 @@ class Mode(object):
             v = n.reshape(nx, ny)[:-1, :-1]
 
             # in xc e yc
-            Dx = neff * EMpy.utils.centered2d(Hy) + (Hz[:-1, 1:] + Hz[1:, 1:] - Hz[:-1, :-1] - Hz[1:, :-1]) / (
+            Dx = neff * EMpy_gpu.utils.centered2d(Hy) + (Hz[:-1, 1:] + Hz[1:, 1:] - Hz[:-1, :-1] - Hz[1:, :-1]) / (
                 2j * k * v
             )
-            Dy = -neff * EMpy.utils.centered2d(Hx) - (Hz[1:, :-1] + Hz[1:, 1:] - Hz[:-1, 1:] - Hz[:-1, :-1]) / (
+            Dy = -neff * EMpy_gpu.utils.centered2d(Hx) - (Hz[1:, :-1] + Hz[1:, 1:] - Hz[:-1, 1:] - Hz[:-1, :-1]) / (
                 2j * k * h
             )
             Dz = (

@@ -1,7 +1,6 @@
 from emepy.fd import MSEMpy
 import importlib
-if not (importlib.util.find_spec("EMpy_gpu") is None):
-    import EMpy_gpu
+import EMpy_gpu
 if not (importlib.util.find_spec("pycuda") is None):
     import pycuda.driver as cuda
     import pycuda.autoinit
