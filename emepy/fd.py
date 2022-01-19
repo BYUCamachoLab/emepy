@@ -2,8 +2,8 @@ import numpy as np
 
 from emepy.mode import Mode
 from emepy import tools
-import EMpy
-from EMpy.modesolvers.FD import stretchmesh
+import EMpy_gpu
+from EMpy_gpu.modesolvers.FD import stretchmesh
 from emepy.tools import interp
 import pickle
 
@@ -32,6 +32,7 @@ class ModeSolver(object):
             index of the mode of choice
         """
         raise NotImplementedError
+
 
 class MSEMpy(ModeSolver):
     """Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide."""
@@ -150,7 +151,7 @@ class MSEMpy(ModeSolver):
 
     def solve(self):
         """Solves for the eigenmodes"""
-        self.solver = EMpy.modesolvers.FD.VFDModeSolver(self.wl, self.x, self.y, self.epsfunc, self.boundary).solve(
+        self.solver = EMpy_gpu.modesolvers.FD.VFDModeSolver(self.wl, self.x, self.y, self.epsfunc, self.boundary).solve(
             self.num_modes, self.accuracy
         )
         return self
@@ -208,7 +209,6 @@ class MSEMpy(ModeSolver):
 
         neff = self.solver.modes[mode_num].neff
         n = self.epsfunc(self.x, self.y)
-
 
         return Mode(
             x=self.x,

@@ -13,10 +13,9 @@ def read(filename):
         return re.sub(text_type(r":[a-z]+:`~?(.*?)`"), text_type(r"``\1``"), fd.read())
 
 
-direct = [
-    "electromagneticpython @ git+git://github.com/lbolla/EMpy@4bf1b01#egg=electromagneticpython",
-    "electromagneticpythongpu @ git+git://github.com/hammy4815/EMpy_gpu@master#egg=electromagneticpythongpu",
-]
+direct = []
+# "electromagneticpython @ git+git://github.com/lbolla/EMpy@4bf1b01#egg=electromagneticpython",
+# "electromagneticpythongpu @ git+git://github.com/hammy4815/EMpy_gpu@master#egg=electromagneticpythongpu",
 
 
 def get_install_requires():

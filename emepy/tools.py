@@ -2,9 +2,10 @@ import numpy as np
 import scipy
 import os
 from scipy.interpolate import griddata
-import EMpy
+import EMpy_gpu
 import collections
 from matplotlib import pyplot as plt
+
 
 def get_epsfunc(
     width,
@@ -46,8 +47,7 @@ def get_epsfunc(
             )
         else:
             n = np.where(
-                (np.abs(np.real(xx.T)) <= width * 0.5)
-                * (np.abs(np.real(yy.T)) <= thickness * 0.5),
+                (np.abs(np.real(xx.T)) <= width * 0.5) * (np.abs(np.real(yy.T)) <= thickness * 0.5),
                 core_index ** 2 + 0j,
                 cladding_index ** 2 + 0j,
             )
@@ -61,10 +61,7 @@ def get_epsfunc(
         xx, yy = np.meshgrid(np.real(x_), np.real(y_))
         n = np.interp(np.real(x_), np.real(nx), n).astype(complex)
         n = np.repeat(n, len(y_)).reshape((len(n), len(y_)))
-        n = (
-            np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j)
-            ** 2
-        )
+        n = np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j) ** 2
         return n
 
     # Case 3 : 2D n is defined
@@ -89,35 +86,34 @@ def get_epsfunc(
     elif (width is None) and (thickness is None) and not (profile is None):
         return epsfunc_3
 
-    raise Exception(
-        "Need to provide width & thickness, or 1D profile and thickness, or 2D profile"
-    )
+    raise Exception("Need to provide width & thickness, or 1D profile and thickness, or 2D profile")
+
 
 def create_polygon(x, y, n, detranslate=True):
 
     x0, y0 = [x.copy(), y.copy()]
-    diff =  np.abs(np.diff(n,axis=1))
+    diff = np.abs(np.diff(n, axis=1))
     where = np.argwhere(diff > np.mean(n))
-    tx = np.mean(x[where[:,0]]) 
-    ty = np.mean(y[where[:,1]]) 
+    tx = np.mean(x[where[:, 0]])
+    ty = np.mean(y[where[:, 1]])
     x0 -= tx
     y0 -= ty
-    diff = diff[1:,:]+diff[:-1,:]
-    diff2 = np.abs(np.diff(n,axis=0))
-    diff2 = diff2[:,1:]+diff2[:,:-1]
-    diff = diff+diff2
-    diff = np.where(diff,1,0)
+    diff = diff[1:, :] + diff[:-1, :]
+    diff2 = np.abs(np.diff(n, axis=0))
+    diff2 = diff2[:, 1:] + diff2[:, :-1]
+    diff = diff + diff2
+    diff = np.where(diff, 1, 0)
 
     newd = {}
     for i in np.argwhere(diff):
-        angle = np.angle(x0[i[0]]+1j*y0[i[1]])
+        angle = np.angle(x0[i[0]] + 1j * y0[i[1]])
         if detranslate:
-            newd[angle] = [y0[i[1]]-ty,x0[i[0]]-tx]
+            newd[angle] = [y0[i[1]] - ty, x0[i[0]] - tx]
         else:
-            newd[angle] = [y0[i[1]],x0[i[0]]]
+            newd[angle] = [y0[i[1]], x0[i[0]]]
 
     od = collections.OrderedDict(sorted(newd.items()))
-    
+
     if detranslate:
         return np.array(list(od.values())).astype(float)
     else:
@@ -444,14 +440,14 @@ def SiO2(wavelength):
     f = scipy.interpolate.interp1d(SiO2_lambda, SiO2_n)
     return f([wavelength, wavelength])[0]
 
+
 def interp(x, y, x0, y0, f, centered):
     """Interpolate a 2D complex array."""
 
     if centered:
         # electric fields and intensity are centered
-        x0 = EMpy.utils.centered1d(x0)
-        y0 = EMpy.utils.centered1d(y0)
-
+        x0 = EMpy_gpu.utils.centered1d(x0)
+        y0 = EMpy_gpu.utils.centered1d(y0)
 
     f1r = np.zeros((len(x0), len(y)))
     f1i = np.zeros((len(x0), len(y)))
