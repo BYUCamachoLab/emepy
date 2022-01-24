@@ -89,6 +89,21 @@ def get_epsfunc(
     raise Exception("Need to provide width & thickness, or 1D profile and thickness, or 2D profile")
 
 
+def get_epsfunc_epsfunc(epsfunc_xx, epsfunc_yy, epsfunc_zz, epsfunc_xy=None, epsfunc_yx=None):
+    """Returns an epsfunction for an isotropic medium"""
+
+    def epsfunc_iso(x_, y_):
+        xx = epsfunc_xx(x_, y_)
+        yy = epsfunc_yy(x_, y_)
+        zz = epsfunc_zz(x_, y_)
+        xy = epsfunc_xy(x_, y_) if not (epsfunc_xy is None) else 0 * xx
+        yx = epsfunc_yx(x_, y_) if not (epsfunc_yx is None) else 0 * xx
+
+        return np.array([xx, xy, yx, yy, zz])
+
+    return epsfunc_iso
+
+
 def create_polygon(x, y, n, detranslate=True):
 
     x0, y0 = [x.copy(), y.copy()]
