@@ -221,8 +221,6 @@ class MSEMpy(ModeSolver):
             Ex=Ex,
             Ey=Ey,
             Ez=Ez,
-            width=self.width,
-            thickness=self.thickness,
             n=n,
         )
 
