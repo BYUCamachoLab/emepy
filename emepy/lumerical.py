@@ -36,11 +36,11 @@ class LumEME(EME):
 
     # def __del__(self):
 
-        # if os.path.isfile("api.lms"):
-        #     os.remove("api.lms")
+    # if os.path.isfile("api.lms"):
+    #     os.remove("api.lms")
 
-        # if os.path.isfile("api_p0.log"):
-        #     os.remove("api_p0.log")
+    # if os.path.isfile("api_p0.log"):
+    #     os.remove("api_p0.log")
 
 
 class MSLumerical(ModeSolver):
@@ -109,15 +109,23 @@ class MSLumerical(ModeSolver):
         self.cladding_index = tools.SiO2(wl * 1e6) if cladding_index is None else cladding_index
         if self.PML:
             self.num_pml_layers = int(self.mesh / 8.0)
-            self.after_x = np.linspace(-0.5 * cladding_width*(1+1/4), 0.5 * cladding_width*(1+1/4), self.mesh+2*self.num_pml_layers-1)
-            self.after_y = np.linspace(-0.5 * cladding_width*(1+1/4), 0.5 * cladding_width*(1+1/4), self.mesh+2*self.num_pml_layers-1)
+            self.after_x = np.linspace(
+                -0.5 * cladding_width * (1 + 1 / 4),
+                0.5 * cladding_width * (1 + 1 / 4),
+                self.mesh + 2 * self.num_pml_layers - 1,
+            )
+            self.after_y = np.linspace(
+                -0.5 * cladding_width * (1 + 1 / 4),
+                0.5 * cladding_width * (1 + 1 / 4),
+                self.mesh + 2 * self.num_pml_layers - 1,
+            )
             self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
             self.y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
         else:
             self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
             self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
             self.x = self.after_x
-            self.y = self.after_y        
+            self.y = self.after_y
         if self.mode is None:
             self.close_after = True
 
@@ -127,8 +135,6 @@ class MSLumerical(ModeSolver):
 
             self.mode = lm.MODE(hide=True)
             self.mode.save("api.lms")
-
-
 
     def solve(self):
         """Solves for the eigenmodes"""
@@ -163,9 +169,9 @@ class MSLumerical(ModeSolver):
             core.z_span = self.thickness
             core.index = self.core_index
             # core.material = "Si (Silicon) - Palik"
-        
+
         else:
-            for i,p in enumerate(self.polygons):
+            for i, p in enumerate(self.polygons):
                 self.mode.addpoly()
                 self.mode.set("name", str("poly{}".format(i)))
                 self.mode.set("vertices", p[0])
@@ -197,7 +203,7 @@ class MSLumerical(ModeSolver):
                 self.mode.set("y max bc", "PML")
                 self.mode.set("z min bc", "PML")
                 self.mode.set("z max bc", "PML")
-                self.mode.set("pml layers",self.num_pml_layers)
+                self.mode.set("pml layers", self.num_pml_layers)
 
             # run
             self.mode.run()
@@ -211,15 +217,11 @@ class MSLumerical(ModeSolver):
             gridy = results["z"]
             gridy = gridy.reshape(gridy.shape[0])
             grid = [gridx, gridy]
-            mesh = len(gridx) 
-            self.mesh = mesh 
+            mesh = len(gridx)
+            self.mesh = mesh
             field = []
             for mode_num in range(1, self.num_modes + 1):
-                neff.append(
-                    self.mode.getresult("EME::Cells::cell_1", "neff")["neff"].flatten()[
-                        mode_num - 1
-                    ]
-                )
+                neff.append(self.mode.getresult("EME::Cells::cell_1", "neff")["neff"].flatten()[mode_num - 1])
                 E = results["E" + str(mode_num)].reshape(mesh, mesh, 3)
                 H = results["H" + str(mode_num)].reshape(mesh, mesh, 3)
                 Ex = E[:, :, 1]
@@ -229,7 +231,7 @@ class MSLumerical(ModeSolver):
                 Hy = H[:, :, 2]
                 Hz = H[:, :, 0]
                 field.append([Hx, Hy, Hz, Ex, Ey, Ez])
-            self.n = results["index"].reshape(mesh, mesh,3)[:,:,0]
+            self.n = results["index"].reshape(mesh, mesh, 3)[:, :, 0]
 
         else:
 
@@ -256,31 +258,27 @@ class MSLumerical(ModeSolver):
             neff = []
             for mode_num in range(1, self.num_modes + 1):
                 mode_field = []
-                neff.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "neff")[0][0]
+                neff.append(self.mode.getdata("FDE::data::mode" + str(mode_num), "neff")[0][0])
+                mode_field.append(
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hy").reshape(self.mesh, self.mesh)
                 )
                 mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hy").reshape(self.mesh,self.mesh)
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hz").reshape(self.mesh, self.mesh)
                 )
                 mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hz").reshape(self.mesh,self.mesh)
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hx").reshape(self.mesh, self.mesh)
                 )
                 mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hx").reshape(self.mesh,self.mesh)
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ey").reshape(self.mesh, self.mesh)
                 )
                 mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ey").reshape(self.mesh,self.mesh)
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ez").reshape(self.mesh, self.mesh)
                 )
                 mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ez").reshape(self.mesh,self.mesh)
-                )
-                mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ex").reshape(self.mesh,self.mesh)
+                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ex").reshape(self.mesh, self.mesh)
                 )
                 field.append(mode_field)
-            self.n = (
-                self.mode.getdata("FDE::data::material", "index_x").reshape(self.mesh,self.mesh)
-            )
+            self.n = self.mode.getdata("FDE::data::material", "index_x").reshape(self.mesh, self.mesh)
 
         field = np.array(field).tolist()
 
@@ -322,20 +320,6 @@ class MSLumerical(ModeSolver):
         Hy = field[1]
         Hz = field[2]
         neff = self.neffs[mode_num]
-        mode = Mode(
-            x=self.x,
-            y=self.y,
-            wl=self.wl,
-            neff=neff,
-            Hx=Hx,
-            Hy=Hy,
-            Hz=Hz,
-            Ex=Ex,
-            Ey=Ey,
-            Ez=Ez,
-            width=self.width,
-            thickness=self.thickness,
-            n=self.n
-        )
+        mode = Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=self.n)
 
         return mode
