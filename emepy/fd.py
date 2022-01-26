@@ -1,11 +1,12 @@
 import numpy as np
 
-from emepy.mode import Mode
+from emepy.mode import Mode, Mode1D
 from emepy import tools
 import EMpy_gpu
 from EMpy_gpu.modesolvers.FD import stretchmesh
-from emepy.tools import interp
+from emepy.tools import interp, interp1d
 import pickle
+from matplotlib import pyplot as plt
 
 
 class ModeSolver(object):
@@ -223,6 +224,189 @@ class MSEMpy(ModeSolver):
             Ez=Ez,
             n=n,
         )
+    
+    def plot_material(self):
+        """Plots the index of refraction profile"""
+        plt.imshow(np.sqrt(np.real(self.n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6])
+        plt.colorbar()
+        plt.title("Index of Refraction")
+        plt.xlabel("x (µm)")
+        plt.ylabel("y (µm)")
+
+class MSEMpy1D(ModeSolver):
+    """Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide."""
+
+    def __init__(
+        self,
+        wl,
+        width=None,
+        num_modes=1,
+        cladding_width=2.5e-6,
+        core_index=None,
+        cladding_index=None,
+        x=None,
+        mesh=128,
+        accuracy=1e-8,
+        boundary="0000",
+        epsfunc=None,
+        n=None,
+        PML=False,
+        **kwargs
+    ):
+        """MSEMpy class constructor
+
+        Parameters
+        ----------
+        wl : number
+            wavelength of the eigenmodes
+        width : number
+            width of the core in the cross section
+        num_modes : int
+            number of modes to solve for (default:1)
+        cladding_width : number
+            width of the cladding in the cross section (default:5e-6)
+        core_index : number
+            refractive index of the core (default:Si)
+        cladding_index : number
+            refractive index of the cladding (default:SiO2)
+        mesh : int
+            number of mesh points in each direction (xy)
+        x : numpy array
+            the cross section grid in the x direction (z propagation) (default:None)
+        mesh : int
+            the number of mesh points in each xy direction
+        accuracy : number
+            the minimum accuracy of the finite difference solution (default:1e-8)
+        boundary : string
+            the boundaries according to the EMpy library (default:"0000")
+        epsfunc : function
+            the function which defines the permittivity based on a grid (see EMpy library) (default:"0000")
+        n : numpy array
+            2D profile of the refractive index
+        PML : boolean
+            if True, will use PML boundaries. Default : False, PEC
+        """
+
+        self.wl = wl
+        self.width = width
+        self.num_modes = num_modes
+        self.cladding_width = cladding_width
+        self.core_index = core_index
+        self.cladding_index = cladding_index
+        self.x = x
+        self.mesh = mesh
+        self.accuracy = accuracy
+        self.boundary = boundary
+        self.epsfunc = epsfunc
+        self.n = n
+        self.PML = PML
+
+        if core_index is None:
+            self.core_index = tools.Si(wl * 1e6)
+        if cladding_index is None:
+            self.cladding_index = tools.SiO2(wl * 1e6)
+        if x is None:
+            self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
+        if self.PML:  # Create a PML at least half a wavelength long
+            dx = np.diff(self.x)
+            layer_xp = int(np.abs(0.5 * self.wl / dx[-1]))
+            layer_xn = int(np.abs(0.5 * self.wl / dx[0]))
+            self.nlayers = [layer_xp, layer_xn, 0, 0]
+            factor = 1 + 2j
+            self.x, _, _, _, _, _ = stretchmesh(self.x, np.zeros(1), self.nlayers, factor)
+        if epsfunc is None:
+            self.epsfunc = tools.get_epsfunc(
+                self.width,
+                None,
+                self.cladding_width,
+                None,
+                self.core_index,
+                self.cladding_index,
+                profile=self.n,
+                nx=self.x,
+            )
+
+        self.after_x = self.x
+        self.n = self.epsfunc(self.x, np.zeros(1))
+
+    def solve(self):
+        """Solves for the eigenmodes"""
+        self.solver = EMpy_gpu.modesolvers.FD.VFDModeSolver(self.wl, self.x, np.zeros(1), self.epsfunc, self.boundary).solve(
+            self.num_modes, self.accuracy
+        )
+        return self
+
+    def clear(self):
+        """Clears the modesolver's eigenmodes to make memory"""
+
+        self.solver = None
+        return self
+
+    def get_mode(self, mode_num=0):
+        """Get the indexed mode number
+
+        Parameters
+        ----------
+        mode_num : int
+            index of the mode of choice
+
+        Returns
+        -------
+        Mode
+            the eigenmode of index mode_num
+        """
+
+        x = self.solver.modes[mode_num].get_x()
+        x0, y0 = [np.real(x), np.real(y)]
+        diffx, diffy = [np.diff(x0), np.diff(y0)]
+        x0_new, y0_new = [np.ones(len(x) + 1), np.ones(len(y) + 1)]
+        x0_new[0:-1], y0_new[0:-1] = [x0, y0]
+        x0_new[-1], y0_new[-1] = [x0[-1] + diffx[-1], y0[-1] + diffy[-1]]
+
+        if not self.PML:
+            self.nlayers = [1, 0, 1, 0]
+        Ex = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Ex"), True)[
+            self.nlayers[1] : -self.nlayers[0]
+        ]
+        Ey = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Ey"), True)[
+            self.nlayers[1] : -self.nlayers[0]
+        ]
+        Ez = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Ez"), True)[
+            self.nlayers[1] : -self.nlayers[0]
+        ]
+        Hx = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Hx"), False)[
+            self.nlayers[1] : -self.nlayers[0]
+        ]
+        Hy = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Hy"), False)[
+            self.nlayers[1] : -self.nlayers[0]
+        ]
+        Hz = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Hz"), False)[
+            self.nlayers[1] : -self.nlayers[0]
+        ]
+        self.x = x0_new[self.nlayers[1] : -self.nlayers[0]]
+
+        neff = self.solver.modes[mode_num].neff
+        n = self.epsfunc(self.x, np.zeros(0))
+
+        return Mode1D(
+            x=self.x,
+            wl=self.wl,
+            neff=neff,
+            Hx=Hx,
+            Hy=Hy,
+            Hz=Hz,
+            Ex=Ex,
+            Ey=Ey,
+            Ez=Ez,
+            n=n,
+        )
+    
+    def plot_material(self):
+        """Plots the index of refraction profile"""
+        plt.plot(self.x, self.n)
+        plt.title("Index of Refraction")
+        plt.xlabel("x (µm)")
+        plt.ylabel("y (µm)")
 
 
 class MSPickle(object):

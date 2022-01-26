@@ -23,7 +23,7 @@ def get_epsfunc(
     """Returns the epsfunc for given parameters"""
 
     # Case 1 : width and thickness are defined
-    def epsfunc_1(x_, y_):
+    def epsfunc_2D_1(x_, y_):
         """Return a matrix describing a 2d material.
 
         Parameters
@@ -52,11 +52,10 @@ def get_epsfunc(
                 core_index ** 2 + 0j,
                 cladding_index ** 2 + 0j,
             )
-
         return n
 
     # Case 2 : thickness and 1D n is defined
-    def epsfunc_2(x_, y_):
+    def epsfunc_2D_2(x_, y_):
 
         n = profile
         xx, yy = np.meshgrid(np.real(x_), np.real(y_))
@@ -66,7 +65,7 @@ def get_epsfunc(
         return n
 
     # Case 3 : 2D n is defined
-    def epsfunc_3(x_, y_):
+    def epsfunc_2D_3(x_, y_):
 
         xxn, yyn = np.meshgrid(np.real(nx), np.real(ny))
         points = np.array((xxn.flatten(), yyn.flatten())).T
@@ -75,19 +74,41 @@ def get_epsfunc(
         n_real = griddata(points, np.real(n), (xx, yy))
         n_imag = griddata(points, np.imag(n), (xx, yy))
         n = (n_real + 1j * n_imag) ** 2
+        return n
+
+    # Case 4: width only
+    def epsfunc_1D_1(x_, y_):
+
+        n = np.where(
+                (np.abs(np.real(x_)) <= width * 0.5),
+                core_index ** 2 + 0j,
+                cladding_index ** 2 + 0j,
+            ).reshape(len(x_), 1)
 
         return n
 
+    # Case 5: 1D n only
+    def epsfunc_1D_2(x_, y_):
+
+        n = np.interp(np.real(x_), np.real(nx), profile).astype(complex).reshape(len(x_), 1)
+        return n
+
     if not (width is None) and not (thickness is None):
-        return epsfunc_1
+        return epsfunc_2D_1
 
     elif (width is None) and not (thickness is None) and not (profile is None):
-        return epsfunc_2
+        return epsfunc_2D_2
 
     elif (width is None) and (thickness is None) and not (profile is None):
-        return epsfunc_3
+        return epsfunc_2D_3
+    
+    elif (thickness is None) and not (width is None):
+        return epsfunc_1D_1
 
-    raise Exception("Need to provide width & thickness, or 1D profile and thickness, or 2D profile")
+    elif (thickness is None) and (width is None) and not (profile is None):
+        return epsfunc_1D_2
+
+    raise Exception("Need to provide width & thickness, or 1D profile and thickness, or 2D profile, or width for 1D, or 1D profile for 1D")
 
 
 def get_epsfunc_epsfunc(epsfunc_xx, epsfunc_yy, epsfunc_zz, epsfunc_xy=None, epsfunc_yx=None):
@@ -476,6 +497,17 @@ def interp(x, y, x0, y0, f, centered):
         fr[:, iy] = np.interp(x, x0, f1r[:, iy])
         fi[:, iy] = np.interp(x, x0, f1i[:, iy])
     return fr + 1j * fi
+
+def interp1d(x, x0, f, centered):
+    """Interpolate a 2D complex array."""
+
+    if centered:
+        # electric fields and intensity are centered
+        x0 = EMpy_gpu.utils.centered1d(x0)
+
+    f1r = np.interp(x, x0, np.real(f[:]))
+    f1i = np.interp(x, x0, np.imag(f[:]))
+    return f1r + 1j * f1i
 
 
 def into_chunks(location, name, chunk_size=20000000):
