@@ -11,7 +11,7 @@ freq = 1 / wavelength
 
 sources = [
     mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(-1.2, 1.93)),
-    # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(+1.2, 1.93)),
+    mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(+1.2, 1.93)),
     # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(-0.6, 1.93)),
     # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(+0.6, 1.93)),
     # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(-1.95, 0.15)),
@@ -22,7 +22,7 @@ sources = [
     # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(+1.95, 1.93)),
     # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(-1.3, 1)),
     # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(0, 1)),
-    # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(0, 1.9)),
+    mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(0, 1.9)),
     # mp.Source(mp.ContinuousSource(frequency=freq), component=mp.Hz, center=mp.Vector3(+1.3, 1)),
 ]
 
@@ -175,4 +175,5 @@ sim.plot2D(
     plot_sources_flag=False,
     plot_boundaries_flag=False,
 )
+plt.savefig("logo")
 plt.show()
