@@ -28,7 +28,7 @@ sources = [
 
 
 pml_layers = [mp.PML(1.0)]
-resolution = 35
+resolution = 50
 
 # Params
 height = 2
