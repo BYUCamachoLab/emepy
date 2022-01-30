@@ -11,7 +11,7 @@ if not (importlib.util.find_spec("lumapi") is None):
 import numpy as np
 import os
 
-from emepy.mode import Mode
+from emepy.mode import Mode, Mode1D
 from emepy import tools
 import time
 
@@ -49,8 +49,8 @@ class MSLumerical(ModeSolver):
     def __init__(
         self,
         wl=1.55e-6,
-        width=None,
-        thickness=None,
+        width=0.5e-6,
+        thickness=0.22e-6,
         num_modes=1,
         cladding_width=10e-6,
         cladding_thickness=10e-6,
@@ -93,6 +93,7 @@ class MSLumerical(ModeSolver):
             if true, will enable PML boundary conditions, note: this will increase the mesh and grid space
         """
 
+        # Create global params
         self.wl = wl
         self.width = width
         self.thickness = thickness
@@ -101,202 +102,217 @@ class MSLumerical(ModeSolver):
         self.cladding_thickness = cladding_thickness
         self.mesh = mesh
         self.mode = mode
-        self.close_after = False
         self.eme_modes = eme_modes
         self.PML = PML
         self.polygons = polygons
+
+        # Check indexes
         self.core_index = tools.Si(wl * 1e6) if core_index is None else core_index
         self.cladding_index = tools.SiO2(wl * 1e6) if cladding_index is None else cladding_index
+        self.close_after = False
+
+        # Setup PML
         if self.PML:
-            self.num_pml_layers = int(self.mesh / 8.0)
-            self.after_x = np.linspace(
-                -0.5 * cladding_width * (1 + 1 / 4),
-                0.5 * cladding_width * (1 + 1 / 4),
-                self.mesh + 2 * self.num_pml_layers - 1,
-            )
-            self.after_y = np.linspace(
-                -0.5 * cladding_width * (1 + 1 / 4),
-                0.5 * cladding_width * (1 + 1 / 4),
-                self.mesh + 2 * self.num_pml_layers - 1,
-            )
-            self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
-            self.y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
+            self.setup_PML()
         else:
-            self.after_x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
-            self.after_y = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, self.mesh)
-            self.x = self.after_x
-            self.y = self.after_y
+            self.setup_no_PML()
+
+        # Setup file
         if self.mode is None:
-            self.close_after = True
+            self.setup_file()
 
-            # open file
-            if os.path.isfile("api.lms"):
-                os.remove("api.lms")
+    def setup_PML(self):
+        self.num_pml_layers = int(self.mesh / 8.0)
+        self.after_x = np.linspace(
+            -0.5 * self.cladding_width * (1 + 1 / 4),
+            0.5 * self.cladding_width * (1 + 1 / 4),
+            self.mesh + 2 * self.num_pml_layers - 1,
+        )
+        self.after_y = np.linspace(
+            -0.5 * self.cladding_width * (1 + 1 / 4),
+            0.5 * self.cladding_width * (1 + 1 / 4),
+            self.mesh + 2 * self.num_pml_layers - 1,
+        )
+        self.x = np.linspace(-0.5 * self.cladding_width, 0.5 * self.cladding_width, self.mesh)
+        self.y = np.linspace(-0.5 * self.cladding_width, 0.5 * self.cladding_width, self.mesh)
 
-            self.mode = lm.MODE(hide=True)
-            self.mode.save("api.lms")
+    def setup_file(self):
+        self.close_after = True
 
-    def solve(self):
-        """Solves for the eigenmodes"""
+        # open file
+        if os.path.isfile("api.lms"):
+            os.remove("api.lms")
 
-        length = 10.0e-6
+        self.mode = lm.MODE(hide=True)
+        self.mode.save("api.lms")
 
-        # Restart everything in case this isn't the first go
-        self.mode.switchtolayout()
-        self.mode.deleteall()
+    def setup_no_PML(self):
+        self.after_x = np.linspace(-0.5 * self.cladding_width, 0.5 * self.cladding_width, self.mesh)
+        self.after_y = np.linspace(-0.5 * self.cladding_width, 0.5 * self.cladding_width, self.mesh)
+        self.x = self.after_x
+        self.y = self.after_y
 
+    def setup_cladding(self):
         cladding = self.mode.addrect()
         cladding.name = "cladding"
         cladding.x = 0
-        cladding.x_span = length
+        cladding.x_span = 10.0e-6
         cladding.y = 0
         cladding.y_span = self.cladding_width * 2.0
         cladding.z = 0
         cladding.z_span = self.cladding_thickness * 2.0
         cladding.index = self.cladding_index
-        # cladding.material = "SiO2 (Glass) - Palik"
+        return cladding
 
+    def setup_waveguide_core(self):
+        core = self.mode.addrect()
+        core.name = "core"
+        core.x = 0
+        core.x_span = 10.0e-6
+        core.y = 0
+        core.y_span = self.width
+        core.z = 0
+        core.z_span = self.thickness
+        core.index = self.core_index
+        return core
+
+    def setup_polygons_core(self):
+        for i, p in enumerate(self.polygons):
+            core = self.mode.addpoly()
+            self.mode.set("name", str("poly{}".format(i)))
+            self.mode.set("vertices", p[0])
+            self.mode.set("z span", self.thickness)
+            self.mode.set("first axis", "y")
+            self.mode.set("rotation 1", 90)
+            self.mode.set("y", p[1])
+            self.mode.set("z", p[2])
+            self.mode.set("index", self.core_index)
+        return core
+
+    def setup_eme(self):
+        eme = self.mode.addeme()
+        self.mode.set("wavelength", self.wl)
+        self.mode.set("mesh cells y", self.mesh)
+        self.mode.set("mesh cells z", self.mesh)
+        self.mode.set("x min", -1e-6)
+        self.mode.set("y", 0)
+        self.mode.set("y span", self.cladding_width)
+        self.mode.set("z", 0)
+        self.mode.set("z span", self.cladding_thickness)
+        self.mode.set("allow custom eigensolver settings", 1)
+        self.mode.set("cells", 1)
+        self.mode.set("group spans", 2e-6)
+        self.mode.set("modes", self.num_modes)
+        if self.PML:
+            self.mode.set("y min bc", "PML")
+            self.mode.set("y max bc", "PML")
+            self.mode.set("z min bc", "PML")
+            self.mode.set("z max bc", "PML")
+            self.mode.set("pml layers", self.num_pml_layers)
+        return eme
+
+    def get_eme_results(self):
+        results = self.mode.getresult("EME::Cells::cell_1", "mode fields")
+        neffs = []
+        gridx, gridy = [results["y"], results["z"]]
+        gridx, gridy = [gridx.reshape(gridx.shape[0]), gridy.reshape(gridy.shape[0])]
+        mesh = len(gridx)
+        fields = []
+        for mode_num in range(1, self.num_modes + 1):
+            neffs.append(self.mode.getresult("EME::Cells::cell_1", "neff")["neff"].flatten()[mode_num - 1])
+            E = results["E" + str(mode_num)].reshape(mesh, mesh, 3)
+            H = results["H" + str(mode_num)].reshape(mesh, mesh, 3)
+            Ex, Ey, Ez, Hx, Hy, Hz = [E[:, :, 1], E[:, :, 2], E[:, :, 0], H[:, :, 1], H[:, :, 2], H[:, :, 0]]
+            fields.append([Hx, Hy, Hz, Ex, Ey, Ez])
+        n = results["index"].reshape(mesh, mesh, 3)[:, :, 0]
+        return fields, neffs, gridx, gridy, mesh, n
+
+    def setup_fde(self):
+        fde = self.mode.addfde()
+        fde.y = 0
+        fde.y_span = self.cladding_width  # clad_width / 2
+        fde.solver_type = "2D X normal"
+        fde.x = 0
+        fde.z = 0
+        fde.z_span = self.cladding_thickness  # clad_thickness / 2
+        fde.mesh_cells_y = self.mesh - 1
+        fde.mesh_cells_z = self.mesh - 1
+        self.mode.set("number of trial modes", self.num_modes)
+        self.mode.set("wavelength", self.wl)
+        return fde
+
+    def get_fde_results(self):
+        self.mode.findmodes()
+        gridx, gridy = [self.mode.getresult("FDE::data::mode1", "y"), self.mode.getresult("FDE::data::mode1", "z")]
+        gridx, gridy = [gridx.reshape(gridx.shape[0]), gridy.reshape(gridy.shape[0])]
+        fields, neffs = [[], []]
+        m = self.mesh
+        for mode_num in range(1, self.num_modes + 1):
+            mode_field = []
+            neffs.append(self.mode.getdata("FDE::data::mode" + str(mode_num), "neff")[0][0])
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Hy").reshape(m, m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Hz").reshape(m, m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Hx").reshape(m, m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Ey").reshape(m, m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Ez").reshape(m, m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Ex").reshape(m, m))
+            fields.append(mode_field)
+        n = self.mode.getdata("FDE::data::material", "index_x").reshape(m, m)
+        return fields, neffs, gridx, gridy, n
+
+    def solve(self):
+        """Solves for the eigenmodes"""
+
+        # Restart everything in case this isn't the first go
+        self.mode.switchtolayout()
+        self.mode.deleteall()
+
+        # Create cladding
+        cladding = self.setup_cladding()
+
+        # add core x=prop y=width z=thickness
         if not len(self.polygons):
-
-            # add core x=prop y=width z=thickness
-            core = self.mode.addrect()
-            core.name = "core"
-            core.x = 0
-            core.x_span = length
-            core.y = 0
-            core.y_span = self.width
-            core.z = 0
-            core.z_span = self.thickness
-            core.index = self.core_index
-            # core.material = "Si (Silicon) - Palik"
-
+            core = self.setup_waveguide_core()
         else:
-            for i, p in enumerate(self.polygons):
-                self.mode.addpoly()
-                self.mode.set("name", str("poly{}".format(i)))
-                self.mode.set("vertices", p[0])
-                self.mode.set("z span", self.thickness)
-                self.mode.set("first axis", "y")
-                self.mode.set("rotation 1", 90)
-                self.mode.set("y", p[1])
-                self.mode.set("z", p[2])
-                self.mode.set("index", self.core_index)
+            core = self.setup_polygons_core()
 
+        # Solve using EME modesolver
         if self.eme_modes or self.PML:
 
             # set up EME for FDE extraction
-            self.mode.addeme()
-            self.mode.set("wavelength", self.wl)
-            self.mode.set("mesh cells y", self.mesh)
-            self.mode.set("mesh cells z", self.mesh)
-            self.mode.set("x min", -1e-6)
-            self.mode.set("y", 0)
-            self.mode.set("y span", self.cladding_width)
-            self.mode.set("z", 0)
-            self.mode.set("z span", self.cladding_thickness)
-            self.mode.set("allow custom eigensolver settings", 1)
-            self.mode.set("cells", 1)
-            self.mode.set("group spans", 2e-6)
-            self.mode.set("modes", self.num_modes)
-            if self.PML:
-                self.mode.set("y min bc", "PML")
-                self.mode.set("y max bc", "PML")
-                self.mode.set("z min bc", "PML")
-                self.mode.set("z max bc", "PML")
-                self.mode.set("pml layers", self.num_pml_layers)
+            eme = self.setup_eme()
 
             # run
             self.mode.run()
             self.mode.emepropagate()
 
             # get modes
-            results = self.mode.getresult("EME::Cells::cell_1", "mode fields")
-            neff = []
-            gridx = results["y"]
-            gridx = gridx.reshape(gridx.shape[0])
-            gridy = results["z"]
-            gridy = gridy.reshape(gridy.shape[0])
-            grid = [gridx, gridy]
-            mesh = len(gridx)
+            fields, neffs, gridx, gridy, mesh, n = self.get_eme_results()
             self.mesh = mesh
-            field = []
-            for mode_num in range(1, self.num_modes + 1):
-                neff.append(self.mode.getresult("EME::Cells::cell_1", "neff")["neff"].flatten()[mode_num - 1])
-                E = results["E" + str(mode_num)].reshape(mesh, mesh, 3)
-                H = results["H" + str(mode_num)].reshape(mesh, mesh, 3)
-                Ex = E[:, :, 1]
-                Ey = E[:, :, 2]
-                Ez = E[:, :, 0]
-                Hx = H[:, :, 1]
-                Hy = H[:, :, 2]
-                Hz = H[:, :, 0]
-                field.append([Hx, Hy, Hz, Ex, Ey, Ez])
-            self.n = results["index"].reshape(mesh, mesh, 3)[:, :, 0]
+            self.n = n
 
+        # Solve using FDE modesolver
         else:
 
             # set up FDE
-            fde = self.mode.addfde()
-            fde.y = 0
-            fde.y_span = self.cladding_width  # clad_width / 2
-            fde.solver_type = "2D X normal"
-            fde.x = 0
-            fde.z = 0
-            fde.z_span = self.cladding_thickness  # clad_thickness / 2
-            fde.mesh_cells_y = self.mesh - 1
-            fde.mesh_cells_z = self.mesh - 1
+            fde = self.setup_fde()
 
-            self.mode.set("number of trial modes", self.num_modes)
-            self.mode.set("wavelength", self.wl)
-            self.mode.findmodes()
-            field = []
-            gridx = self.mode.getresult("FDE::data::mode1", "y")
-            gridx = gridx.reshape(gridx.shape[0])
-            gridy = self.mode.getresult("FDE::data::mode1", "z")
-            gridy = gridy.reshape(gridy.shape[0])
-            grid = [gridx, gridy]
-            neff = []
-            for mode_num in range(1, self.num_modes + 1):
-                mode_field = []
-                neff.append(self.mode.getdata("FDE::data::mode" + str(mode_num), "neff")[0][0])
-                mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hy").reshape(self.mesh, self.mesh)
-                )
-                mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hz").reshape(self.mesh, self.mesh)
-                )
-                mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Hx").reshape(self.mesh, self.mesh)
-                )
-                mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ey").reshape(self.mesh, self.mesh)
-                )
-                mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ez").reshape(self.mesh, self.mesh)
-                )
-                mode_field.append(
-                    self.mode.getdata("FDE::data::mode" + str(mode_num), "Ex").reshape(self.mesh, self.mesh)
-                )
-                field.append(mode_field)
-            self.n = self.mode.getdata("FDE::data::material", "index_x").reshape(self.mesh, self.mesh)
+            # get fde results
+            fields, neffs, gridx, gridy, n = self.get_fde_results()
+            self.n = n
 
-        field = np.array(field).tolist()
+        # Set field, grid, and effective index
+        self.x, self.y = [gridx, gridy][:]
+        self.neffs, self.fields = [neffs, fields][:]
 
-        self.x = grid[0]
-        self.y = grid[1]
-        self.neffs = neff
-        self.fields = field
-
+        # Check for gui close
         if self.close_after and os.path.isfile("api.lms"):
             os.remove("api.lms")
 
     def clear(self):
         """Clears the modesolver's eigenmodes to make memory"""
 
-        self.x = None
-        self.y = None
-        self.neffs = None
-        self.fields = None
+        self.x, self.y, self.neffs, self.fields = [None] * 4
 
     def get_mode(self, mode_num=0):
         """Get the indexed mode number
@@ -313,13 +329,93 @@ class MSLumerical(ModeSolver):
         """
 
         field = self.fields[mode_num]
-        Ex = field[3]
-        Ey = field[4]
-        Ez = field[5]
-        Hx = field[0]
-        Hy = field[1]
-        Hz = field[2]
+        Hx, Hy, Hz, Ex, Ey, Ez = field[0:6]
         neff = self.neffs[mode_num]
         mode = Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=self.n)
 
+        return mode
+
+
+class MSLumerical1D(MSLumerical):
+    """
+    Exact same as MSLumerical except solves on a 1D grid. 
+    Create geometries in 2D as before, but only the middle y value will be used.
+    This declaration will only overload the methods that require changing code for
+    """
+
+    def setup_eme(self):
+        eme = self.mode.addeme()
+        self.mode.set("solver type", "XY plane: X prop")
+        self.mode.set("wavelength", self.wl)
+        self.mode.set("mesh cells y", self.mesh)
+        self.mode.set("mesh cells z", self.mesh)
+        self.mode.set("x min", -1e-6)
+        self.mode.set("y", 0)
+        self.mode.set("y span", self.cladding_width)
+        self.mode.set("z", 0)
+        self.mode.set("allow custom eigensolver settings", 1)
+        self.mode.set("cells", 1)
+        self.mode.set("group spans", 2e-6)
+        self.mode.set("modes", self.num_modes)
+        if self.PML:
+            self.mode.set("y min bc", "PML")
+            self.mode.set("y max bc", "PML")
+            self.mode.set("z min bc", "PML")
+            self.mode.set("z max bc", "PML")
+            self.mode.set("pml layers", self.num_pml_layers)
+        return eme
+
+    def get_eme_results(self):
+        results = self.mode.getresult("EME::Cells::cell_1", "mode fields")
+        neffs = []
+        gridx = [results["y"]]
+        gridx, gridy = [gridx.reshape(gridx.shape[0]), np.zeros(1)]
+        mesh = len(gridx)
+        fields = []
+        for mode_num in range(1, self.num_modes + 1):
+            neffs.append(self.mode.getresult("EME::Cells::cell_1", "neff")["neff"].flatten()[mode_num - 1])
+            E = results["E" + str(mode_num)].reshape(mesh, mesh, 3)
+            H = results["H" + str(mode_num)].reshape(mesh, mesh, 3)
+            Ex, Ey, Ez, Hx, Hy, Hz = [E[:, 1], E[:, 2], E[:, 0], H[:, 1], H[:, 2], H[:, 0]]
+            fields.append([Hx, Hy, Hz, Ex, Ey, Ez])
+        n = results["index"].reshape(mesh, 3)[:, 0]
+        return fields, neffs, gridx, gridy, mesh, n
+
+    def setup_fde(self):
+        fde = self.mode.addfde()
+        fde.y = 0
+        fde.y_span = self.cladding_width  # clad_width / 2
+        fde.solver_type = "1D Y:X prop"
+        fde.x = 0
+        fde.z = 0
+        fde.mesh_cells_y = self.mesh - 1
+        self.mode.set("number of trial modes", self.num_modes)
+        self.mode.set("wavelength", self.wl)
+        return fde
+
+    def get_fde_results(self):
+        self.mode.findmodes()
+        gridx = self.mode.getresult("FDE::data::mode1", "y")
+        gridx = gridx.reshape(gridx.shape[0])
+        gridy = np.zeros(1)
+        fields, neffs = [[], []]
+        m = self.mesh
+        for mode_num in range(1, self.num_modes + 1):
+            mode_field = []
+            neffs.append(self.mode.getdata("FDE::data::mode" + str(mode_num), "neff")[0][0])
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Hy").reshape(m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Hz").reshape(m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Hx").reshape(m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Ey").reshape(m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Ez").reshape(m))
+            mode_field.append(self.mode.getdata("FDE::data::mode{}".format(mode_num), "Ex").reshape(m))
+            fields.append(mode_field)
+        n = self.mode.getdata("FDE::data::material", "index_x").reshape(m)
+        return fields, neffs, gridx, gridy, n
+
+    def get_mode(self, mode_num=0):
+        field = self.fields[mode_num]
+        Hx, Hy, Hz, Ex, Ey, Ez = field[0:6]
+        neff = self.neffs[mode_num]
+        mode = Mode1D(x=self.x, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=self.n)
         return mode
