@@ -12,6 +12,7 @@ import pickle
 from sklearn.preprocessing import PolynomialFeatures
 from emepy.fd import ModeSolver
 from emepy.tools import from_chunks
+import numpy as np
 
 
 FIELD_WIDTH = 128

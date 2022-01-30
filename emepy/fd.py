@@ -34,6 +34,7 @@ class ModeSolver(object):
         """
         raise NotImplementedError
 
+
 class ModeSolver1D(ModeSolver):
     pass
 
@@ -151,7 +152,7 @@ class MSEMpy(ModeSolver):
 
         self.after_x = self.x
         self.after_y = self.y
-        self.n = self.epsfunc(self.x, self.y)
+        self.n = np.sqrt(self.epsfunc(self.x, self.y))
 
     def solve(self):
         """Solves for the eigenmodes"""
@@ -212,29 +213,20 @@ class MSEMpy(ModeSolver):
         self.y = y0_new[self.nlayers[3] : -self.nlayers[2]]
 
         neff = self.solver.modes[mode_num].neff
-        n = self.epsfunc(self.x, self.y)
+        n = np.sqrt(self.epsfunc(self.x, self.y))
 
-        return Mode(
-            x=self.x,
-            y=self.y,
-            wl=self.wl,
-            neff=neff,
-            Hx=Hx,
-            Hy=Hy,
-            Hz=Hz,
-            Ex=Ex,
-            Ey=Ey,
-            Ez=Ez,
-            n=n,
-        )
-    
+        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=n)
+
     def plot_material(self):
         """Plots the index of refraction profile"""
-        plt.imshow(np.sqrt(np.real(self.n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6])
+        plt.imshow(
+            np.sqrt(np.real(self.n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6]
+        )
         plt.colorbar()
         plt.title("Index of Refraction")
         plt.xlabel("x (µm)")
         plt.ylabel("y (µm)")
+
 
 class MSEMpy1D(ModeSolver):
     """Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide."""
@@ -334,9 +326,9 @@ class MSEMpy1D(ModeSolver):
 
     def solve(self):
         """Solves for the eigenmodes"""
-        self.solver = EMpy_gpu.modesolvers.FD.VFDModeSolver(self.wl, self.x, np.zeros(1), self.epsfunc, self.boundary).solve(
-            self.num_modes, self.accuracy
-        )
+        self.solver = EMpy_gpu.modesolvers.FD.VFDModeSolver(
+            self.wl, self.x, np.zeros(1), self.epsfunc, self.boundary
+        ).solve(self.num_modes, self.accuracy)
         return self
 
     def clear(self):
@@ -368,42 +360,19 @@ class MSEMpy1D(ModeSolver):
 
         if not self.PML:
             self.nlayers = [1, 0, 1, 0]
-        Ex = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Ex"), True)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Ey = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Ey"), True)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Ez = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Ez"), True)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Hx = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Hx"), False)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Hy = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Hy"), False)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Hz = interp1d(x0_new, x0. self.solver.modes[mode_num].get_field("Hz"), False)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
+        Ex = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ex"), True)[self.nlayers[1] : -self.nlayers[0]]
+        Ey = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ey"), True)[self.nlayers[1] : -self.nlayers[0]]
+        Ez = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ez"), True)[self.nlayers[1] : -self.nlayers[0]]
+        Hx = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hx"), False)[self.nlayers[1] : -self.nlayers[0]]
+        Hy = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hy"), False)[self.nlayers[1] : -self.nlayers[0]]
+        Hz = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hz"), False)[self.nlayers[1] : -self.nlayers[0]]
         self.x = x0_new[self.nlayers[1] : -self.nlayers[0]]
 
         neff = self.solver.modes[mode_num].neff
         n = np.sqrt(self.epsfunc(self.x, np.zeros(0)))
 
-        return Mode1D(
-            x=self.x,
-            wl=self.wl,
-            neff=neff,
-            Hx=Hx,
-            Hy=Hy,
-            Hz=Hz,
-            Ex=Ex,
-            Ey=Ey,
-            Ez=Ez,
-            n=n,
-        )
-    
+        return Mode1D(x=self.x, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=n)
+
     def plot_material(self):
         """Plots the index of refraction profile"""
         plt.plot(self.x, self.n)
