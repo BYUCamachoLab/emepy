@@ -51,8 +51,8 @@ class MSLumerical(ModeSolver):
         width=0.5e-6,
         thickness=0.22e-6,
         num_modes=1,
-        cladding_width=10e-6,
-        cladding_thickness=10e-6,
+        cladding_width=5e-6,
+        cladding_thickness=5e-6,
         core_index=None,
         cladding_index=None,
         mesh=300,
@@ -288,7 +288,6 @@ class MSLumerical(ModeSolver):
             # get modes
             fields, neffs, gridx, gridy, mesh, n = self.get_eme_results()
             self.mesh = mesh
-            self.n = n
 
         # Solve using FDE modesolver
         else:
@@ -298,11 +297,11 @@ class MSLumerical(ModeSolver):
 
             # get fde results
             fields, neffs, gridx, gridy, n = self.get_fde_results()
-            self.n = n
 
         # Set field, grid, and effective index
         self.x, self.y = [gridx, gridy][:]
         self.neffs, self.fields = [neffs, fields][:]
+        self.n = n
 
         # Check for gui close
         if self.close_after and os.path.isfile("api.lms"):
@@ -344,10 +343,9 @@ class MSLumerical1D(MSLumerical):
 
     def setup_eme(self):
         eme = self.mode.addeme()
-        self.mode.set("solver type", "XY plane: X prop")
+        self.mode.set("solver type", "2D XY plane: X prop")
         self.mode.set("wavelength", self.wl)
         self.mode.set("mesh cells y", self.mesh)
-        self.mode.set("mesh cells z", self.mesh)
         self.mode.set("x min", -1e-6)
         self.mode.set("y", 0)
         self.mode.set("y span", self.cladding_width)
@@ -359,22 +357,20 @@ class MSLumerical1D(MSLumerical):
         if self.PML:
             self.mode.set("y min bc", "PML")
             self.mode.set("y max bc", "PML")
-            self.mode.set("z min bc", "PML")
-            self.mode.set("z max bc", "PML")
             self.mode.set("pml layers", self.num_pml_layers)
         return eme
 
     def get_eme_results(self):
         results = self.mode.getresult("EME::Cells::cell_1", "mode fields")
         neffs = []
-        gridx = [results["y"]]
+        gridx = results["y"]
         gridx, gridy = [gridx.reshape(gridx.shape[0]), np.zeros(1)]
         mesh = len(gridx)
         fields = []
         for mode_num in range(1, self.num_modes + 1):
             neffs.append(self.mode.getresult("EME::Cells::cell_1", "neff")["neff"].flatten()[mode_num - 1])
-            E = results["E" + str(mode_num)].reshape(mesh, mesh, 3)
-            H = results["H" + str(mode_num)].reshape(mesh, mesh, 3)
+            E = results["E" + str(mode_num)].reshape(mesh, 3)
+            H = results["H" + str(mode_num)].reshape(mesh, 3)
             Ex, Ey, Ez, Hx, Hy, Hz = [E[:, 1], E[:, 2], E[:, 0], H[:, 1], H[:, 2], H[:, 0]]
             fields.append([Hx, Hy, Hz, Ex, Ey, Ez])
         n = results["index"].reshape(mesh, 3)[:, 0]
