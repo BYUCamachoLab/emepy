@@ -76,21 +76,10 @@ class Layer(object):
             for mode in range(self.mode_solvers.num_modes):
                 if not isinstance(self.mode_solvers, ModeSolver1D):
                     modes.append(
-                        Mode(
-                            self.mode_solvers.x,
-                            self.mode_solvers.y,
-                            self.mode_solvers.wl,
-                            n=self.mode_solvers.n,
-                        )
+                        Mode(self.mode_solvers.x, self.mode_solvers.y, self.mode_solvers.wl, n=self.mode_solvers.n)
                     )
                 else:
-                    modes.append(
-                        Mode1D(
-                            self.mode_solvers.x,
-                            self.mode_solvers.wl,
-                            n=self.mode_solvers.n,
-                        )
-                    )
+                    modes.append(Mode1D(self.mode_solvers.x, self.mode_solvers.wl, n=self.mode_solvers.n))
 
         else:
             for index in range(len(self.mode_solvers)):
@@ -176,6 +165,29 @@ class EME(object):
         self.interface = None
         self.monitors = []
 
+    def solve_modes(self):
+        for layer in self.layers:
+            layer.activate_layer()
+
+    def propagate_period_n_only(self, input_array):
+        mode_set1 = self.layers[0].get_n_only()
+        self.update_monitors(
+            self.layers[0].length, self.layers[0].length, mode_set1, not_first=False, input_array=input_array
+        )
+
+        # Propagate the middle layers
+        for index in tqdm(range(1, len(self.layers) - 1)):
+
+            layer1_ = self.layers[index]
+            layer1 = layer1_.get_n_only()
+            self.update_monitors(
+                self.layers[index].length, self.layers[index].length, layer1, None, input_array=input_array
+            )
+
+        mode_set2 = self.layers[-1].get_n_only()
+        self.update_monitors(self.layers[-1].length, self.layers[-1].length, mode_set2, None, input_array=input_array)
+        return (None, mode_set1, mode_set2)
+
     def propagate_period(self, input_array, n_only=False):
         """The propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values.
 
@@ -192,85 +204,55 @@ class EME(object):
         """
 
         if n_only:
-            mode_set1 = self.layers[0].get_n_only()
-            self.update_monitors(
-                self.layers[0].length, self.layers[0].length, mode_set1, not_first=False, input_array=input_array
-            )
-        else:
-            # Propagate the first two layers
-            self.layers[0].activate_layer()
-            mode_set1 = self.layers[0].get_activated_layer()
-            self.layers[1].activate_layer()
-            current = Current(self.wavelength, self.layers[0].get_activated_layer())
+            return self.propagate_period_n_only(input_array)
 
-            # Update the monitors
-            self.update_monitors(
-                self.layers[0].length, self.layers[0].length, mode_set1, not_first=False, input_array=input_array
-            )
+        # Propagate the first two layers
+        mode_set1 = self.layers[0].get_activated_layer()
+        current = Current(self.wavelength, self.layers[0].get_activated_layer())
 
-            interface = self.interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
-            interface.solve()
-            self.layers[0].clear()
-            current.update_s(self.cascade(Current(self.wavelength, current), interface), interface)
-            interface.clear()
+        # Update the monitors
+        self.update_monitors(
+            self.layers[0].length, self.layers[0].length, mode_set1, not_first=False, input_array=input_array
+        )
+
+        interface = self.interface(self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
+        current.update_s(self.cascade(Current(self.wavelength, current), interface), interface)
 
         # Propagate the middle layers
         for index in tqdm(range(1, len(self.layers) - 1)):
 
-            if n_only:
-                layer1_ = self.layers[index]
-                layer1 = layer1_.get_n_only()
-                self.update_monitors(
-                    self.layers[index].length, self.layers[index].length, layer1, None, input_array=input_array
-                )
-            else:
-                layer1_ = self.layers[index]
-                layer2_ = self.layers[index + 1]
-                layer2_.activate_layer()
-
-                layer1 = layer1_.get_activated_layer()
-                layer2 = layer2_.get_activated_layer()
-
-                # Update the monitors
-                self.update_monitors(
-                    self.layers[index].length, self.layers[index].length, layer1, current, input_array=input_array
-                )
-
-                interface = self.interface(layer1, layer2)
-                interface.solve()
-
-                current.update_s(self.cascade(Current(self.wavelength, current), layer1), layer1)
-                layer1_.clear()
-                current.update_s(self.cascade(Current(self.wavelength, current), interface), interface)
-                interface.clear()
-
-        if n_only:
-            mode_set2 = self.layers[-1].get_n_only()
-            self.update_monitors(
-                self.layers[-1].length, self.layers[-1].length, mode_set2, None, input_array=input_array
-            )
-            return (None, mode_set1, mode_set2)
-        else:
-            # Gather and return the s params and edge layers
-            mode_set2 = self.layers[-1].get_activated_layer()
+            layer1 = self.layers[index].get_activated_layer()
+            layer2 = self.layers[index + 1].get_activated_layer()
 
             # Update the monitors
             self.update_monitors(
-                self.layers[-1].length, self.layers[-1].length, mode_set2, current, input_array=input_array
+                self.layers[index].length, self.layers[index].length, layer1, current, input_array=input_array
             )
 
-            # Propagate final two layers
-            current.update_s(
-                self.cascade(Current(self.wavelength, current), self.layers[-1].get_activated_layer()),
-                self.layers[-1].get_activated_layer(),
-            )
+            interface = self.interface(layer1, layer2)
+            current.update_s(self.cascade(Current(self.wavelength, current), layer1), layer1)
+            current.update_s(self.cascade(Current(self.wavelength, current), interface), interface)
 
-            self.layers[-1].clear()
-            self.s_params = current.s_params
-            for m in range(len(self.monitors)):
-                self.monitors[m].normalize()
+        # Gather and return the s params and edge layers
+        mode_set2 = self.layers[-1].get_activated_layer()
 
-            return (current.s_params, mode_set1, mode_set2)
+        # Update the monitors
+        self.update_monitors(
+            self.layers[-1].length, self.layers[-1].length, mode_set2, current, input_array=input_array
+        )
+
+        # Propagate final two layers
+        current.update_s(
+            self.cascade(Current(self.wavelength, current), self.layers[-1].get_activated_layer()),
+            self.layers[-1].get_activated_layer(),
+        )
+
+        self.layers[-1].clear()
+        self.s_params = current.s_params
+        for m in range(len(self.monitors)):
+            self.monitors[m].normalize()
+
+        return (current.s_params, mode_set1, mode_set2)
 
     def propagate(self, input_array=None, n_only=False):
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.
@@ -289,6 +271,8 @@ class EME(object):
             raise Exception("Must place layers before propagating")
         else:
             self.wavelength = self.layers[0].wavelength
+
+        self.solve_modes()
 
         # Decide which routine to use
         num_modes = max([l.num_modes for l in self.layers])
@@ -595,13 +579,13 @@ class EME(object):
 
             # Create monitor dimensions
             c = len(components)
-            if axes in ["xz","yz"]:
+            if axes in ["xz", "yz"]:
                 dimensions = (c, x, z)
             elif axes in ["yz", "zy"]:
                 dimensions = (c, y, z)
             elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
                 dimensions = (c, x, y, z)
-            elif axes in ["xy","yx"]:
+            elif axes in ["xy", "yx"]:
                 dimensions = (c, x, y)
             else:
                 raise Exception("Improper axes format")
@@ -740,6 +724,8 @@ class ActivatedLayer(Model):
         self.length = length
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)]
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)]
+        forward_s = None
+        backward_s = None
         if not n_only:
             self.normalize_fields()
             self.purge_spurious()
@@ -907,6 +893,7 @@ class InterfaceSingleMode(Model):
         for name in self.right_pins:
             pins.append(Pin(self, name))
         super().__init__(**kwargs, pins=pins)
+        self.solve()
 
     def s_parameters(self, freqs=None):
         """Returns the scattering matrix.
@@ -1012,6 +999,7 @@ class InterfaceMultiMode(Model):
             pins.append(Pin(self, name))
 
         super().__init__(**kwargs, pins=pins)
+        self.solve()
 
     def s_parameters(self, freqs=None):
         """Returns the scattering matrix.
