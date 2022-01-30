@@ -238,7 +238,7 @@ class Mode1D(EigenMode):
         # Plot fields
         fields = ["Hx", "Hy", "Hz", "Ex", "Ey", "Ez"]
         for i, field in enumerate([Hx, Hy, Hz, Ex, Ey, Ez]):
-            plt.subplot(2, 3, i + 1, adjustable="box", aspect=field.shape[0] / field.shape[1])
+            plt.subplot(2, 3, i + 1)
             plt.plot(self.x, field)
             plt.xlabel("x µm")
             plt.ylabel("{}({})".format(op_name, fields[i]))
@@ -305,9 +305,9 @@ class Mode1D(EigenMode):
         if (np.sum(np.real(self.Hy))) < 0:
             self *= -1
 
-    def plot_material(self):
+    def plot_material(self, operation=np.real):
         """Plots the index of refraction profile"""
-        plt.plot(self.x, self.n)
+        plt.plot(self.x, operation(self.n))
         plt.title("Index of Refraction")
         plt.xlabel("x (µm)")
         plt.ylabel("y (µm)")
@@ -482,7 +482,7 @@ class Mode(EigenMode):
 
     def plot_material(self):
         """Plots the index of refraction profile"""
-        plt.imshow(np.sqrt(np.real(self.n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6])
+        plt.imshow(np.real(self.n).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6])
         plt.colorbar()
         plt.title("Index of Refraction")
         plt.xlabel("x (µm)")

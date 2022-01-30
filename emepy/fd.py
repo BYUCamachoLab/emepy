@@ -386,7 +386,7 @@ class MSEMpy1D(ModeSolver):
         self.x = x0_new[self.nlayers[1] : -self.nlayers[0]]
 
         neff = self.solver.modes[mode_num].neff
-        n = self.epsfunc(self.x, np.zeros(0))
+        n = np.sqrt(self.epsfunc(self.x, np.zeros(0)))
 
         return Mode1D(
             x=self.x,
