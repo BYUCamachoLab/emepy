@@ -34,13 +34,12 @@ class LumEME(EME):
         if os.path.isfile("api.lms"):
             os.remove("api.lms")
 
-    # def __del__(self):
+    def __del__(self):
+        if os.path.isfile("api.lms"):
+            os.remove("api.lms")
 
-    # if os.path.isfile("api.lms"):
-    #     os.remove("api.lms")
-
-    # if os.path.isfile("api_p0.log"):
-    #     os.remove("api_p0.log")
+        if os.path.isfile("api_p0.log"):
+            os.remove("api_p0.log")
 
 
 class MSLumerical(ModeSolver):
@@ -419,3 +418,20 @@ class MSLumerical1D(MSLumerical):
         neff = self.neffs[mode_num]
         mode = Mode1D(x=self.x, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=self.n)
         return mode
+
+    def setup_PML(self):
+        self.num_pml_layers = int(self.mesh / 8.0)
+        self.after_x = np.linspace(
+            -0.5 * self.cladding_width * (1 + 1 / 4),
+            0.5 * self.cladding_width * (1 + 1 / 4),
+            self.mesh + 2 * self.num_pml_layers - 1,
+        )
+        self.after_y = np.zeros(1)
+        self.x = np.linspace(-0.5 * self.cladding_width, 0.5 * self.cladding_width, self.mesh)
+        self.y = np.zeros(1)
+
+    def setup_no_PML(self):
+        self.after_x = np.linspace(-0.5 * self.cladding_width, 0.5 * self.cladding_width, self.mesh)
+        self.after_y = np.zeros(1)
+        self.x = self.after_x
+        self.y = self.after_y
