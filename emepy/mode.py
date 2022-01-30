@@ -160,7 +160,7 @@ class EigenMode(object):
 class Mode1D(EigenMode):
     """Object that holds the field profiles and effective index for a 1D eigenmode"""
 
-    def __init__(self, x, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n):
+    def __init__(self, x=None, wl=None, neff=None, Hx=None, Hy=None, Hz=None, Ex=None, Ey=None, Ez=None, n=None):
         """Constructor for Mode1D Object (one dimensional eigenmode)
 
         Parameters
@@ -316,7 +316,7 @@ class Mode1D(EigenMode):
 class Mode(EigenMode):
     """Object that holds the field profiles and effective index for a 2D eigenmode"""
 
-    def __init__(self, x, y, wl, neff, Hx, Hy, Hz, Ex, Ey, Ez, n):
+    def __init__(self, x=None, y=None, wl=None, neff=None, Hx=None, Hy=None, Hz=None, Ex=None, Ey=None, Ez=None, n=None):
         """Constructor for Mode Object
 
         Parameters

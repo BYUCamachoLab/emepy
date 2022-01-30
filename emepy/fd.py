@@ -34,6 +34,9 @@ class ModeSolver(object):
         """
         raise NotImplementedError
 
+class ModeSolver1D(ModeSolver):
+    pass
+
 
 class MSEMpy(ModeSolver):
     """Electromagnetic Python Modesolver. Uses the EMpy library See Modesolver. Parameterizes the cross section as a rectangular waveguide."""

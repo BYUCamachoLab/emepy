@@ -3,7 +3,7 @@
 """
 
 from emepy.eme import EME
-from emepy.fd import ModeSolver
+from emepy.fd import ModeSolver, ModeSolver1D
 import importlib
 
 if not (importlib.util.find_spec("lumapi") is None):
@@ -334,7 +334,7 @@ class MSLumerical(ModeSolver):
         return mode
 
 
-class MSLumerical1D(MSLumerical):
+class MSLumerical1D(MSLumerical, ModeSolver1D):
     """
     Exact same as MSLumerical except solves on a 1D grid. 
     Create geometries in 2D as before, but only the middle y value will be used.
