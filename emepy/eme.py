@@ -6,8 +6,8 @@ from simphony.models import Subcircuit
 from matplotlib import pyplot as plt
 from emepy.monitors import Monitor
 from copy import copy
-from emepy.mode import Mode
-from emepy.fd import MSEMpy
+from emepy.mode import Mode, Mode1D
+from emepy.fd import MSEMpy, ModeSolver1D
 
 
 class Layer(object):
@@ -74,40 +74,44 @@ class Layer(object):
 
         if type(self.mode_solvers) != list:
             for mode in range(self.mode_solvers.num_modes):
-                modes.append(
-                    Mode(
-                        self.mode_solvers.x,
-                        self.mode_solvers.y,
-                        self.mode_solvers.wl,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        n=self.mode_solvers.n,
+                if not isinstance(self.mode_solvers, ModeSolver1D):
+                    modes.append(
+                        Mode(
+                            self.mode_solvers.x,
+                            self.mode_solvers.y,
+                            self.mode_solvers.wl,
+                            n=self.mode_solvers.n,
+                        )
                     )
-                )
+                else:
+                    modes.append(
+                        Mode1D(
+                            self.mode_solvers.x,
+                            self.mode_solvers.wl,
+                            n=self.mode_solvers.n,
+                        )
+                    )
 
         else:
             for index in range(len(self.mode_solvers)):
                 for mode in range(self.mode_solvers[index][1]):
-                    modes.append(
-                        Mode(
-                            self.mode_solvers[index][0].x,
-                            self.mode_solvers[index][0].y,
-                            self.mode_solvers[index][0].wl,
-                            None,
-                            None,
-                            None,
-                            None,
-                            None,
-                            None,
-                            None,
-                            n=self.mode_solvers[index][0].n,
+                    if not isinstance(self.mode_solvers[index][0], ModeSolver1D):
+                        modes.append(
+                            Mode(
+                                self.mode_solvers[index][0].x,
+                                self.mode_solvers[index][0].y,
+                                self.mode_solvers[index][0].wl,
+                                n=self.mode_solvers[index][0].n,
+                            )
                         )
-                    )
+                    else:
+                        modes.append(
+                            Mode1D(
+                                self.mode_solvers[index][0].x,
+                                self.mode_solvers[index][0].wl,
+                                n=self.mode_solvers[index][0].n,
+                            )
+                        )
 
         return ActivatedLayer(modes, self.wavelength, self.length, n_only=True)
 
@@ -448,9 +452,9 @@ class EME(object):
 
                         # Only care about the area of the grid of concern
                         if self.monitors[m].axes == "xz":
-                            field = field[:, int(len(field) / 2)]
+                            field = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
                         elif self.monitors[m].axes == "yz":
-                            field = field[int(len(field) / 2), :]
+                            field = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
                         else:
                             field = field
 
@@ -591,7 +595,16 @@ class EME(object):
 
             # Create monitor dimensions
             c = len(components)
-            dimensions = (c, y, z) if not (axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]) else (c, x, y, z)
+            if axes in ["xz","yz"]:
+                dimensions = (c, x, z)
+            elif axes in ["yz", "zy"]:
+                dimensions = (c, y, z)
+            elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+                dimensions = (c, x, y, z)
+            elif axes in ["xy","yx"]:
+                dimensions = (c, x, y)
+            else:
+                raise Exception("Improper axes format")
 
             # Create grids
             grid_x = self.layers[0].mode_solvers.after_x

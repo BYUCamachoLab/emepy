@@ -68,7 +68,7 @@ class Monitor(object):
                 f"Monitor setup {axes} has not yet been implemented. Please choose from"
                 " the following implemented monitor types: ['xy','yz','xz','xyz']"
             )
-
+            
         self.dimensions = dimensions
         self.field = np.zeros(dimensions).astype(complex)
         self.lengths = copy(lengths)
