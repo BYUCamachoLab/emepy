@@ -152,7 +152,6 @@ class EME(object):
         self.num_periods = num_periods
         self.s_params = None
         self.monitors = []
-        self.state = 0
 
     def add_layer(self, layer):
         """The add_layer method will add a Layer object to the EME object. The object will be geometrically added to the very right side of the structure. Using this method after propagate is useless as the solver has already been called.
@@ -173,13 +172,13 @@ class EME(object):
         if full_reset:
             self.layers = []
             self.wavelength = None
-            self.state = 0
+            self.update_state(0)
 
         # Only unsolve everything and erase monitors
         else:
             for i in range(len(self.layers)):
                 self.layers[i].clear()
-            self.state = 2
+            self.update_state(2)
 
         self.s_params = None
         self.interface = None
@@ -195,10 +194,10 @@ class EME(object):
             continue
 
         # Solve modes
-        self.state = 1
-        for layer in self.layers:
+        self.update_state(1)
+        for layer in tqdm(self.layers):
             layer.activate_layer()
-        self.state = 2
+        self.update_state(2)
 
     def propagate_period(self):
         """The propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values.
@@ -284,6 +283,20 @@ class EME(object):
         # Cascade params for each period
         return self.cascade_periods_n_only()
 
+    def cascade_periods_n_only(self):
+        
+        # Cascade all periods
+        for l in range(self.num_periods - 1):
+            self.update_monitors(
+                None,
+                self.get_total_length(),
+                None,
+                curr_s=None,
+                not_first=True,
+                input_array=None,
+                periodic=l,
+            )
+
     def cascade_periods(self, current_layer, interface, period_layer):
 
         # Cascade params for each period
@@ -297,7 +310,7 @@ class EME(object):
     def forward_pass(self, input_array):
 
         # Start forward
-        self.state = 3
+        self.update_state(3)
 
         # Decide routine
         num_modes = max([l.num_modes for l in self.layers])
@@ -316,7 +329,7 @@ class EME(object):
         interface.solve()
 
         # Cascade periods
-        self.state = 5
+        self.update_state(5)
         s_params = self.cascade_periods(current_layer, interface, period_layer)
 
         # Finds the output given the input vector
@@ -327,13 +340,18 @@ class EME(object):
             temp[: input_array.shape[0]] = input_array
             input_array = temp
         self.output = np.matmul(current_layer.s_params[0], input_array)
-        self.state = 6
+        self.update_state(6)
 
         return s_params
 
+    def update_state(self, state):
+
+        self.state = state
+        print("current state: {}".format(self.states[self.state]))
+
     def reverse_pass(self):
         # Assign state
-        self.state = 7
+        self.update_state(7)
 
         # Reverse geometry
         self.layers = self.layers[::-1]
@@ -355,7 +373,7 @@ class EME(object):
         interface.solve()
 
         # Cascade periods
-        self.state = 8
+        self.update_state(8)
         s_params = self.cascade_periods(current_layer, interface, period_layer)
 
         # Fix geometry
@@ -375,7 +393,7 @@ class EME(object):
 
         # Case 3: input_right > num_modes
         if len(input_left) > self.layers[-1].num_modes:
-            raise Exception("Too many mode coefficients in the right input")
+            raise Exception("Too many mode coefficients in the right input")    
 
         # Fill input_left
         while len(input_left) < self.layers[0].num_modes:
@@ -386,7 +404,7 @@ class EME(object):
 
         # Fill input_right
         while len(input_right) < self.layers[-1].num_modes:
-            input_left += [0]
+            input_right += [0]
 
         # Build forward input_array
         forward = np.array(input_left + input_middle + input_right)
@@ -398,10 +416,14 @@ class EME(object):
 
     def field_propagate(self, input_array):
         # Start state
-        self.state = 10
+        self.update_state(10)
+
+        # Update all monitors
+        for m in tqdm(self.monitors):
+            continue
 
         # Finish state
-        self.state = 11
+        self.update_state(11)
 
     def propagate(self, input_left=[1], input_right=[0]):
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.

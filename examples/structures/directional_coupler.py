@@ -31,9 +31,6 @@ n = np.ones(mesh) * cladding_index
 
 # ### Define structure and verify shape
 
-# In[2]:
-
-
 # Create simulation 
 eme = EME()
 
@@ -79,41 +76,27 @@ two_channel = MSEMpy(
 eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6)) 
 eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
 
+# draw
+plt.figure()
+eme.draw()
+plt.show()
+
 
 # ### Add a monitor
-
-# In[3]:
-
 
 monitor = eme.add_monitor(axes="xz")
 
 
 # ### Propagate
-
-# In[4]:
-
-
 eme.propagate()  # propagate at given wavelength
 
 
 # ### Visualize Monitors
 
-# In[ ]:
-
-
-plt.figure()
-monitor.visualize(component="n")
-plt.colorbar()
-plt.show()
 
 plt.figure()
 monitor.visualize(component="Hy")
 plt.colorbar()
 plt.show()
-
-
-# In[ ]:
-
-
 
 
