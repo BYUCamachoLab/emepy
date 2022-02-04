@@ -194,12 +194,8 @@ class MSNeuralNetwork(ModeSolver):
         self.mesh = len(self.x) - 1
         self.PML = False
         self.n = tools.get_epsfunc(
-            self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6)
+            self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6), compute=True
         )(self.x,self.y)
-        from matplotlib import pyplot as plt
-        plt.figure()
-        plt.imshow(np.real(self.n))
-        plt.show()
 
     def solve(self):
         """Solves for the eigenmode using the neural networks"""

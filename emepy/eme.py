@@ -152,6 +152,8 @@ class EME(object):
         self.num_periods = num_periods
         self.s_params = None
         self.monitors = []
+        self.forward_periodic_s = []
+        self.reverse_periodic_s = []
 
     def add_layer(self, layer):
         """The add_layer method will add a Layer object to the EME object. The object will be geometrically added to the very right side of the structure. Using this method after propagate is useless as the solver has already been called.
@@ -297,13 +299,14 @@ class EME(object):
                 periodic=l,
             )
 
-    def cascade_periods(self, current_layer, interface, period_layer):
+    def cascade_periods(self, current_layer, interface, period_layer, periodic_s):
 
         # Cascade params for each period
         for l in range(self.num_periods - 1):
 
             current_layer.s_params = self.cascade((current_layer), (interface))
             current_layer.s_params = self.cascade((current_layer), (period_layer))
+            periodic_s.append(copy(current_layer.s_params))
 
         return current_layer.s_params
 
@@ -330,7 +333,7 @@ class EME(object):
 
         # Cascade periods
         self.update_state(5)
-        s_params = self.cascade_periods(current_layer, interface, period_layer)
+        s_params = self.cascade_periods(current_layer, interface, period_layer, self.forward_periodic_s)
 
         # Finds the output given the input vector
         while input_array.shape[0] > current_layer.s_params[0].shape[0]:
@@ -374,7 +377,7 @@ class EME(object):
 
         # Cascade periods
         self.update_state(8)
-        s_params = self.cascade_periods(current_layer, interface, period_layer)
+        s_params = self.cascade_periods(current_layer, interface, period_layer, self.reverse_periodic_s)
 
         # Fix geometry
         self.layers = self.layers[::-1]
@@ -414,13 +417,71 @@ class EME(object):
 
         return forward, reverse
 
-    def field_propagate(self, input_array):
+    def prop_all(self, *args):
+        temp_s = args[0]
+        for s in args[1:]:
+            Subcircuit.clear_scache()
+
+            # make sure the components are completely disconnected
+            temp_s.disconnect()
+            s.disconnect()
+
+            # # connect the components
+            for port in range(temp_s.right_ports):
+                temp_s[f"right{port}"].connect(s[f"left{port}"])
+
+            # # get the scattering parameters
+            a = temp_s.s_params.shape
+            b = s.s_params.shape
+            new_s = temp_s.circuit.s_parameters(np.array([self.wavelength]))
+
+            # # create new temp_s
+            c = temp_s.s_params.shape
+            temp_s.right_pins = s.right_pins
+            temp_s.right_ports = s.right_ports
+            temp_s.s_params = new_s
+            d = temp_s.s_params.shape
+            print(a,b,d,temp_s)
+
+        # print([p.name for p in temp_s.pins], temp_s.s_params.shape)
+        return None
+
+    def field_propagate(self, forward):
         # Start state
         self.update_state(10)
 
+        # Reused params
+        num_left = len(self.layers[0].get_activated_layer().left_pins)
+        num_right = len(self.layers[-1].get_activated_layer().right_pins)
+
         # Update all monitors
-        for m in tqdm(self.monitors):
-            continue
+        for m in self.monitors:
+
+            # Forward through the device
+            cur_len = 0
+            for layer in tqdm(self.layers):
+
+                # Get system params
+                l = layer.get_activated_layer()
+                S0, S1 = (l.S0, l.S1)
+                cur_len += l.length
+
+                # Iterate through z
+                while(len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len):
+                    z = m.remaining_lengths[0][0]
+                    left = Duplicator(l.wavelength, l.modes, z, which_s=0)
+                    right = Duplicator(l.wavelength, l.modes, l.length-z, which_s=1)
+
+                    # Get full s params for all periods
+                    for i in range(self.num_periods):
+                        f = self.forward_periodic_s[i-1] if i-1 > -1 else None
+                        r = self.reverse_periodic_s[self.num_periods-i-2] if self.num_periods-i-2 > -1 else None
+                        prop = [copy(f),copy(S0),copy(left),copy(right),copy(S1),copy(r)]
+                        S = self.prop_all(*[i for i in prop if not (i is None) and not (isinstance(i, list) and not len(i))])
+                        # input_array = forward[:num_left] + [0 for i in 2*len(l.modes)] + forward[num_left:]
+                        # coeffs = np.matmul(S, input_array)[num_left:num_left+num_right]
+                        # print(coeffs)
+                    m.remaining_lengths[0] = m.remaining_lengths[0][1:] if len(m.remaining_lengths[0]) else []
 
         # Finish state
         self.update_state(11)
@@ -814,13 +875,18 @@ class Duplicator(Model):
         # Eliminate unnecessary row and column
         starting_rowcol = 2 * m + self.which_s * m
         ending_rowcol = starting_rowcol + m
-        s_matrix[0, starting_rowcol:ending_rowcol, :] = 0
-        s_matrix[0, :, starting_rowcol:ending_rowcol] = 0
+
+        for i in range(starting_rowcol, ending_rowcol)[::-1]:
+            s_matrix = np.delete(s_matrix,i,1)
+
+        for i in range(starting_rowcol, ending_rowcol)[::-1]:
+            s_matrix = np.delete(s_matrix,i,2)
+        
 
         # Assign number of ports
-        self.right_ports = 2 * m - self.which_s * m
-        self.left_ports = 2 * m - (1 - self.which_s) * m
-        self.num_ports = 3 * m
+        self.right_ports = m#2 * m - self.which_s * m
+        self.left_ports = m#2 * m - (1 - self.which_s) * m
+        self.num_ports = 2*m#3 * m
 
         return s_matrix
 
