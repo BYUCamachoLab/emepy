@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from copy import copy
+from copy import deepcopy
 from scipy.interpolate import griddata
 
 
@@ -19,7 +19,7 @@ class Monitor(object):
         grid_z=None,
         location=None,
     ):
-        """Monitor class constructor
+        """Monitor class constructor0
 
         Parameters
         ----------
@@ -71,8 +71,8 @@ class Monitor(object):
             
         self.dimensions = dimensions
         self.field = np.zeros(dimensions).astype(complex)
-        self.lengths = copy(lengths)
-        self.remaining_lengths = copy(lengths)
+        self.lengths = deepcopy(lengths)
+        self.remaining_lengths = deepcopy(lengths)
 
         self.cur_prop_index = [0 for i in range(len(components))]
         self.cur_length = [0 for i in range(len(components))]
