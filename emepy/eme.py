@@ -5,7 +5,7 @@ from simphony.pins import Pin
 from simphony.models import Subcircuit
 from matplotlib import pyplot as plt
 from emepy.monitors import Monitor
-from copy import copy
+from copy import deepcopy
 from emepy.mode import Mode, Mode1D
 from emepy.fd import MSEMpy, ModeSolver1D
 
@@ -224,9 +224,9 @@ class EME(object):
 
         # Assign to layer the right sub matrix
         if self.state == 3:
-            right.S0 = copy(current)
+            right.S0 = deepcopy(current)
         elif self.state == 7:
-            right.S1 = copy(current)
+            right.S1 = deepcopy(current)
 
         # Propagate the middle layers
         for index in tqdm(range(1, len(self.layers) - 1)):
@@ -242,9 +242,9 @@ class EME(object):
 
             # Assign to layer the right sub matrix
             if self.state == 3:
-                layer2.S0 = copy(current)
+                layer2.S0 = deepcopy(current)
             elif self.state == 7:
-                layer2.S1 = copy(current)
+                layer2.S1 = deepcopy(current)
 
         # Propagate final two layers
         current.update_s(
@@ -254,9 +254,9 @@ class EME(object):
 
         # Assign to layer the right sub matrix
         if self.state == 3:
-            self.layers[-1].get_activated_layer().S0 = copy(current)
+            self.layers[-1].get_activated_layer().S0 = deepcopy(current)
         elif self.state == 7:
-            self.layers[-1].get_activated_layer().S1 = copy(current)
+            self.layers[-1].get_activated_layer().S1 = deepcopy(current)
 
         # Finalize s params
         self.s_params = current.s_params
@@ -306,7 +306,7 @@ class EME(object):
 
             current_layer.s_params = self.cascade((current_layer), (interface))
             current_layer.s_params = self.cascade((current_layer), (period_layer))
-            periodic_s.append(copy(current_layer.s_params))
+            periodic_s.append(deepcopy(current_layer.s_params))
 
         return current_layer.s_params
 
@@ -428,18 +428,14 @@ class EME(object):
 
             # # connect the components
             right_pins = [i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name]
-            # print([i.name for i in temp_s.pins])
-            # print([i.name for i in s.pins],"\n")
             for port in range(len(right_pins)):
                 temp_s[f"right{port}"].connect(s[f"left{port}"])
-                # print([i.name for i in temp_s.circuit.pins])
-                print(temp_s[f"right{port}"].name, s[f"left{port}"].name)
-
+            
             temp_s = temp_s.circuit.to_subcircuit()
 
-        # print([p.name for p in temp_s.pins], temp_s.s_parameters([0]).shape)
+        s_params = temp_s.s_parameters([0])    
         del temp_s
-        return None
+        return s_params[0]
 
     def field_propagate(self, forward):
         # Start state
@@ -471,15 +467,22 @@ class EME(object):
                     for i in range(self.num_periods):
                         f = self.forward_periodic_s[i-1] if i-1 > -1 else None
                         r = self.reverse_periodic_s[self.num_periods-i-2] if self.num_periods-i-2 > -1 else None
-                        prop = [copy(f),copy(S0),copy(left),copy(right),copy(S1),copy(r)]
+                        prop = [deepcopy(f),deepcopy(S0),deepcopy(left),deepcopy(right),deepcopy(S1),deepcopy(r)]
                         S = self.prop_all(*[i for i in prop if not (i is None) and not (isinstance(i, list) and not len(i))])
-                        # input_array = forward[:num_left] + [0 for i in 2*len(l.modes)] + forward[num_left:]
-                        # coeffs = np.matmul(S, input_array)[num_left:num_left+num_right]
-                        # print(coeffs)
+                        input_array = np.array(forward[:num_left].tolist() + [0 for i in range(2*len(l.modes))]+forward[num_left:].tolist())
+                        coeffs = np.matmul(S, input_array)[num_left:num_left+num_right]
+                        modes = [[i.Ex,i.Ey,i.Ez,i.Hx,i.Hy,i.Hz] for i in l.modes]
+                        fields = (np.array(modes) * np.array(coeffs)[:, np.newaxis, np.newaxis, np.newaxis])
+                        Ex,Ey,Ez,Hx,Hy,Hz = fields.sum(0)
+
                     m.remaining_lengths[0] = m.remaining_lengths[0][1:] if len(m.remaining_lengths[0]) else []
 
         # Finish state
         self.update_state(11)
+
+    def update_monitor(m, c, field):
+        
+        self.monitors[m][c, :, :] = field
 
     def propagate(self, input_left=[1], input_right=[0]):
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.
@@ -623,7 +626,7 @@ class EME(object):
 
                         # Save solved field profiles for referencing from repeated layers
                         if periodic is None:
-                            self.monitors[m].layers[round(self.monitors[m].remaining_lengths[c][0], 14)] = copy(
+                            self.monitors[m].layers[round(self.monitors[m].remaining_lengths[c][0], 14)] = deepcopy(
                                 mode_set
                             )
 
