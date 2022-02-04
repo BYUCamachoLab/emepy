@@ -427,23 +427,18 @@ class EME(object):
             s.disconnect()
 
             # # connect the components
-            for port in range(temp_s.right_ports):
+            right_pins = [i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name]
+            # print([i.name for i in temp_s.pins])
+            # print([i.name for i in s.pins],"\n")
+            for port in range(len(right_pins)):
                 temp_s[f"right{port}"].connect(s[f"left{port}"])
+                # print([i.name for i in temp_s.circuit.pins])
+                print(temp_s[f"right{port}"].name, s[f"left{port}"].name)
 
-            # # get the scattering parameters
-            a = temp_s.s_params.shape
-            b = s.s_params.shape
-            new_s = temp_s.circuit.s_parameters(np.array([self.wavelength]))
+            temp_s = temp_s.circuit.to_subcircuit()
 
-            # # create new temp_s
-            c = temp_s.s_params.shape
-            temp_s.right_pins = s.right_pins
-            temp_s.right_ports = s.right_ports
-            temp_s.s_params = new_s
-            d = temp_s.s_params.shape
-            print(a,b,d,temp_s)
-
-        # print([p.name for p in temp_s.pins], temp_s.s_params.shape)
+        # print([p.name for p in temp_s.pins], temp_s.s_parameters([0]).shape)
+        del temp_s
         return None
 
     def field_propagate(self, forward):
