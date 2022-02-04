@@ -74,8 +74,6 @@ class Monitor(object):
         self.lengths = deepcopy(lengths)
         self.remaining_lengths = deepcopy(lengths)
 
-        self.cur_prop_index = [0 for i in range(len(components))]
-        self.cur_length = [0 for i in range(len(components))]
         self.components = components
         self.layers = {}
         self.grid_x = grid_x
@@ -88,20 +86,12 @@ class Monitor(object):
     def __setitem__(self, subscript, item):
 
         # Only set item if it's in the valid z_range
-        if self.axes in ["xy", "yx"]:
-            self.field[subscript] = item
-        elif (self.lengths[0][subscript[-1]] >= self.start) and (self.lengths[0][subscript[-1]] <= self.end):
-            difference_start = lambda list_value: abs(list_value - self.start)
-            s = self.lengths[0].index(min(self.lengths[0], key=difference_start))
-            subscript = tuple(list(subscript[:-1]) + [subscript[-1] - s])
-            self.field[subscript] = item
+        self.field[subscript] = item
 
         if len(self.remaining_lengths[int(subscript[0])]) > 1:
             self.remaining_lengths[int(subscript[0])] = self.remaining_lengths[int(subscript[0])][1:]
-            self.cur_prop_index[int(subscript[0])] += 1
         else:
             self.remaining_lengths[int(subscript[0])] = []
-            self.cur_prop_index[int(subscript[0])] += 1
 
     def __delitem__(self, subscript):
         del self.field[subscript]
