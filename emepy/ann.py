@@ -12,6 +12,7 @@ import pickle
 from sklearn.preprocessing import PolynomialFeatures
 from emepy.fd import ModeSolver
 from emepy.tools import from_chunks
+from emepy import tools
 import numpy as np
 
 
@@ -192,6 +193,9 @@ class MSNeuralNetwork(ModeSolver):
         self.after_y = self.y
         self.mesh = len(self.x) - 1
         self.PML = False
+        self.n = tools.get_epsfunc(
+            self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6), compute=True
+        )(self.x,self.y)
 
     def solve(self):
         """Solves for the eigenmode using the neural networks"""
@@ -314,7 +318,6 @@ class MSNeuralNetwork(ModeSolver):
     def get_mode(self, mode_num=0):
         """Returns the solved eigenmode"""
         Hx, Hy, neff = self.mode
-        from emepy import tools
 
         epsfunc_before = tools.get_epsfunc(
             self.width, self.thickness, 2.5e-6, 2.5e-6, tools.Si(self.wl * 1e6), tools.SiO2(self.wl * 1e6), compute=True

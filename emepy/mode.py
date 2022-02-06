@@ -5,7 +5,7 @@ import random
 import EMpy_gpu
 from emepy import tools
 from scipy.signal import convolve2d, convolve
-from copy import copy
+from copy import deepcopy
 
 
 class EigenMode(object):
@@ -90,16 +90,16 @@ class EigenMode(object):
         return start
 
     def __mul__(self, other):
-        return self.change_fields(copy(self), other, lambda a, b: a * b)
+        return self.change_fields(deepcopy(self), other, lambda a, b: a * b)
 
     def __add__(self, other):
-        return self.change_fields(copy(self), other, lambda a, b: a + b)
+        return self.change_fields(deepcopy(self), other, lambda a, b: a + b)
 
     def __truediv__(self, other):
-        return self.change_fields(copy(self), other, lambda a, b: a / b)
+        return self.change_fields(deepcopy(self), other, lambda a, b: a / b)
 
     def __sub__(self, other):
-        return self.change_fields(copy(self), other, lambda a, b: a - b)
+        return self.change_fields(deepcopy(self), other, lambda a, b: a - b)
 
     def __imul__(self, other):
         return self.change_fields(self, other, lambda a, b: a * b)
@@ -228,7 +228,7 @@ class Mode1D(EigenMode):
         elif operation == "Real":
             operation = lambda a: np.real(a)
         try:
-            t = self.change_fields(copy(temp), copy(temp), lambda a, b: operation(b))
+            t = self.change_fields(deepcopy(temp), deepcopy(temp), lambda a, b: operation(b))
             Hx, Hy, Hz, Ex, Ey, Ez = [t.Hx, t.Hy, t.Hz, t.Ex, t.Ey, t.Ez]
         except:
             raise Exception(
@@ -389,7 +389,7 @@ class Mode(EigenMode):
         elif operation == "Real":
             operation = lambda a: np.real(a)
         try:
-            t = self.change_fields(copy(temp), copy(temp), lambda a, b: operation(b))
+            t = self.change_fields(deepcopy(temp), deepcopy(temp), lambda a, b: operation(b))
             Hx, Hy, Hz, Ex, Ey, Ez = [t.Hx, t.Hy, t.Hz, t.Ex, t.Ey, t.Ez]
         except:
             raise Exception(
