@@ -8,6 +8,7 @@ from emepy.monitors import Monitor
 from copy import deepcopy
 from emepy.mode import Mode, Mode1D
 from emepy.fd import MSEMpy, ModeSolver1D
+import time
 
 
 class Layer(object):
@@ -280,17 +281,9 @@ class EME(object):
                     # Get full s params for all periods
                     for i in range(self.num_periods):
 
-                        self.set_monitor(m, i, z, {"n": n}, True)
+                        self.set_monitor(m, i, z, {"n": n}, n=True, last_period=(i==self.num_periods-1))
 
         return
-
-    def cascade_periods_n_only(self):
-
-        # Cascade all periods
-        for l in range(self.num_periods - 1):
-            self.update_monitors(
-                None, self.get_total_length(), None, curr_s=None, not_first=True, input_array=None, periodic=l
-            )
 
     def cascade_periods(self, current_layer, interface, period_layer, periodic_s):
 
@@ -298,8 +291,8 @@ class EME(object):
         for l in range(self.num_periods - 1):
 
             current_layer.s_params = self.cascade((current_layer), (interface))
+            periodic_s.append(deepcopy(current_layer))
             current_layer.s_params = self.cascade((current_layer), (period_layer))
-            periodic_s.append(deepcopy(current_layer.s_params))
 
         return current_layer.s_params
 
@@ -380,7 +373,7 @@ class EME(object):
     def build_input_array(self, input_left, input_middle, input_right):
 
         # Case 1: input_left > num_modes
-        if len(input_left) > self.layers[0].num_modes:
+        if len(input_left) > self.layers[0].get_activated_layer().num_modes:
             raise Exception("Too many mode coefficients in the left input")
 
         # Case 2: input_middle > num_sources
@@ -388,18 +381,18 @@ class EME(object):
             raise Exception("Too many mode coefficients in the middle sources")
 
         # Case 3: input_right > num_modes
-        if len(input_left) > self.layers[-1].num_modes:
+        if len(input_left) > self.layers[-1].get_activated_layer().num_modes:
             raise Exception("Too many mode coefficients in the right input")
 
         # Fill input_left
-        while len(input_left) < self.layers[0].num_modes:
+        while len(input_left) < self.layers[0].get_activated_layer().num_modes:
             input_left += [0]
 
         # Fill input_middle
         input_middle += []
 
         # Fill input_right
-        while len(input_right) < self.layers[-1].num_modes:
+        while len(input_right) < self.layers[-1].get_activated_layer().num_modes:
             input_right += [0]
 
         # Build forward input_array
@@ -431,6 +424,23 @@ class EME(object):
         del temp_s
         return s_params[0]
 
+    def swap(self, s):
+        # Reformat to be in forward reference frame
+        if not s is None:
+            for j, pin in enumerate(s.pins):
+                if "left" in pin.name:
+                    name = pin.name
+                    s.pins[j].rename(name.replace("left", "temp"))
+                elif "right" in pin.name:
+                    name = pin.name
+                    s.pins[j].rename(name.replace("right", "left"))
+            for j, pin in enumerate(s.pins):
+                if "temp" in pin.name:
+                    name = pin.name
+                    s.pins[j].rename(name.replace("temp", "right"))
+
+        return s
+
     def field_propagate(self, forward):
         # Start state
         self.update_state(10)
@@ -441,92 +451,200 @@ class EME(object):
 
         # Update all monitors
         for m in self.monitors:
+            # Reset monitor
+            m.reset_monitor()
 
-            # Forward through the device
-            cur_len = 0
-            for layer in tqdm(self.layers):
+            # Get full s params for all periods
+            for per in range(self.num_periods):
+                cur_len = 0
 
-                # Get system params
-                l = layer.get_activated_layer()
-                S0, S1 = (l.S0, l.S1)
+                # Periodic layers
+                f = self.forward_periodic_s[per - 1] if per - 1 > -1 else None
+                r = self.reverse_periodic_s[self.num_periods - per - 2] if self.num_periods - per - 2 > -1 else None
+                
+                # Reformat r to be in forward reference frame
+                r = self.swap(r)
 
-                # Reformat S1 to be in S0 reference frame
-                if not S1 is None:
-                    for i, pin in enumerate(S1.pins):
-                        if "left" in pin.name:
-                            name = pin.name
-                            S1.pins[i].rename(name.replace("left", "temp"))
-                        elif "right" in pin.name:
-                            name = pin.name
-                            S1.pins[i].rename(name.replace("right", "left"))
-                    for i, pin in enumerate(S1.pins):
-                        if "temp" in pin.name:
-                            name = pin.name
-                            S1.pins[i].rename(name.replace("temp", "right"))
-
-                # Get length
-                cur_last = deepcopy(cur_len)
-                cur_len += l.length
-
-                # Iterate through z
-                while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
-                    z = m.remaining_lengths[0][0]
-                    z_temp = z - cur_last
-                    left = Duplicator(l.wavelength, l.modes, z_temp, which_s=0)
-                    right = Duplicator(l.wavelength, l.modes, l.length-z_temp, which_s=1)
-
-                    # Get full s params for all periods
-                    for i in range(self.num_periods):
-                        
-                        # Periodic layers
-                        f = self.forward_periodic_s[i - 1] if i - 1 > -1 else None
-                        r = self.reverse_periodic_s[self.num_periods - i - 2] if self.num_periods - i - 2 > -1 else None
-                        
-                        
-                        # Reformat r to be in forward reference frame
-                        if not r is None:
-                            for i, pin in enumerate(r.pins):
-                                if "left" in pin.name:
-                                    name = pin.name
-                                    r.pins[i].rename(name.replace("left", "temp"))
-                                elif "right" in pin.name:
-                                    name = pin.name
-                                    r.pins[i].rename(name.replace("right", "left"))
-                            for i, pin in enumerate(r.pins):
-                                if "temp" in pin.name:
-                                    name = pin.name
-                                    r.pins[i].rename(name.replace("temp", "right"))
-                        
-                        # Compute field propagation
-                        prop = [deepcopy(f), deepcopy(S0), deepcopy(left), deepcopy(right), deepcopy(S1), deepcopy(r)]
-                        S = self.prop_all(
-                            *[i for i in prop if not (i is None) and not (isinstance(i, list) and not len(i))]
-                        )
-                        input_array = np.array(
-                            forward[:num_left].tolist()
-                            + [0 for i in range(2 * len(l.modes))]
-                            + forward[num_left:].tolist()
-                        )
-                        coeffs_ = np.matmul(S, input_array)
-                        coeffs = coeffs_[num_left : - num_right]
-                        coeffs_l = coeffs[:len(l.modes)]
-                        coeffs_r = coeffs[len(l.modes):]
-
-                        # Create field
-                        modes = [[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes]
-                        fields = np.array(modes) * np.array(coeffs_l)[:, np.newaxis, np.newaxis, np.newaxis]
-                        fields += np.array(modes) * np.array(coeffs_r)[:, np.newaxis, np.newaxis, np.newaxis]
-                        results = {}
-                        results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
-                            "Hz"
-                        ] = fields.sum(0)
-                        results["n"] = l.modes[0].n
-                        self.set_monitor(m, i, z, results)
-
+                # Forward through the device
+                for layer in self.layers:
+                    cur_len = self.layer_field_propagate(layer.get_activated_layer(), m, per, r, f, cur_len, forward, num_left, num_right)
+                
+                # Prepare for new period
+                m.soft_reset()
+        
         # Finish state
         self.update_state(11)
 
-    def set_monitor(self, m, i, z, results, n=False):
+    
+    def layer_field_propagate(self, l, m, per, r, f, cur_len, forward, num_left, num_right):
+
+        # Get length
+        cur_last = deepcopy(cur_len)
+        cur_len += l.length
+
+        # Get system params
+        S0, S1 = (l.S0, l.S1)
+
+        # Reformat S1
+        S1 = self.swap(S1)
+
+        # Distance params
+        z = m.remaining_lengths[0][0]
+        z_temp = z - cur_last
+        left = Duplicator(l.wavelength, l.modes, z_temp, which_s=0)
+        right = Duplicator(l.wavelength, l.modes, l.length-z_temp, which_s=1)
+
+        # Compute field propagation
+        prop = [deepcopy(f), deepcopy(S0), deepcopy(left), deepcopy(right), deepcopy(S1), deepcopy(r)]
+        # print(prop)
+        S = self.prop_all(
+            *[t for t in prop if not (t is None) and not (isinstance(t, list) and not len(t))]
+        )
+        input_array = np.array(
+            forward[:num_left].tolist()
+            + [0 for _ in range(2 * len(l.modes))]
+            + forward[num_left:].tolist()
+        )
+        coeffs_ = np.matmul(S, input_array)
+        coeffs = coeffs_[num_left : - num_right]
+        coeffs_l = coeffs[:len(l.modes)]
+        coeffs_r = coeffs[len(l.modes):]
+        coe = coeffs_l + coeffs_r
+        modes = [[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes]
+        fields = np.array(modes) * np.array(coe)[:, np.newaxis, np.newaxis, np.newaxis]
+        results = {}
+        results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
+            "Hz"
+        ] = fields.sum(0)
+        results["n"] = l.modes[0].n
+        self.set_monitor(m, per, z, results)
+
+        # Iterate through z
+        while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
+
+            # Get coe
+            z_old = deepcopy(z)
+            z = m.remaining_lengths[0][0]
+            z_diff = z - z_old
+            eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
+            coeffs_l *= np.exp(z_diff * 1j * eig) 
+            coeffs_r *= np.exp(-z_diff * 1j * eig) 
+            coe =  coeffs_l + coeffs_r 
+
+            # Create field
+            fields = np.array(modes) * np.array(coe)[:, np.newaxis, np.newaxis, np.newaxis]
+            results = {}
+            results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
+                "Hz"
+            ] = fields.sum(0)
+            results["n"] = l.modes[0].n
+            self.set_monitor(m, per, z, results)
+            
+        return cur_len
+
+    # def field_propagate(self, forward):
+    #     # Start state
+    #     self.update_state(10)
+
+    #     # Reused params
+    #     num_left = len(self.layers[0].get_activated_layer().left_pins)
+    #     num_right = len(self.layers[-1].get_activated_layer().right_pins)
+
+    #     # Update all monitors
+    #     for m in self.monitors:
+
+    #         # Reset monitor
+    #         m.reset_monitor()
+
+    #         # Forward through the device
+    #         cur_len = 0
+    #         for layer in tqdm(self.layers):
+
+    #             # Get system params
+    #             l = layer.get_activated_layer()
+    #             S0, S1 = (l.S0, l.S1)
+
+    #             # Reformat S1 to be in S0 reference frame
+    #             if not S1 is None:
+    #                 for i, pin in enumerate(S1.pins):
+    #                     if "left" in pin.name:
+    #                         name = pin.name
+    #                         S1.pins[i].rename(name.replace("left", "temp"))
+    #                     elif "right" in pin.name:
+    #                         name = pin.name
+    #                         S1.pins[i].rename(name.replace("right", "left"))
+    #                 for i, pin in enumerate(S1.pins):
+    #                     if "temp" in pin.name:
+    #                         name = pin.name
+    #                         S1.pins[i].rename(name.replace("temp", "right"))
+
+    #             # Get length
+    #             cur_last = deepcopy(cur_len)
+    #             cur_len += l.length
+
+    #             # Iterate through z
+    #             while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
+                    
+    #                 # Distance params
+    #                 z = m.remaining_lengths[0][0]
+    #                 z_temp = z - cur_last
+    #                 left = Duplicator(l.wavelength, l.modes, z_temp, which_s=0)
+    #                 right = Duplicator(l.wavelength, l.modes, l.length-z_temp, which_s=1)
+
+    #                 # Get full s params for all periods
+    #                 for per in range(self.num_periods):
+                        
+    #                     # Periodic layers
+    #                     f = self.forward_periodic_s[per - 1] if per - 1 > -1 else None
+    #                     r = self.reverse_periodic_s[self.num_periods - per - 2] if self.num_periods - per - 2 > -1 else None
+                        
+                        
+    #                     # Reformat r to be in forward reference frame
+    #                     if not r is None:
+    #                         for j, pin in enumerate(r.pins):
+    #                             if "left" in pin.name:
+    #                                 name = pin.name
+    #                                 r.pins[j].rename(name.replace("left", "temp"))
+    #                             elif "right" in pin.name:
+    #                                 name = pin.name
+    #                                 r.pins[j].rename(name.replace("right", "left"))
+    #                         for j, pin in enumerate(r.pins):
+    #                             if "temp" in pin.name:
+    #                                 name = pin.name
+    #                                 r.pins[j].rename(name.replace("temp", "right"))
+                        
+    #                     # Compute field propagation
+    #                     prop = [deepcopy(f), deepcopy(S0), deepcopy(left), deepcopy(right), deepcopy(S1), deepcopy(r)]
+    #                     S = self.prop_all(
+    #                         *[t for t in prop if not (t is None) and not (isinstance(t, list) and not len(t))]
+    #                     )
+    #                     input_array = np.array(
+    #                         forward[:num_left].tolist()
+    #                         + [0 for _ in range(2 * len(l.modes))]
+    #                         + forward[num_left:].tolist()
+    #                     )
+    #                     coeffs_ = np.matmul(S, input_array)
+    #                     coeffs = coeffs_[num_left : - num_right]
+    #                     coeffs_l = coeffs[:len(l.modes)]
+    #                     coeffs_r = coeffs[len(l.modes):]
+
+    #                     # Create field
+    #                     modes = [[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes]
+    #                     fields = np.array(modes) * np.array(coeffs_l)[:, np.newaxis, np.newaxis, np.newaxis]
+    #                     fields += np.array(modes) * np.array(coeffs_r)[:, np.newaxis, np.newaxis, np.newaxis]
+    #                     results = {}
+    #                     results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
+    #                         "Hz"
+    #                     ] = fields.sum(0)
+    #                     results["n"] = l.modes[0].n
+    #                     last_period = (per == self.num_periods - 1)
+    #                     self.set_monitor(m, per, z, results, last_period=last_period)
+
+
+    #     # Finish state
+    #     self.update_state(11)
+
+    def set_monitor(self, m, i, z, results, n=False, last_period=True):
         for key, field in results.items():
 
             key = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"].index(key) if not n else 0
@@ -544,13 +662,13 @@ class EME(object):
 
             # Implemented fields
             if m.axes in ["xy", "yx"]:
-                m[key, :, :] = field[:, :]
+                m[key, :, :, last_period] = field[:, :]
             elif m.axes in ["xz", "zx"]:
-                m[key, :, z_loc] = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
+                m[key, :, z_loc, last_period] = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
             elif m.axes in ["yz", "zy"]:
-                m[key, :, z_loc] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
+                m[key, :, z_loc, last_period] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
             elif m.axes in ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]:
-                m[key, :, :, z_loc] = field[:, :]
+                m[key, :, :, z_loc, last_period] = field[:, :]
 
         return
 
@@ -563,9 +681,6 @@ class EME(object):
             the array representing the input to the device in s parameter format: [left port mode 1, left port mode 2, ... left port mode n, right port mode 1, right port mode 2, ... right port mode n] (default : [1,0,0,...]) the default represents sending in the fundamental mode of the left port
         """
 
-        # Format input array
-        forward, reverse = self.build_input_array(input_left, [], input_right)
-
         # Check for layers
         if not len(self.layers):
             raise Exception("Must place layers before propagating")
@@ -575,11 +690,16 @@ class EME(object):
         # Solve for the modes
         self.solve_modes()
 
+        # Format input array
+        forward, reverse = self.build_input_array(input_left, [], input_right)
+
         # Forward pass
-        self.s_params = self.forward_pass(forward)
+        if self.state == 2:
+            self.s_params = self.forward_pass(forward)
 
         # Reverse pass
-        self.reverse_pass()
+        if self.state == 6:
+            self.reverse_pass()
 
         # Update monitors
         self.field_propagate(forward)
@@ -679,10 +799,12 @@ class EME(object):
             # Create lengths
             l = self.get_total_length()
             single_lengths = np.linspace(0, l, mesh_z, endpoint=False).tolist()
-            lengths = []
-            for i in range(self.num_periods):
-                lengths += [np.array(j) + i * l for j in single_lengths]
-            lengths = [lengths for i in range(len(components))]
+            lengths = deepcopy(single_lengths)
+            
+            for i in range(1,self.num_periods):
+                lengths += (np.array(single_lengths) + l * i).tolist()
+            lengths = [lengths for _ in range(len(components))]
+            single_lengths = [single_lengths for _ in range(len(components))]
 
             # Ensure z range is in proper format
             try:
@@ -700,9 +822,9 @@ class EME(object):
             # Fix z mesh if changed by z_range
             difference_start = lambda list_value: abs(list_value - start)
             difference_end = lambda list_value: abs(list_value - end)
-            s = min(lengths[0], key=difference_start)
-            e = min(lengths[0], key=difference_end)
-            z = np.sum((s <= lengths[0]) * (e >= lengths[0]))
+            s = min(np.array(lengths)[0], key=difference_start)
+            e = min(np.array(lengths)[0], key=difference_end)
+            z = np.sum((s <= np.array(lengths)[0]) * (e >= np.array(lengths)[0]))
 
             # Create monitor dimensions
             c = len(components)
@@ -729,6 +851,7 @@ class EME(object):
 
             # Create single length
             lengths = [[location] for _ in range(len(components))]
+            single_lengths = lengths
 
             # Create monitor dimensions
             c = len(components)
@@ -747,16 +870,16 @@ class EME(object):
             )
 
         # Create monitor
-        monitor = Monitor(axes, dimensions, lengths, components, z_range, grid_x, grid_y, grid_z)
+        monitor = Monitor(axes, dimensions, lengths, components, z_range, grid_x, grid_y, grid_z, location, single_lengths)
         self.monitors.append(monitor)
         return monitor
 
-    def draw(self, z_range=None):
+    def draw(self, z_range=None, mesh_z=200):
         """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. This will change in the future."""
 
         temp_storage = self.monitors
         self.monitors = []
-        monitor = self.add_monitor(axes="xz", components=["n"], z_range=z_range, excempt=False)
+        monitor = self.add_monitor(axes="xz", components=["n"], z_range=z_range, excempt=False,mesh_z=mesh_z)
         self.propagate_n_only()
         im = monitor.visualize(component="n")
         self.monitors = temp_storage
