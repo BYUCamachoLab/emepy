@@ -216,6 +216,12 @@ class EME(object):
             The set of Mode objects that were solved for on the output layer
         """
 
+        # See if only one layer or no layer
+        if not len(self.layers):
+            raise Exception("No layers in system")
+        elif len(self.layers) == 1:
+            return self.layers[0].get_activated_layer().s_params
+
         # Propagate the first two layers
         left, right = (self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
         current = Current(self.wavelength, left)
@@ -274,32 +280,26 @@ class EME(object):
             for layer in tqdm(self.layers):
 
                 # Get system params
-                n = layer.mode_solvers.n   
+                n = layer.mode_solvers.n
                 cur_len += layer.length
 
                 # Iterate through z
-                while(len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len):
+                while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
                     z = m.remaining_lengths[0][0]
 
                     # Get full s params for all periods
                     for i in range(self.num_periods):
 
-                        self.set_monitor(m,i,z,{"n":n},True)
+                        self.set_monitor(m, i, z, {"n": n}, True)
 
         return
 
     def cascade_periods_n_only(self):
-        
+
         # Cascade all periods
         for l in range(self.num_periods - 1):
             self.update_monitors(
-                None,
-                self.get_total_length(),
-                None,
-                curr_s=None,
-                not_first=True,
-                input_array=None,
-                periodic=l,
+                None, self.get_total_length(), None, curr_s=None, not_first=True, input_array=None, periodic=l
             )
 
     def cascade_periods(self, current_layer, interface, period_layer, periodic_s):
@@ -399,7 +399,7 @@ class EME(object):
 
         # Case 3: input_right > num_modes
         if len(input_left) > self.layers[-1].num_modes:
-            raise Exception("Too many mode coefficients in the right input")    
+            raise Exception("Too many mode coefficients in the right input")
 
         # Fill input_left
         while len(input_left) < self.layers[0].num_modes:
@@ -433,11 +433,11 @@ class EME(object):
             right_pins = [i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name]
             for port in range(len(right_pins)):
                 temp_s[f"right{port}"].connect(s[f"left{port}"])
-            
+
             temp_s = temp_s.circuit.to_subcircuit()
 
         pins = temp_s.pins
-        s_params = temp_s.s_parameters([0]) 
+        s_params = temp_s.s_parameters([0])
         del temp_s
         return s_params[0]
 
@@ -465,52 +465,61 @@ class EME(object):
                     for i, pin in enumerate(S1.pins):
                         if "left" in pin.name:
                             name = pin.name
-                            pin.rename(name.replace("left","temp"))
+                            pin.rename(name.replace("left", "temp"))
                         elif "right" in pin.name:
                             name = pin.name
-                            pin.rename(name.replace("right","left"))
+                            pin.rename(name.replace("right", "left"))
                     for i, pin in enumerate(S1.pins):
                         if "temp" in pin.name:
                             name = pin.name
-                            pin.rename(name.replace("temp","right"))
+                            pin.rename(name.replace("temp", "right"))
 
                 # Get length
                 cur_last = deepcopy(cur_len)
                 cur_len += l.length
 
                 # Iterate through z
-                while(len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len):
+                while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
                     z = m.remaining_lengths[0][0]
                     z_temp = z - cur_last
-                    # left = Duplicator(l.wavelength, l.modes, z_temp, which_s=0)
-                    # right = Duplicator(l.wavelength, l.modes, l.length-z_temp, which_s=1)
                     left = Duplicator(l.wavelength, l.modes, z_temp, which_s=0)
-                    right = Duplicator(l.wavelength, l.modes, z_temp, which_s=1)
+                    right = Duplicator(l.wavelength, l.modes, l.length-z_temp, which_s=1)
 
                     # Get full s params for all periods
                     for i in range(self.num_periods):
-                        f = self.forward_periodic_s[i-1] if i-1 > -1 else None
-                        r = self.reverse_periodic_s[self.num_periods-i-2] if self.num_periods-i-2 > -1 else None
-                        prop = [deepcopy(f),deepcopy(S0),deepcopy(left),deepcopy(right),deepcopy(S1),deepcopy(r)]
-                        S = self.prop_all(*[i for i in prop if not (i is None) and not (isinstance(i, list) and not len(i))])
-                        input_array = np.array(forward[:num_left].tolist() + [0 for i in range(2*len(l.modes))]+forward[num_left:].tolist())
-                        coeffs = np.matmul(S, input_array)[num_left:num_left+num_right+1]
-                        
+                        f = self.forward_periodic_s[i - 1] if i - 1 > -1 else None
+                        r = self.reverse_periodic_s[self.num_periods - i - 2] if self.num_periods - i - 2 > -1 else None
+                        prop = [deepcopy(f), deepcopy(S0), deepcopy(left), deepcopy(right), deepcopy(S1), deepcopy(r)]
+                        S = self.prop_all(
+                            *[i for i in prop if not (i is None) and not (isinstance(i, list) and not len(i))]
+                        )
+                        input_array = np.array(
+                            forward[:num_left].tolist()
+                            + [0 for i in range(2 * len(l.modes))]
+                            + forward[num_left:].tolist()
+                        )
+                        coeffs = np.matmul(S, input_array)[num_left : - num_right]
+                        coeffs_l = coeffs[:len(l.modes)]
+                        coeffs_r = coeffs[len(l.modes):]
+
                         # Create field
-                        modes = [[i.Ex,i.Ey,i.Ez,i.Hx,i.Hy,i.Hz] for i in l.modes]
-                        fields = (np.array(modes) * np.array(coeffs)[:, np.newaxis, np.newaxis, np.newaxis])
+                        modes = [[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes]
+                        fields = np.array(modes) * np.array(coeffs_l)[:, np.newaxis, np.newaxis, np.newaxis]
+                        fields += np.array(modes) * np.array(coeffs_r)[:, np.newaxis, np.newaxis, np.newaxis]
                         results = {}
-                        results["Ex"],results["Ey"],results["Ez"],results["Hx"],results["Hy"],results["Hz"] = fields.sum(0)
+                        results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
+                            "Hz"
+                        ] = fields.sum(0)
                         results["n"] = l.modes[0].n
-                        self.set_monitor(m,i,z,results)
+                        self.set_monitor(m, i, z, results)
 
         # Finish state
         self.update_state(11)
 
-    def set_monitor(self,m,i,z,results,n=False):
+    def set_monitor(self, m, i, z, results, n=False):
         for key, field in results.items():
 
-            key = ["Ex","Ey","Ez","Hx","Hy","Hz","n"].index(key) if not n else 0
+            key = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"].index(key) if not n else 0
 
             # Non implemented fields
             if m.axes in ["x"]:
@@ -520,21 +529,20 @@ class EME(object):
             elif m.axes in ["z"]:
                 raise Exception("z not implemented")
 
-            # z Location 
-            z_loc = np.argwhere(m.lengths[key] == self.get_total_length()*i+z).sum()
+            # z Location
+            z_loc = np.argwhere(m.lengths[key] == self.get_total_length() * i + z).sum()
 
             # Implemented fields
             if m.axes in ["xy", "yx"]:
-                m[key,:,:] = field[:,:]
+                m[key, :, :] = field[:, :]
             elif m.axes in ["xz", "zx"]:
-                m[key,:,z_loc] = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
-            elif m.axes in ["yz","zy"]:
-                m[key,:,z_loc] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
-            elif m.axes in ["xyz","xzy","yxz","yzx","zxy","zyx"]:
-                m[key,:,:,z_loc] = field[:, :]
+                m[key, :, z_loc] = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
+            elif m.axes in ["yz", "zy"]:
+                m[key, :, z_loc] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
+            elif m.axes in ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]:
+                m[key, :, :, z_loc] = field[:, :]
 
         return
-
 
     def propagate(self, input_left=[1], input_right=[0]):
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.
@@ -758,15 +766,20 @@ class Duplicator(Model):
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)] + [
             "right_dup" + str(i) for i in range(self.num_modes * (1 - which_s))
         ]
-        self.s_params = self.calculate_s_params()
 
         # create the pins for the model
         pins = []
         for name in self.left_pins:
             pins.append(Pin(self, name))
         for name in self.right_pins:
-            pins.append(Pin(self, name))
+            if "dup" in name:
+                pins.append(Pin(self, name))
+        for name in self.right_pins:
+            if not "dup" in name:
+                pins.append(Pin(self, name))
+        self.pins = pins
         super().__init__(**kwargs, pins=pins)
+        self.s_params = self.calculate_s_params()
 
     def s_parameters(self, freqs: "np.array") -> "np.ndarray":
 
@@ -775,7 +788,6 @@ class Duplicator(Model):
     def calculate_s_params(self):
         # Create template for final s matrix
         m = self.num_modes
-        s_matrix = np.zeros((1, 4 * m, 4 * m), dtype=complex)
 
         # Create eigenvalue vector
         eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes * 4]) / (self.wavelength)
@@ -784,39 +796,27 @@ class Duplicator(Model):
         propagation_matrix1 = np.diag(np.exp(self.length * 1j * eigenvalues1))
 
         # Create sub matrix
-        temp_s_matrix = np.zeros((2 * m, 2 * m), dtype=complex)
-        temp_s_matrix[0:m, 0:m] = propagation_matrix1[m : 2 * m, 0:m]
-        temp_s_matrix[m : 2 * m, 0:m] = propagation_matrix1[0:m, 0:m]
-        temp_s_matrix[0:m, m : 2 * m] = propagation_matrix1[m : 2 * m, m : 2 * m]
-        temp_s_matrix[m : 2 * m, m : 2 * m] = propagation_matrix1[0:m, m : 2 * m]
-
-        # Create final matrix
-        s_matrix[0, 0 : 2 * m, 0 : 2 * m] = temp_s_matrix
-        s_matrix[0, 2 * m : 4 * m, 0 : 2 * m] = temp_s_matrix
-        s_matrix[0, 0 : 2 * m, 2 * m : 4 * m] = temp_s_matrix
-        s_matrix[0, 2 * m : 4 * m, 2 * m : 4 * m] = temp_s_matrix
-
-        # Eliminate unnecessary row and column
-        starting_rowcol = 2 * m + self.which_s * m
-        ending_rowcol = starting_rowcol + m
-
-        for i in range(starting_rowcol, ending_rowcol)[::-1]:
-            s_matrix = np.delete(s_matrix,i,1)
-
-        for i in range(starting_rowcol, ending_rowcol)[::-1]:
-            s_matrix = np.delete(s_matrix,i,2)
-
-        # Rearrange for proper format
-        for i in range(m):
-            if self.which_s: # Right side, switch left_dup and right
-                continue
-            else: # Left side, switch right_dup and right
-                s_matrix[0,:,[2*m+i,m+i]] = s_matrix[0,:,[m+i,2*m+i]]
+        s_matrix = np.zeros((2 * m, 2 * m), dtype=complex)
+        s_matrix[0:m, 0:m] = propagation_matrix1[m : 2 * m, 0:m]
+        s_matrix[m : 2 * m, 0:m] = propagation_matrix1[0:m, 0:m]
+        s_matrix[0:m, m : 2 * m] = propagation_matrix1[m : 2 * m, m : 2 * m]
+        s_matrix[m : 2 * m, m : 2 * m] = propagation_matrix1[0:m, m : 2 * m]
+        
+        # Insert new rows and cols
+        if not self.which_s:
+            s_matrix = np.insert(s_matrix,[m],s_matrix[m:,:],axis=0)
+            s_matrix = np.insert(s_matrix,[m],s_matrix[:,m:],axis=1)
+        else:
+            s_matrix = np.insert(s_matrix,[m],s_matrix[:m,:],axis=0)
+            s_matrix = np.insert(s_matrix,[m],s_matrix[:,:m],axis=1)
         
         # Assign number of ports
-        self.right_ports = m#2 * m - self.which_s * m
-        self.left_ports = m#2 * m - (1 - self.which_s) * m
-        self.num_ports = 2*m#3 * m
+        self.right_ports = m  # 2 * m - self.which_s * m
+        self.left_ports = m  # 2 * m - (1 - self.which_s) * m
+        self.num_ports = 2 * m  # 3 * m
+        s_matrix = s_matrix.reshape(1,3*m,3*m)
+
+        # print(np.abs(s_matrix),[i.name for i in self.pins]) 
 
         return s_matrix
 
