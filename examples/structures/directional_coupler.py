@@ -21,7 +21,7 @@ wavelength = 1.55e-6 # Wavelength
 width = 0.4e-6  # Width of left waveguide
 gap = 0.2e-6 # Gap between waveguides
 thickness = 0.22e-6  # Thickness of left waveguide
-num_modes=2 # Number of modes
+num_modes=1 # Number of modes
 mesh=100 # Number of mesh points
 core_index=Si(wavelength*1e6) # Silicon core
 cladding_index=SiO2(wavelength*1e6) # Oxide cladding
@@ -30,9 +30,6 @@ n = np.ones(mesh) * cladding_index
 
 
 # ### Define structure and verify shape
-
-# In[2]:
-
 
 # Create simulation 
 eme = EME()
@@ -77,43 +74,36 @@ two_channel = MSEMpy(
 )
 
 eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6)) 
-eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
+eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6)) 
+eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6)) 
+# eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6)) 
+# eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
+
+# draw
+# plt.figure()
+# eme.draw()
+# plt.show()
 
 
 # ### Add a monitor
-
-# In[3]:
-
 
 monitor = eme.add_monitor(axes="xz")
 
 
 # ### Propagate
-
-# In[4]:
-
-
-eme.propagate()  # propagate at given wavelength
+eme.propagate(input_left=[0],input_right=[1])  # propagate at given wavelength
 
 
 # ### Visualize Monitors
 
-# In[ ]:
-
-
-plt.figure()
-monitor.visualize(component="n")
-plt.colorbar()
-plt.show()
+# plt.figure()
+# monitor.visualize(component="n")
+# plt.colorbar()
+# plt.show()
 
 plt.figure()
 monitor.visualize(component="Hy")
 plt.colorbar()
 plt.show()
-
-
-# In[ ]:
-
-
 
 
