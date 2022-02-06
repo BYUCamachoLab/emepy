@@ -18,6 +18,7 @@ class Monitor(object):
         grid_y=None,
         grid_z=None,
         location=None,
+        remaining_lengths=[],
     ):
         """Monitor class constructor0
 
@@ -72,7 +73,8 @@ class Monitor(object):
         self.dimensions = dimensions
         self.field = np.zeros(dimensions).astype(complex)
         self.lengths = deepcopy(lengths)
-        self.remaining_lengths = deepcopy(lengths)
+        self.remaining_lengths = deepcopy(remaining_lengths) 
+        self.remaining_lengths_reset = deepcopy(remaining_lengths) 
 
         self.components = components
         self.layers = {}
@@ -80,13 +82,27 @@ class Monitor(object):
         self.grid_y = grid_y
         self.grid_z = grid_z
 
+    def reset_monitor(self):
+        self.remaining_lengths = deepcopy(self.remaining_lengths_reset)
+        self.field *= 0
+
+    def soft_reset(self):
+        self.remaining_lengths = deepcopy(self.remaining_lengths_reset)
+
     def __getitem__(self, subscript):
         return self.field[subscript]
 
     def __setitem__(self, subscript, item):
 
+        # Extract if final period
+        last_period = subscript[-1]
+        subscript = subscript[:-1]
+
         # Only set item if it's in the valid z_range
         self.field[subscript] = item
+
+        if not last_period:
+            return
 
         if len(self.remaining_lengths[int(subscript[0])]) > 1:
             self.remaining_lengths[int(subscript[0])] = self.remaining_lengths[int(subscript[0])][1:]
