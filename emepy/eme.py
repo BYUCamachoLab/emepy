@@ -258,16 +258,6 @@ class EME(object):
             self.layers[-1].get_activated_layer(),
         )
 
-        # Assign to layer the right sub matrix
-        if self.state == 3:
-            self.layers[-1].get_activated_layer().S0 = deepcopy(current)
-        elif self.state == 7:
-            self.layers[-1].get_activated_layer().S1 = deepcopy(current)
-
-        # Finalize s params
-        self.s_params = current.s_params
-        for m in range(len(self.monitors)):
-            self.monitors[m].normalize()
         return current.s_params
 
     def propagate_n_only(self):
@@ -465,14 +455,14 @@ class EME(object):
                     for i, pin in enumerate(S1.pins):
                         if "left" in pin.name:
                             name = pin.name
-                            pin.rename(name.replace("left", "temp"))
+                            S1.pins[i].rename(name.replace("left", "temp"))
                         elif "right" in pin.name:
                             name = pin.name
-                            pin.rename(name.replace("right", "left"))
+                            S1.pins[i].rename(name.replace("right", "left"))
                     for i, pin in enumerate(S1.pins):
                         if "temp" in pin.name:
                             name = pin.name
-                            pin.rename(name.replace("temp", "right"))
+                            S1.pins[i].rename(name.replace("temp", "right"))
 
                 # Get length
                 cur_last = deepcopy(cur_len)
@@ -487,8 +477,27 @@ class EME(object):
 
                     # Get full s params for all periods
                     for i in range(self.num_periods):
+                        
+                        # Periodic layers
                         f = self.forward_periodic_s[i - 1] if i - 1 > -1 else None
                         r = self.reverse_periodic_s[self.num_periods - i - 2] if self.num_periods - i - 2 > -1 else None
+                        
+                        
+                        # Reformat r to be in forward reference frame
+                        if not r is None:
+                            for i, pin in enumerate(r.pins):
+                                if "left" in pin.name:
+                                    name = pin.name
+                                    r.pins[i].rename(name.replace("left", "temp"))
+                                elif "right" in pin.name:
+                                    name = pin.name
+                                    r.pins[i].rename(name.replace("right", "left"))
+                            for i, pin in enumerate(r.pins):
+                                if "temp" in pin.name:
+                                    name = pin.name
+                                    r.pins[i].rename(name.replace("temp", "right"))
+                        
+                        # Compute field propagation
                         prop = [deepcopy(f), deepcopy(S0), deepcopy(left), deepcopy(right), deepcopy(S1), deepcopy(r)]
                         S = self.prop_all(
                             *[i for i in prop if not (i is None) and not (isinstance(i, list) and not len(i))]
@@ -498,7 +507,8 @@ class EME(object):
                             + [0 for i in range(2 * len(l.modes))]
                             + forward[num_left:].tolist()
                         )
-                        coeffs = np.matmul(S, input_array)[num_left : - num_right]
+                        coeffs_ = np.matmul(S, input_array)
+                        coeffs = coeffs_[num_left : - num_right]
                         coeffs_l = coeffs[:len(l.modes)]
                         coeffs_r = coeffs[len(l.modes):]
 
@@ -566,7 +576,7 @@ class EME(object):
         self.solve_modes()
 
         # Forward pass
-        self.forward_pass(forward)
+        self.s_params = self.forward_pass(forward)
 
         # Reverse pass
         self.reverse_pass()
@@ -815,8 +825,6 @@ class Duplicator(Model):
         self.left_ports = m  # 2 * m - (1 - self.which_s) * m
         self.num_ports = 2 * m  # 3 * m
         s_matrix = s_matrix.reshape(1,3*m,3*m)
-
-        # print(np.abs(s_matrix),[i.name for i in self.pins]) 
 
         return s_matrix
 
