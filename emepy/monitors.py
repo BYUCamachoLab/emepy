@@ -19,6 +19,7 @@ class Monitor(object):
         grid_z=None,
         location=None,
         remaining_lengths=[],
+        sources=[],
     ):
         """Monitor class constructor0
 
@@ -75,6 +76,7 @@ class Monitor(object):
         self.lengths = deepcopy(lengths)
         self.remaining_lengths = deepcopy(remaining_lengths) 
         self.remaining_lengths_reset = deepcopy(remaining_lengths) 
+        self.sources = sources
 
         self.components = components
         self.layers = {}
