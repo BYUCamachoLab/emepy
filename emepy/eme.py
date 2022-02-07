@@ -6,6 +6,7 @@ from copy import deepcopy
 from emepy.fd import MSEMpy
 from emepy.models import Layer, Duplicator, Current, PeriodicLayer, InterfaceSingleMode, InterfaceMultiMode
 from emepy.source import Source
+_prop_all = Layer._prop_all
 
 
 class EME(object):
@@ -81,7 +82,7 @@ class EME(object):
         self.monitors = []
         self.custom_monitors = []
 
-    def solve_modes(self):
+    def solve_modes(self, sources=[]):
         # Check if already solved
         if self.state > 1:
             return
@@ -92,8 +93,10 @@ class EME(object):
 
         # Solve modes
         self._update_state(1)
+        length = 0.0
         for layer in tqdm(self.layers):
-            layer.activate_layer()
+            layer.activate_layer(sources,length)
+            length += layer.length
         self._update_state(2)
 
     def s_parameters(self, freqs=None):
@@ -280,7 +283,7 @@ class EME(object):
             self.wavelength = self.layers[0].wavelength
 
         # Solve for the modes
-        self.solve_modes()
+        self.solve_modes([i.sources for i in (self.monitors + self.custom_monitors)])
 
         # Forward pass
         if self.state == 2:
@@ -489,27 +492,6 @@ class EME(object):
 
         return forward, reverse
 
-    def _prop_all(self, *args):
-        temp_s = args[0]
-        for s in args[1:]:
-            Subcircuit.clear_scache()
-
-            # make sure the components are completely disconnected
-            temp_s.disconnect()
-            s.disconnect()
-
-            # # connect the components
-            right_pins = [i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name]
-            for port in range(len(right_pins)):
-                temp_s[f"right{port}"].connect(s[f"left{port}"])
-
-            temp_s = temp_s.circuit.to_subcircuit()
-
-        pins = temp_s.pins
-        s_params = temp_s.s_parameters([0])
-        del temp_s
-        return s_params[0]
-
     def _swap(self, s):
         # Reformat to be in forward reference frame
         if not s is None:
@@ -562,7 +544,7 @@ class EME(object):
         self._update_state(11)
 
     
-    def _layer_field_propagate(self, l, m, per, r, f, cur_len, forward, num_right):
+    def _layer_field_propagate(self, l, m, per, r, f, cur_len, forward, num_left, num_right):
 
         """
             TODO
@@ -590,9 +572,9 @@ class EME(object):
         # Compute field propagation
         prop = [deepcopy(f), deepcopy(S0), deepcopy(left), deepcopy(right), deepcopy(S1), deepcopy(r)]
         # print(prop)
-        S = self._prop_all(
+        S = _prop_all(
             *[t for t in prop if not (t is None) and not (isinstance(t, list) and not len(t))]
-        )
+        ).s_parameters([0])[0]
         input_array = np.array(
             forward[:num_left].tolist()
             + [0 for _ in range(2 * len(l.modes))]
@@ -690,7 +672,8 @@ class EME(object):
 
         # connect the components
         for port in range(first.right_ports):
-            first[f"right{port}"].connect(second[f"left{port}"])
+            if "dup" not in port.name:
+                first[f"right{port}"].connect(second[f"left{port}"])
 
         # get the scattering parameters
         return first.circuit.s_parameters(np.array([self.wavelength]))

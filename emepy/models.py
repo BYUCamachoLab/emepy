@@ -1,6 +1,7 @@
 import numpy as np
 from simphony import Model
 from simphony.pins import Pin
+from simphony.models import Subcircuit
 from copy import deepcopy
 from emepy.mode import Mode, Mode1D
 from emepy.fd import ModeSolver1D
@@ -29,11 +30,16 @@ class Layer(object):
         self.length = length
         self.activated_layer = None
 
-    def activate_layer(self):
+    @staticmethod
+    def get_sources(sources=[], start=0.0, end=0.0):
+        return [i for i in sources if not i.z is None and start <= i.z <= end]
+
+    def activate_layer(self, sources=[], start=0.0):
         """Solves for the modes in the layer and creates an ActivatedLayer object"""
 
         modes = []
 
+        # Solve for modes 
         if type(self.mode_solvers) != list:
             self.mode_solvers.solve()
             for mode in range(self.num_modes):
@@ -45,9 +51,65 @@ class Layer(object):
                 for mode in range(self.mode_solvers[index][1]):
                     modes.append(self.mode_solvers[index][0].get_mode(mode))
 
-        self.activated_layer = ActivatedLayer(modes, self.wavelength, self.length)
+        # Only care about sources between the ends
+        custom_sources = self.get_sources(sources, start, self.length)
 
-    def get_activated_layer(self):
+        # If no custom sources
+        if not len(custom_sources):
+            self.activated_layer = ActivatedLayer(modes, self.wavelength, self.length)
+
+        # Other sources
+        else:
+            self.activated_layer = self.get_source_system(modes, self.wavelength, self.length, custom_sources)
+
+    @staticmethod
+    def get_source_system(modes, wavelength, length, custom_sources):
+
+        # Get lengths between components
+        lengths = np.diff([0.0] + [i.z for i in custom_sources] + [length])
+        dups = []
+
+        # Enumerate through all lengths
+        for i, length in enumerate(lengths):
+
+            # Create coefficents indexes to keep in the models
+            pk, nk = [[],[]]
+            if (i-1) > -1 and custom_sources[i-1].k > 0:
+                pk = custom_sources[i-1].coeffs
+            if (i) < len(custom_sources) and custom_sources[i].k < 0:
+                nk = custom_sources[i].coeffs
+
+            # Create label
+            left = custom_sources[i-1].z if (i-1) > -1 else 0.0
+            right = custom_sources[i].z if (i) < len(custom_sources) else lengths
+            label = "_{}_to_{}".format(left,right)
+
+            # Create duplicators
+            dups.append(Duplicator(wavelength,modes,length,pk=pk,k=nk,label=label))
+
+        return Layer._prop_all(*dups)
+
+    @staticmethod
+    def _prop_all(*args):
+        temp_s = args[0]
+        for s in args[1:]:
+            Subcircuit.clear_scache()
+
+            # make sure the components are completely disconnected
+            temp_s.disconnect()
+            s.disconnect()
+
+            # # connect the components
+            right_pins = [i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name]
+            for port in range(len(right_pins)):
+                temp_s[f"right{port}"].connect(s[f"left{port}"])
+
+            temp_s = temp_s.circuit.to_subcircuit()
+
+        return temp_s
+
+
+    def get_activated_layer(self, source_locs=[], start=0.0):
         """Gets the activated layer if it exists or calls activate_layer first
 
         Returns
@@ -57,7 +119,7 @@ class Layer(object):
         """
 
         if self.activated_layer is None:
-            self.activate_layer()
+            self.activate_layer(source_locs=[], start=0.0)
 
         return self.activated_layer
 
@@ -117,17 +179,18 @@ class Layer(object):
 
 
 class Duplicator(Model):
-    def __init__(self, wavelength, modes, length, which_s=0, **kwargs):
+    def __init__(self, wavelength, modes, length, pk=[],nk=[], label="", **kwargs):
         self.num_modes = len(modes)
         self.wavelength = wavelength
         self.modes = modes
         self.length = length
-        self.which_s = which_s
+        self.pk = pk
+        self.nk = nk
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)] + [
-            "left_dup" + str(i) for i in range(self.num_modes * which_s)
+            "left_dup{}{}".format(str(i),label) for i in range(pk)
         ]
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)] + [
-            "right_dup" + str(i) for i in range(self.num_modes * (1 - which_s))
+            "right_dup{}{}".format(str(i),label) for i in range(nk)
         ]
 
         # create the pins for the model
@@ -166,18 +229,26 @@ class Duplicator(Model):
         s_matrix[m : 2 * m, m : 2 * m] = propagation_matrix1[0:m, m : 2 * m]
         
         # Insert new rows and cols
-        if not self.which_s:
-            s_matrix = np.insert(s_matrix,[m],s_matrix[m:,:],axis=0)
-            s_matrix = np.insert(s_matrix,[m],s_matrix[:,m:],axis=1)
-        else:
-            s_matrix = np.insert(s_matrix,[m],s_matrix[:m,:],axis=0)
-            s_matrix = np.insert(s_matrix,[m],s_matrix[:,:m],axis=1)
-        
+        s_matrix = np.insert(s_matrix,[m],s_matrix[:m,:],axis=0)
+        s_matrix = np.insert(s_matrix,[m],s_matrix[:,:m],axis=1)
+        s_matrix = np.insert(s_matrix,[m],s_matrix[2*m:,m:],axis=0)
+        s_matrix = np.insert(s_matrix,[m],s_matrix[m:,2*m:],axis=1)
+
+        # Delete rows and cols
+        pk_remove = m-len(self.pk)
+        nk_remove = m-len(self.nk)
+        for _ in range(pk_remove):
+            s_matrix = np.delete(s_matrix,-m-1,axis=0)
+            s_matrix = np.delete(s_matrix,-m-1,axis=1)
+        for _ in range(nk_remove):
+            s_matrix = np.delete(s_matrix,-m-len(self.pk)-1,axis=0)
+            s_matrix = np.delete(s_matrix,-m-len(self.pk)-1,axis=1)
+
         # Assign number of ports
         self.right_ports = m  # 2 * m - self.which_s * m
         self.left_ports = m  # 2 * m - (1 - self.which_s) * m
         self.num_ports = 2 * m  # 3 * m
-        s_matrix = s_matrix.reshape(1,3*m,3*m)
+        s_matrix = s_matrix.reshape(1,2*m + len(self.pk) + len(self.nk),2*m + len(self.pk) + len(self.nk))
 
         return s_matrix
 

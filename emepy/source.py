@@ -8,7 +8,7 @@ from copy import deepcopy
 class Source(object):
     """This class defines mode sources that can be created for monitors"""
 
-    def __init__(self, left_input=[1.0], right_input=[], z=[], mode_coeffs=[], k=[]):
+    def __init__(self, left_input=[1.0], right_input=[], z=None, mode_coeffs=[], positive_k=True):
         """Constructor for Source. Note: if the modes corresponding to the coefficients defined are not found in the system, the coefficients will be reduced to 0. For now, the wavelength will always be the same as defined in EME.
 
         Parameters
@@ -17,19 +17,19 @@ class Source(object):
             list of the mode coefficients to input on the left side of the system (default: [1.0])
         right_input : list[float]
             list of the mode coefficients to input on the left side of the system (default: [0.0])
-        z : list[list[float]]
-            if defined, list of the z locations to define each mode source (default: [])
+        z : float
+            if defined, the z location to define each mode source (default: None)
         mode_coeffs : list[int]
-            if z is non-empty, this list represents the modes used for each source. Example: if z=[1e-6,2e-6]; mode_coeffs=[[1,0,1],[1]] (default: [])
-        k : list[int]
-            the k value defines the direction of the propagating modes. Example: if z=[1e-6,2e-6]; mode_coeffs=[[1,0,1],[1]]; k=[[1,1,1],[-1]] (default: [])
+            if z is non-empty, this list represents the modes used for each source. (default: [])
+        positive_k : boolean
+            if true, will propagate in the positive direction
         """
 
         self.left_input = left_input
         self.right_input = right_input 
         self.z = z
         self.mode_coeffs = mode_coeffs
-        self.k = k
+        self.positive_k = positive_k
 
     # def get_left_prop(self, )
 
