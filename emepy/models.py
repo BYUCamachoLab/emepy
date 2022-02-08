@@ -28,7 +28,18 @@ class Layer(object):
         self.mode_solvers = mode_solvers
         self.wavelength = wavelength
         self.length = length
-        self.activated_layer = None
+        self.activated_layers = []
+
+    @staticmethod
+    def purge_spurious(modes):
+        """Purges all spurious modes in the dataset to prevent EME failure for high mode simulations"""
+
+        mm = deepcopy(modes)
+        for i, mode in enumerate(mm[::-1]):
+            if mode.check_spurious():
+                mm.pop(-i-1)
+        
+        return mm
 
     @staticmethod
     def get_sources(sources=[], start=0.0, end=0.0):
@@ -51,16 +62,21 @@ class Layer(object):
                 for mode in range(self.mode_solvers[index][1]):
                     modes.append(self.mode_solvers[index][0].get_mode(mode))
 
+        # Purge spurious mode
+        modes = Layer.purge_spurious(modes)
+
         # Only care about sources between the ends
         custom_sources = self.get_sources(sources, start, self.length)
 
         # If no custom sources
         if not len(custom_sources):
-            self.activated_layer = ActivatedLayer(modes, self.wavelength, self.length)
+            self.activated_layers = [ActivatedLayer(modes, self.wavelength, self.length)]
 
         # Other sources
         else:
-            self.activated_layer = self.get_source_system(modes, self.wavelength, self.length, custom_sources)
+            self.activated_layers = self.get_source_system(modes, self.wavelength, self.length, custom_sources)
+
+        return self.activated_layers
 
     @staticmethod
     def get_source_system(modes, wavelength, length, custom_sources):
@@ -74,10 +90,10 @@ class Layer(object):
 
             # Create coefficents indexes to keep in the models
             pk, nk = [[],[]]
-            if (i-1) > -1 and custom_sources[i-1].k > 0:
-                pk = custom_sources[i-1].coeffs
-            if (i) < len(custom_sources) and custom_sources[i].k < 0:
-                nk = custom_sources[i].coeffs
+            if (i-1) > -1 and custom_sources[i-1].k:
+                pk = custom_sources[i-1].mode_coeffs
+            if (i) < len(custom_sources) and not custom_sources[i].k:
+                nk = custom_sources[i].mode_coeffs
 
             # Create label
             left = custom_sources[i-1].z if (i-1) > -1 else 0.0
@@ -85,9 +101,9 @@ class Layer(object):
             label = "_{}_to_{}".format(left,right)
 
             # Create duplicators
-            dups.append(Duplicator(wavelength,modes,length,pk=pk,k=nk,label=label))
+            dups.append(Duplicator(wavelength,modes,length,pk=pk,nk=nk,label=label))
 
-        return Layer._prop_all(*dups)
+        return dups
 
     @staticmethod
     def _prop_all(*args):
@@ -105,6 +121,7 @@ class Layer(object):
                 temp_s[f"right{port}"].connect(s[f"left{port}"])
 
             temp_s = temp_s.circuit.to_subcircuit()
+            temp_s.s_params = temp_s.s_parameters([0])
 
         return temp_s
 
@@ -118,10 +135,10 @@ class Layer(object):
             the object that stores the eigenmodes
         """
 
-        if self.activated_layer is None:
+        if not len(self.activated_layers):
             self.activate_layer(source_locs=[], start=0.0)
 
-        return self.activated_layer
+        return self.activated_layers
 
     def get_n_only(self):
         """Creates a psuedo layer for accessing the material only no fields
@@ -187,11 +204,13 @@ class Duplicator(Model):
         self.pk = pk
         self.nk = nk
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)] + [
-            "left_dup{}{}".format(str(i),label) for i in range(pk)
+            "left_dup{}{}".format(str(i),label) for i in range(len(pk))
         ]
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)] + [
-            "right_dup{}{}".format(str(i),label) for i in range(nk)
+            "right_dup{}{}".format(str(i),label) for i in range(len(nk))
         ]
+        self.S0 = None
+        self.S1 = None
 
         # create the pins for the model
         pins = []
@@ -229,20 +248,30 @@ class Duplicator(Model):
         s_matrix[m : 2 * m, m : 2 * m] = propagation_matrix1[0:m, m : 2 * m]
         
         # Insert new rows and cols
-        s_matrix = np.insert(s_matrix,[m],s_matrix[:m,:],axis=0)
-        s_matrix = np.insert(s_matrix,[m],s_matrix[:,:m],axis=1)
-        s_matrix = np.insert(s_matrix,[m],s_matrix[2*m:,m:],axis=0)
-        s_matrix = np.insert(s_matrix,[m],s_matrix[m:,2*m:],axis=1)
+        # s_matrix1 = np.insert(s_matrix,[m],s_matrix[:m,:],axis=0)
+        # s_matrix1 = np.insert(s_matrix1,[m],s_matrix1[:,:m],axis=1)
+        # s_matrix2 = np.insert(s_matrix,[m],s_matrix[m:,:],axis=0)
+        # s_matrix2 = np.insert(s_matrix2,[m],s_matrix2[:,m:],axis=1)
+
+        # Join all
+        s_matrix_new = np.zeros((4*m,4*m),dtype=complex)
+        s_matrix_new[:m,3*m:] = s_matrix[:m,m:]
+        s_matrix_new[m:2*m,3*m:] = s_matrix[:m,m:]
+        s_matrix_new[3*m:,m:2*m] = s_matrix[:m,m:]
+        s_matrix_new[:m,2*m:3*m] = s_matrix[m:,:m]
+        s_matrix_new[2*m:3*m,:m] = s_matrix[m:,:m]
+        s_matrix_new[3*m:,:m] = s_matrix[m:,:m]
+        s_matrix = s_matrix_new
 
         # Delete rows and cols
         pk_remove = m-len(self.pk)
         nk_remove = m-len(self.nk)
-        for _ in range(pk_remove):
+        for _ in range(nk_remove):
             s_matrix = np.delete(s_matrix,-m-1,axis=0)
             s_matrix = np.delete(s_matrix,-m-1,axis=1)
-        for _ in range(nk_remove):
-            s_matrix = np.delete(s_matrix,-m-len(self.pk)-1,axis=0)
-            s_matrix = np.delete(s_matrix,-m-len(self.pk)-1,axis=1)
+        for _ in range(pk_remove):
+            s_matrix = np.delete(s_matrix,-m-len(self.nk)-1,axis=0)
+            s_matrix = np.delete(s_matrix,-m-len(self.nk)-1,axis=1)
 
         # Assign number of ports
         self.right_ports = m  # 2 * m - self.which_s * m
@@ -345,7 +374,6 @@ class ActivatedLayer(Model):
         self.S1 = None
         if not n_only:
             self.normalize_fields()
-            self.purge_spurious()
             self.s_params = self.calculate_s_params()
 
         # create the pins for the model
@@ -362,16 +390,6 @@ class ActivatedLayer(Model):
 
         for mode in range(len(self.modes)):
             self.modes[mode].normalize()
-
-    def purge_spurious(self):
-        """Purges all spurious modes in the dataset to prevent EME failure for high mode simulations"""
-
-        for mode in range(len(self.modes))[::-1]:
-            if self.modes[mode].check_spurious():
-                self.modes.pop(mode)
-                self.left_pins.pop(-1)
-                self.right_pins.pop(-1)
-                self.num_modes -= 1
 
     def calculate_s_params(self):
         """Calculates the s params for the phase propagation and returns it.
@@ -420,7 +438,7 @@ class ActivatedLayer(Model):
 class PeriodicLayer(Model):
     """PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods."""
 
-    def __init__(self, left_modes, right_modes, s_params, n_only=False, **kwargs):
+    def __init__(self, left_modes, right_modes, model, n_only=False, **kwargs):
         """PeriodicLayer class constructor
 
         Parameters
@@ -429,8 +447,15 @@ class PeriodicLayer(Model):
             list of the eigenmodes on the left side of the layer
         right_modes : list [Mode]
             list of the eigenmodes on the right side of the layer
-        s_params :
-            the scattering matrix that represents the layer, which includes both propagation and mode overlaps
+        model :
+            the scattering matrix model that represents the layer, which includes both propagation and mode overlaps
+        """
+
+        """
+            TODO:
+            Add capabilities to have the mode source somewhere arbitrarily in the periodic structure
+            Test the whole thing
+            Reformat this class to allow custom source ports in addition to the rest without adding infinitely many new pins upon cascading the same period over and over
         """
 
         self.left_modes = left_modes
@@ -439,7 +464,7 @@ class PeriodicLayer(Model):
         self.right_ports = len(self.right_modes)
         self.left_pins = ["left" + str(i) for i in range(len(self.left_modes))]
         self.right_pins = ["right" + str(i) for i in range(len(self.right_modes))]
-        self.s_params = s_params
+        self.s_params = model.parameters([0])
         if not n_only:
             self.normalize_fields()
             # self.purge_spurious()

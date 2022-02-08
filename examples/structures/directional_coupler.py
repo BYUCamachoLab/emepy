@@ -8,7 +8,7 @@
 # In[1]:
 
 
-import emepy
+import emepy as em
 from emepy.eme import Layer, EME
 from emepy.mode import Mode
 from emepy.fd import MSEMpy
@@ -87,24 +87,26 @@ eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
 
 # ### Add a monitor
 
-monitor = eme.add_monitor(axes="xz")
+source = em.Source(z=0.2e-6,mode_coeffs=[1,0],k=0)
+monitor = eme.add_monitor(axes="xz",sources=[source])
 
 
-# ### Propagate
-eme.propagate(input_left=[1], input_right=[0])  # propagate at given wavelength
+# # ### Propagate
+eme.solve_modes()
+eme.propagate(left_coeffs=[1])  # propagate at given wavelength
 
-# print(np.matmul(eme.s_parameters()[0],np.array([1,0])))
-# print(eme.s_parameters()[0])
+# # print(np.matmul(eme.s_parameters()[0],np.array([1,0])))
+# # print(eme.s_parameters()[0])
 
-# ### Visualize Monitors
+# # ### Visualize Monitors
 
-plt.figure()
-monitor.visualize(component="n")
-plt.colorbar()
-plt.show()
+# plt.figure()
+# monitor.visualize(component="n")
+# plt.colorbar()
+# plt.show()
 
-plt.figure()
-monitor.visualize(component="Hy")
-plt.colorbar()
-plt.show()
+# plt.figure()
+# monitor.visualize(component="Hy")
+# plt.colorbar()
+# plt.show()
 

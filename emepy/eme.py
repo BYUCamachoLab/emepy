@@ -3,9 +3,10 @@ from tqdm import tqdm
 from simphony.models import Subcircuit
 from emepy.monitors import Monitor
 from copy import deepcopy
-from emepy.fd import MSEMpy
-from emepy.models import Layer, Duplicator, Current, PeriodicLayer, InterfaceSingleMode, InterfaceMultiMode
-from emepy.source import Source
+
+from emepy.fd import *
+from emepy.models import *
+from emepy.source import *
 _prop_all = Layer._prop_all
 
 
@@ -82,7 +83,7 @@ class EME(object):
         self.monitors = []
         self.custom_monitors = []
 
-    def solve_modes(self, sources=[]):
+    def solve_modes(self):
         # Check if already solved
         if self.state > 1:
             return
@@ -94,8 +95,10 @@ class EME(object):
         # Solve modes
         self._update_state(1)
         length = 0.0
+        self.activated_layers = []
+        sources = [j for i in (self.monitors + self.custom_monitors) for j in i.sources]
         for layer in tqdm(self.layers):
-            layer.activate_layer(sources,length)
+            self.activated_layers += (layer.activate_layer(sources,length))
             length += layer.length
         self._update_state(2)
 
@@ -167,7 +170,7 @@ class EME(object):
             sources.append(Source())
 
         # Default mesh_z
-        mesh_z if not mesh_z is None else self.mesh_z
+        mesh_z = mesh_z if not mesh_z is None else self.mesh_z
 
         # Ensure the axes is not still under development
         if axes in ["xz", "zx", "yz", "zy", "xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
@@ -249,7 +252,7 @@ class EME(object):
         monitor = Monitor(axes, dimensions, lengths, components, z_range, grid_x, grid_y, grid_z, location, single_lengths, sources=sources)
         
         # Place monitor where it belongs
-        if (len(lengths) == self.mesh_z):
+        if (len(lengths[0]) == self.mesh_z):
             self.monitors.append(monitor)
         else:
             self.custom_monitors.append(monitor)
@@ -267,7 +270,7 @@ class EME(object):
         self.monitors, self.custom_monitors = temp_storage
         return im
 
-    def propagate(self):
+    def propagate(self, left_coeffs=[], right_coeffs=[]):
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.
 
         Parameters
@@ -283,18 +286,20 @@ class EME(object):
             self.wavelength = self.layers[0].wavelength
 
         # Solve for the modes
-        self.solve_modes([i.sources for i in (self.monitors + self.custom_monitors)])
+        self.solve_modes()
 
         # Forward pass
         if self.state == 2:
-            self.s_params = self._forward_pass()
+            self.network = self._forward_pass()
+            print(self.network)
+            quit()
 
         # Reverse pass
         if self.state == 6:
             self._reverse_pass()
 
         # Update monitors
-        self._field_propagate()
+        self._field_propagate(left_coeffs, right_coeffs)
 
     def _get_source_locations(self):
         return Source.extract_source_locations(*[i.sources for i in (self.monitors + self.custom_monitors)])
@@ -315,16 +320,16 @@ class EME(object):
         """
 
         # See if only one layer or no layer
-        if not len(self.layers):
-            raise Exception("No layers in system")
-        elif len(self.layers) == 1:
-            return self.layers[0].get_activated_layer().s_params
+        if not len(self.activated_layers):
+            raise Exception("No activated layers in system")
+        elif len(self.activated_layers) == 1:
+            return self.activated_layers[0].s_params
 
         # Propagate the first two layers
-        left, right = (self.layers[0].get_activated_layer(), self.layers[1].get_activated_layer())
+        left, right = (self.activated_layers[0], self.activated_layers[1])
         current = Current(self.wavelength, left)
         interface = self.interface(left, right)
-        current.update_s(self._cascade(Current(self.wavelength, current), interface), interface)
+        current = _prop_all(current, interface)
 
         # Assign to layer the right sub matrix
         if self.state == 3:
@@ -333,52 +338,47 @@ class EME(object):
             right.S1 = deepcopy(current)
 
         # Propagate the middle layers
-        for index in tqdm(range(1, len(self.layers) - 1)):
+        for index in tqdm(range(1, len(self.activated_layers) - 1)):
 
             # Get layers
-            layer1 = self.layers[index].get_activated_layer()
-            layer2 = self.layers[index + 1].get_activated_layer()
+            layer1 = self.activated_layers[index]
+            layer2 = self.activated_layers[index + 1]
 
             # Propagate layers together
             interface = self.interface(layer1, layer2)
-            current.update_s(self._cascade(Current(self.wavelength, current), layer1), layer1)
-            current.update_s(self._cascade(Current(self.wavelength, current), interface), interface)
+            current = _prop_all(current, layer1)
+            current = _prop_all(current, interface)
 
             # Assign to layer the right sub matrix
-            if self.state == 3:
-                layer2.S0 = deepcopy(current)
-            elif self.state == 7:
+            if self.state == 7:
                 layer2.S1 = deepcopy(current)
 
         # Propagate final two layers
-        current.update_s(
-            self._cascade(Current(self.wavelength, current), self.layers[-1].get_activated_layer()),
-            self.layers[-1].get_activated_layer(),
-        )
+        current = _prop_all(current, self.activated_layers[-1])
+        if self.state == 3:
+            self.activated_layers[-1].S0 = deepcopy(current)
 
-        return current.s_params
+        return current
 
     def _propagate_n_only(self):
 
-        # Update all monitors
-        for m in self.monitors:
+        # Forward through the device
+        m = self.monitors[0] if len(self.monitors) else self.custom_monitors[0]
+        cur_len = 0
+        for layer in tqdm(self.layers):
 
-            # Forward through the device
-            cur_len = 0
-            for layer in tqdm(self.layers):
+            # Get system params
+            n = layer.mode_solvers.n
+            cur_len += layer.length
 
-                # Get system params
-                n = layer.mode_solvers.n
-                cur_len += layer.length
+            # Iterate through z
+            while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
+                z = m.remaining_lengths[0][0]
 
-                # Iterate through z
-                while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
-                    z = m.remaining_lengths[0][0]
+                # Get full s params for all periods
+                for i in range(self.num_periods):
 
-                    # Get full s params for all periods
-                    for i in range(self.num_periods):
-
-                        self._set_monitor(m, i, z, {"n": n}, n=True, last_period=(i==self.num_periods-1))
+                    self._set_monitor(m, i, z, {"n": n}, n=True, last_period=(i==self.num_periods-1))
 
         return
 
@@ -387,11 +387,11 @@ class EME(object):
         # Cascade params for each period
         for l in range(self.num_periods - 1):
 
-            current_layer.s_params = self._cascade((current_layer), (interface))
+            current_layer = _prop_all(current_layer, interface)
             periodic_s.append(deepcopy(current_layer))
-            current_layer.s_params = self._cascade((current_layer), (period_layer))
+            current_layer = _prop_all(current_layer, period_layer)
 
-        return current_layer.s_params
+        return current_layer
 
     def _forward_pass(self):
 
@@ -403,8 +403,8 @@ class EME(object):
         self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
 
         # Propagate
-        left = self.layers[0].get_activated_layer()
-        right = self.layers[-1].get_activated_layer()
+        left = self.activated_layers[0]
+        right = self.activated_layers[-1]
         single_period = self._propagate_period()
         self.interface = InterfaceMultiMode
 
@@ -416,11 +416,11 @@ class EME(object):
 
         # Cascade periods
         self._update_state(5)
-        s_params = self._cascade_periods(current_layer, interface, period_layer, self.forward_periodic_s)
+        network = self._cascade_periods(current_layer, interface, period_layer, self.forward_periodic_s)
 
         self._update_state(6)
 
-        return s_params
+        return network
 
     def _update_state(self, state):
 
@@ -432,15 +432,15 @@ class EME(object):
         self._update_state(7)
 
         # Reverse geometry
-        self.layers = self.layers[::-1]
+        self.activated_layers = self.activated_layers[::-1]
 
         # Decide routine
-        num_modes = max([l.num_modes for l in self.layers])
+        num_modes = max([l.num_modes for l in self.activated_layers])
         self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
 
         # Propagate
-        left = self.layers[0].get_activated_layer()
-        right = self.layers[-1].get_activated_layer()
+        left = self.activated_layers[0]
+        right = self.activated_layers[-1]
         single_period = self._propagate_period()
         self.interface = InterfaceMultiMode
 
@@ -452,43 +452,43 @@ class EME(object):
 
         # Cascade periods
         self._update_state(8)
-        s_params = self._cascade_periods(current_layer, interface, period_layer, self.reverse_periodic_s)
+        network = self._cascade_periods(current_layer, interface, period_layer, self.reverse_periodic_s)
 
         # Fix geometry
-        self.layers = self.layers[::-1]
+        self.activated_layers = self.activated_layers[::-1]
 
-        return s_params
+        return network
 
-    def _build_input_array(self, input_left, input_middle, input_right):
+    def _build_input_array(self, left_coeffs, right_coeffs, sources):
 
-        # Case 1: input_left > num_modes
-        if len(input_left) > self.layers[0].get_activated_layer().num_modes:
+        # Case 1: left_coeffs > num_modes
+        if len(left_coeffs) > self.activated_layers[0].num_modes:
             raise Exception("Too many mode coefficients in the left input")
 
-        # Case 2: input_middle > num_sources
-        if len(input_middle):
-            raise Exception("Too many mode coefficients in the middle sources")
+        # # Case 2: input_middle > num_sources
+        # if len(input_middle):
+        #     raise Exception("Too many mode coefficients in the middle sources")
 
-        # Case 3: input_right > num_modes
-        if len(input_left) > self.layers[-1].get_activated_layer().num_modes:
+        # Case 3: right_coeffs > num_modes
+        if len(left_coeffs) > self.activated_layers[-1].num_modes:
             raise Exception("Too many mode coefficients in the right input")
 
-        # Fill input_left
-        while len(input_left) < self.layers[0].get_activated_layer().num_modes:
-            input_left += [0]
+        # Fill left_coeffs
+        while len(left_coeffs) < self.activated_layers[0].num_modes:
+            left_coeffs += [0]
 
-        # Fill input_middle
-        input_middle += []
+        # # Fill input_middle
+        # input_middle += []
 
-        # Fill input_right
-        while len(input_right) < self.layers[-1].get_activated_layer().num_modes:
-            input_right += [0]
+        # Fill right_coeffs
+        while len(right_coeffs) < self.activated_layers[-1].num_modes:
+            right_coeffs += [0]
 
         # Build forward input_array
-        forward = np.array(input_left + input_middle + input_right)
+        forward = np.array(left_coeffs + input_middle + right_coeffs)
 
         # Built reverse input_array
-        reverse = np.array(input_right + input_middle + input_left)
+        reverse = np.array(right_coeffs + input_middle + left_coeffs)
 
         return forward, reverse
 
@@ -509,13 +509,13 @@ class EME(object):
 
         return s
 
-    def _field_propagate(self):
+    def _field_propagate(self, left_coeffs, right_coeffs):
         # Start state
         self._update_state(10)
 
         # Reused params
-        num_left = len(self.layers[0].get_activated_layer().left_pins)
-        num_right = len(self.layers[-1].get_activated_layer().right_pins)
+        num_left = len(self.activated_layers[0].left_pins)
+        num_right = len(self.activated_layers[-1].right_pins)
 
         # Update all monitors
         for m in self.monitors:
@@ -534,8 +534,8 @@ class EME(object):
                 r = self._swap(r)
 
                 # Forward through the device
-                for layer in self.layers:
-                    cur_len = self._layer_field_propagate(layer.get_activated_layer(), m, per, r, f, cur_len, num_left, num_right)
+                for layer in self.activated_layers:
+                    cur_len = self._layer_field_propagate(layer, m, per, r, f, cur_len, num_left, num_right, left_coeffs, right_coeffs)
                 
                 # Prepare for new period
                 m.soft_reset()
@@ -544,7 +544,7 @@ class EME(object):
         self._update_state(11)
 
     
-    def _layer_field_propagate(self, l, m, per, r, f, cur_len, forward, num_left, num_right):
+    def _layer_field_propagate(self, l, m, per, r, f, cur_len, num_left, num_right, left_coeffs, right_coeffs):
 
         """
             TODO
@@ -566,25 +566,24 @@ class EME(object):
         # Distance params
         z = m.remaining_lengths[0][0]
         z_temp = z - cur_last
-        left = Duplicator(l.wavelength, l.modes, z_temp, which_s=0)
-        right = Duplicator(l.wavelength, l.modes, l.length-z_temp, which_s=1)
+        left = Duplicator(l.wavelength, l.modes, z_temp, pk=[],nk=[0 for _ in range(len(l.modes))])
+        right = Duplicator(l.wavelength, l.modes, l.length-z_temp, pk=[0 for _ in range(len(l.modes))],nk=[])
 
         # Compute field propagation
         prop = [deepcopy(f), deepcopy(S0), deepcopy(left), deepcopy(right), deepcopy(S1), deepcopy(r)]
-        # print(prop)
         S = _prop_all(
             *[t for t in prop if not (t is None) and not (isinstance(t, list) and not len(t))]
         ).s_parameters([0])[0]
-        input_array = np.array(
-            forward[:num_left].tolist()
-            + [0 for _ in range(2 * len(l.modes))]
-            + forward[num_left:].tolist()
-        )
+
+        # Get input array
+        input_array = self._build_input_array()
         coeffs_ = np.matmul(S, input_array)
         coeffs = coeffs_[num_left : - num_right]
         coeffs_l = coeffs[:len(l.modes)]
         coeffs_r = coeffs[len(l.modes):]
         coe = coeffs_l + coeffs_r
+
+        # Calculate field
         modes = [[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes]
         fields = np.array(modes) * np.array(coe)[:, np.newaxis, np.newaxis, np.newaxis]
         results = {}
@@ -648,32 +647,31 @@ class EME(object):
     def _get_total_length(self):
         return np.sum([layer.length for layer in self.layers])
 
-    def _cascade(self, first, second):
-        """Calculates the s_parameters between two layer objects
+    # def _cascade(self, first, second):
+    #     """Calculates the s_parameters between two layer objects
 
-        Parameters
-        ----------
-        first : Layer
-            left Layer object
-        second : Layer
-            right Layer object
+    #     Parameters
+    #     ----------
+    #     first : Layer
+    #         left Layer object
+    #     second : Layer
+    #         right Layer object
 
-        Returns
-        -------
-        numpy array
-            the s_parameters between the two Layers
-        """
+    #     Returns
+    #     -------
+    #     numpy array
+    #         the s_parameters between the two Layers
+    #     """
 
-        Subcircuit.clear_scache()
+    #     Subcircuit.clear_scache()
 
-        # make sure the components are completely disconnected
-        first.disconnect()
-        second.disconnect()
+    #     # make sure the components are completely disconnected
+    #     first.disconnect()
+    #     second.disconnect()
 
-        # connect the components
-        for port in range(first.right_ports):
-            if "dup" not in port.name:
-                first[f"right{port}"].connect(second[f"left{port}"])
+    #     # connect the components
+    #     for i in enumerate(first.right_ports):
+    #         first[f"right{i}"].connect(second[f"left{i}"])
 
-        # get the scattering parameters
-        return first.circuit.s_parameters(np.array([self.wavelength]))
+    #     # get the scattering parameters
+    #     return first.circuit.s_parameters(np.array([self.wavelength]))
