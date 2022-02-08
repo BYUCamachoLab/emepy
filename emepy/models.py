@@ -65,7 +65,7 @@ class Layer(object):
         # Purge spurious mode
         modes = Layer.purge_spurious(modes)
 
-        # Only care about sources between the ends
+        # Only care about sources between the ends\
         custom_sources = self.get_sources(sources, start, self.length)
 
         # If no custom sources
@@ -74,15 +74,15 @@ class Layer(object):
 
         # Other sources
         else:
-            self.activated_layers = self.get_source_system(modes, self.wavelength, self.length, custom_sources)
+            self.activated_layers = self.get_source_system(modes, self.wavelength, self.length, custom_sources, start)
 
         return self.activated_layers
 
     @staticmethod
-    def get_source_system(modes, wavelength, length, custom_sources):
+    def get_source_system(modes, wavelength, length, custom_sources, start=0.0):
 
         # Get lengths between components
-        lengths = np.diff([0.0] + [i.z for i in custom_sources] + [length])
+        lengths = np.diff([start] + [i.z for i in custom_sources] + [start+length])
         dups = []
 
         # Enumerate through all lengths
@@ -106,6 +106,18 @@ class Layer(object):
         return dups
 
     @staticmethod
+    def parse_activated_layers(activated_layers, sources, start):
+
+        # Track lengths and decompose all layers
+        return_layers = []
+        length_tracker = start
+        for layer in activated_layers:
+            return_layers += Layer.get_source_system(layer.modes, layer.wavelength, layer.length, sources, start)
+            length_tracker += layer.length
+
+        return return_layers
+
+    @staticmethod
     def _prop_all(*args):
         temp_s = args[0]
         for s in args[1:]:
@@ -126,7 +138,7 @@ class Layer(object):
         return temp_s
 
 
-    def get_activated_layer(self, source_locs=[], start=0.0):
+    def get_activated_layer(self, sources=[], start=0.0):
         """Gets the activated layer if it exists or calls activate_layer first
 
         Returns
@@ -136,7 +148,7 @@ class Layer(object):
         """
 
         if not len(self.activated_layers):
-            self.activate_layer(source_locs=[], start=0.0)
+            self.activate_layer(sources=sources, start=start)
 
         return self.activated_layers
 
@@ -196,19 +208,20 @@ class Layer(object):
 
 
 class Duplicator(Model):
-    def __init__(self, wavelength, modes, length, pk=[],nk=[], label="", **kwargs):
+    def __init__(self, wavelength, modes, length, pk=[],nk=[], label="", special_left=[], special_right=[], **kwargs):
         self.num_modes = len(modes)
         self.wavelength = wavelength
         self.modes = modes
         self.length = length
         self.pk = pk
         self.nk = nk
+
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)] + [
-            "left_dup{}{}".format(str(i),label) for i in range(len(pk))
-        ]
+            "left_dup{}{}".format(str(i),label) for i in range(len(pk)*(not len(special_left)))
+        ] + special_left
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)] + [
-            "right_dup{}{}".format(str(i),label) for i in range(len(nk))
-        ]
+            "right_dup{}{}".format(str(i),label) for i in range(len(nk)*(not len(special_right)))
+        ] + special_right
         self.S0 = None
         self.S1 = None
 
@@ -464,19 +477,19 @@ class PeriodicLayer(Model):
         self.right_ports = len(self.right_modes)
         self.left_pins = ["left" + str(i) for i in range(len(self.left_modes))]
         self.right_pins = ["right" + str(i) for i in range(len(self.right_modes))]
-        self.s_params = model.parameters([0])
+        self.s_params = model.s_parameters([0])
         if not n_only:
             self.normalize_fields()
             # self.purge_spurious()
 
         # create the pins for the model
-        pins = []
-        for name in self.left_pins:
-            pins.append(Pin(self, name))
-        for name in self.right_pins:
-            pins.append(Pin(self, name))
+        # pins = []
+        # for name in self.left_pins:
+        #     pins.append(Pin(self, name))
+        # for name in self.right_pins:
+        #     pins.append(Pin(self, name))
 
-        super().__init__(**kwargs, pins=pins)
+        super().__init__(**kwargs, pins=model.pins)
 
     def purge_spurious(self):
         """Purges all spurious modes in the dataset to prevent EME failure for high mode simulations"""
