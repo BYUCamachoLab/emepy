@@ -33,6 +33,14 @@ class Source(object):
 
     # def get_left_prop(self, )
 
+    def get_label(self):
+        k = "+" if self.k else "-"
+        return "{}{}".format(k,str(self.z)[:5])
+
+    def match_label(self, label):
+        return label == self.get_label()
+
+
     def verify(self):
         """Parses self to ensure proper format
         """

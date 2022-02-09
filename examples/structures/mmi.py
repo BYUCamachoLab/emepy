@@ -171,7 +171,7 @@ monitor = eme.add_monitor(axes="xyz", mesh_z=200)
 # eme.draw()
 # plt.show()
 
-eme.propagate(input_left=[1],input_right=[])
+eme.propagate(left_coeffs=[1],right_coeffs=[])
 
 plt.figure()
 monitor.visualize(axes="xz")
