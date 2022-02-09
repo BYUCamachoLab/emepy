@@ -491,7 +491,7 @@ class EME(object):
         if len(left_coeffs) > self.activated_layers[-1].num_modes:
             raise Exception("Too many mode coefficients in the right input")
 
-        print(model.s_parameters([0]).shape)
+        print(model)
         quit()
 
         # # Fill left_coeffs
