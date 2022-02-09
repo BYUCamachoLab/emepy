@@ -37,7 +37,7 @@ class Layer(object):
         mm = deepcopy(modes)
         for i, mode in enumerate(mm[::-1]):
             if mode.check_spurious():
-                mm.pop(-i-1)
+                mm.remove(mode)
         
         return mm
 
@@ -96,8 +96,8 @@ class Layer(object):
                 nk = custom_sources[i].mode_coeffs
 
             # Create label
-            left = custom_sources[i-1].z if (i-1) > -1 else 0.0
-            right = custom_sources[i].z if (i) < len(custom_sources) else lengths
+            left = custom_sources[i-1].get_label() if (i-1) > -1 else 0.0
+            right = custom_sources[i].get_label() if (i) < len(custom_sources) else lengths
             label = "_{}_to_{}".format(left,right)
 
             # Create duplicators
@@ -385,6 +385,8 @@ class ActivatedLayer(Model):
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)]
         self.S0 = None
         self.S1 = None
+        self.nk = []
+        self.pk = []
         if not n_only:
             self.normalize_fields()
             self.s_params = self.calculate_s_params()

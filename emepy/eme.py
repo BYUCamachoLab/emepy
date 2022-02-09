@@ -275,7 +275,7 @@ class EME(object):
         self.monitors, self.custom_monitors = temp_storage
         return im
 
-    def propagate(self, left_coeffs=[], right_coeffs=[]):
+    def propagate(self, left_coeffs=None, right_coeffs=[]):
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.
 
         Parameters
@@ -289,6 +289,13 @@ class EME(object):
             raise Exception("Must place layers before propagating")
         else:
             self.wavelength = self.layers[0].wavelength
+
+        # Fix defaults
+        if left_coeffs is None:
+            if not len(right_coeffs) and not len(self.get_monitors()):
+                left_coeffs = [1]
+            else:
+                left_coeffs = []
 
         # Solve for the modes
         self.solve_modes()
@@ -477,41 +484,79 @@ class EME(object):
 
         return network
 
-    def _build_input_array(self, left_coeffs, right_coeffs, sources, model):
+    def _build_input_array(self, left_coeffs, right_coeffs, model, num_modes=1):
 
         # Case 1: left_coeffs > num_modes
         if len(left_coeffs) > self.activated_layers[0].num_modes:
             raise Exception("Too many mode coefficients in the left input")
 
-        # # Case 2: input_middle > num_sources
-        # if len(input_middle):
-        #     raise Exception("Too many mode coefficients in the middle sources")
-
-        # Case 3: right_coeffs > num_modes
+        # Case 2: right_coeffs > num_modes
         if len(left_coeffs) > self.activated_layers[-1].num_modes:
             raise Exception("Too many mode coefficients in the right input")
 
-        print(model)
-        quit()
+        # Start mapping
+        mapping = {}
 
-        # # Fill left_coeffs
-        # while len(left_coeffs) < self.activated_layers[0].num_modes:
-        #     left_coeffs += [0]
+        # Get sources
+        sources = self.get_sources()
 
-        # # Fill input_middle
-        # input_middle += []
+        # Form mapping
+        try:
+            for pin in model.pins:
+                n = pin.name
+                
+                # Left global input
+                if "left" in n and not "dup" in n:
+                    ind = int(n[4:])
+                    if ind < len(left_coeffs):
+                        mapping[n] = left_coeffs[ind]
+                    else: 
+                        mapping[n] = 0.0
 
-        # # Fill right_coeffs
-        # while len(right_coeffs) < self.activated_layers[-1].num_modes:
-        #     right_coeffs += [0]
+                # Right global input
+                if "right" in n and not "dup" in n:
+                    ind = int(n[5:])
+                    if ind < len(right_coeffs):
+                        mapping[n] = right_coeffs[ind]
+                    else: 
+                        mapping[n] = 0.0
 
-        # # Build forward input_array
-        # forward = np.array(left_coeffs + input_middle + right_coeffs)
+                # Left monitor
+                if "left" in n and "dup" in n and not "to" in n:
+                    mapping[n] = 0
 
-        # # Built reverse input_array
-        # reverse = np.array(right_coeffs + input_middle + left_coeffs)
+                # Right monitor
+                if "right" in n and "dup" in n and not "to" in n:
+                    mapping[n] = 0
 
-        return forward, reverse
+                # Custom left source inputs
+                if "left" in n and "dup" in n and "to" in n:
+                    n = n.split("_")
+                    l, _ = (n[2],n[4])
+                    ind = int(n[1].replace("dup",""))
+                    for i,s in enumerate(sources):
+                        if s.match_label(l) and ind < len(s.mode_coeffs):
+                            mapping[n] = s.mode_coeffs[ind]
+                            break
+                        elif i == len(sources) - 1:
+                            mapping[n] = 0.0
+                    
+                # Custom right source inputs
+                if "right" in n and "dup" in n and "to" in n:
+                    n_ = n.split("_")
+                    _, r = (n_[2],n_[4])
+                    ind = int(n_[1].replace("dup",""))
+                    for i,s in enumerate(sources):
+                        if s.match_label(r) and ind < len(s.mode_coeffs):
+                            mapping[n] = s.mode_coeffs[ind]
+                            break
+                        elif i == len(sources) - 1:
+                            mapping[n] = 0.0
+
+        except Exception as e:
+            raise Exception("Improper format of sources")
+
+        return mapping
 
     def _swap(self, s):
         # Reformat to be in forward reference frame
@@ -588,7 +633,6 @@ class EME(object):
         z = m.remaining_lengths[0][0]
         z_temp = z - cur_last
         
-        
         special_left = [pin.name for pin in l.pins if "left" in pin.name and "dup" in pin.name]
         special_right = [pin.name for pin in l.pins if "right" in pin.name and "dup" in pin.name]
 
@@ -602,17 +646,15 @@ class EME(object):
         )
 
         # Get input array
-        input_array = self._build_input_array(left_coeffs, right_coeffs, self.get_sources(), S)
-        S = S.s_parameters([0])
-        coeffs_ = np.matmul(S, input_array)
-        coeffs = coeffs_[num_left : - num_right]
-        coeffs_l = coeffs[:len(l.modes)]
-        coeffs_r = coeffs[len(l.modes):]
-        coe = coeffs_l + coeffs_r
+        input_map = self._build_input_array(left_coeffs, right_coeffs, S, num_modes=len(l.modes))
+        coeffs_ = S.compute(input_map, 0)
+        coeff = np.zeros(len(l.modes), dtype=complex)
+        for i in range(len(l.modes)):
+            coeff[i] = coeffs_["left_dup{}".format(i)] + coeffs_["right_dup{}".format(i)]
 
         # Calculate field
         modes = [[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes]
-        fields = np.array(modes) * np.array(coe)[:, np.newaxis, np.newaxis, np.newaxis]
+        fields = np.array(modes) * np.array(coeff)[:, np.newaxis, np.newaxis, np.newaxis]
         results = {}
         results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
             "Hz"
@@ -628,16 +670,16 @@ class EME(object):
             z = m.remaining_lengths[0][0]
             z_diff = z - z_old
             eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
-            coeffs_l *= np.exp(z_diff * 1j * eig) 
-            coeffs_r *= np.exp(-z_diff * 1j * eig) 
-            coe =  coeffs_l + coeffs_r 
+            phase = np.exp(z_diff * 1j * eig) 
+            coeff = coeff*phase
+            print(np.abs(coeff), np.angle(coeff))
 
             # Create field
-            fields = np.array(modes) * np.array(coe)[:, np.newaxis, np.newaxis, np.newaxis]
+            fields_ = np.array(modes) * np.array(coeff)[:, np.newaxis, np.newaxis, np.newaxis]
             results = {}
             results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
                 "Hz"
-            ] = fields.sum(0)
+            ] = fields_.sum(0)
             results["n"] = l.modes[0].n
             self._set_monitor(m, per, z, results)
             

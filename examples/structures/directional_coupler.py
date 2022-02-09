@@ -87,8 +87,8 @@ eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
 
 # ### Add a monitor
 
-source = em.Source(z=0.2e-6,mode_coeffs=[1,0],k=0)
-monitor = eme.add_monitor(axes="xz",sources=[source])
+# source = em.Source(z=0.2e-6,mode_coeffs=[1,0],k=0)
+monitor = eme.add_monitor(axes="xz",sources=[])
 
 
 # # ### Propagate
@@ -105,8 +105,8 @@ eme.propagate(left_coeffs=[1])  # propagate at given wavelength
 # plt.colorbar()
 # plt.show()
 
-# plt.figure()
-# monitor.visualize(component="Hy")
-# plt.colorbar()
-# plt.show()
+plt.figure()
+monitor.visualize(component="Hy")
+plt.colorbar()
+plt.show()
 
