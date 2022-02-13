@@ -345,7 +345,6 @@ class EME(object):
         if self.state == 3:
             right.S0 = deepcopy(current)
         elif self.state == 7:
-            print(current)
             right.S1 = deepcopy(current)
 
         # Propagate the middle layers
@@ -653,8 +652,9 @@ class EME(object):
             coeff[i] = coeffs_["left_dup{}".format(i)] + coeffs_["right_dup{}".format(i)]
 
         # Calculate field
-        modes = [[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes]
-        fields = np.array(modes) * np.array(coeff)[:, np.newaxis, np.newaxis, np.newaxis]
+        modes = np.array([[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes],dtype=complex)
+        coeff = np.array(coeff,dtype=complex)
+        fields = modes * coeff[:, np.newaxis, np.newaxis, np.newaxis]
         results = {}
         results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
             "Hz"
@@ -666,22 +666,19 @@ class EME(object):
         while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
 
             # Get coe
-            z_old = deepcopy(z)
             z = m.remaining_lengths[0][0]
-            z_diff = z - z_old
             eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
-            phase = np.exp(z_diff * 1j * eig) 
-            coeff = coeff*phase
-            print(np.abs(coeff), np.angle(coeff))
+            phase = np.exp(z * 1j * eig) 
+            coeff_ = coeff*phase
 
             # Create field
-            fields_ = np.array(modes) * np.array(coeff)[:, np.newaxis, np.newaxis, np.newaxis]
+            fields_ = modes * coeff_[:, np.newaxis, np.newaxis, np.newaxis]
             results = {}
             results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
                 "Hz"
             ] = fields_.sum(0)
             results["n"] = l.modes[0].n
-            self._set_monitor(m, per, z, results)
+            self._set_monitor(m, per, m.remaining_lengths[0][0], results)
             
         return cur_len
 
@@ -715,32 +712,3 @@ class EME(object):
 
     def _get_total_length(self):
         return np.sum([layer.length for layer in self.layers])
-
-    # def _cascade(self, first, second):
-    #     """Calculates the s_parameters between two layer objects
-
-    #     Parameters
-    #     ----------
-    #     first : Layer
-    #         left Layer object
-    #     second : Layer
-    #         right Layer object
-
-    #     Returns
-    #     -------
-    #     numpy array
-    #         the s_parameters between the two Layers
-    #     """
-
-    #     Subcircuit.clear_scache()
-
-    #     # make sure the components are completely disconnected
-    #     first.disconnect()
-    #     second.disconnect()
-
-    #     # connect the components
-    #     for i in enumerate(first.right_ports):
-    #         first[f"right{i}"].connect(second[f"left{i}"])
-
-    #     # get the scattering parameters
-    #     return first.circuit.s_parameters(np.array([self.wavelength]))
