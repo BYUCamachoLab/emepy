@@ -1,8 +1,11 @@
 import numpy as np
-from tqdm import tqdm
+from tqdm import tqdm 
 from simphony.models import Subcircuit
 from emepy.monitors import Monitor
 from copy import deepcopy
+import importlib
+if not (importlib.util.find_spec("mpi4py") is None):
+    from mpi4py import MPI
 
 from emepy.fd import *
 from emepy.models import *
@@ -27,7 +30,7 @@ class EME(object):
         11: "finished",
     }
 
-    def __init__(self, layers=[], num_periods=1, mesh_z=200):
+    def __init__(self, layers=[], num_periods=1, mesh_z=200, parallel=False, quiet=False):
         """EME class constructor
 
         Parameters
@@ -41,7 +44,8 @@ class EME(object):
 
         """
 
-        self.reset()
+        self.quiet = quiet
+        self.reset(parallel=parallel)
         self.layers = layers[:]
         self.num_periods = num_periods
         self.mesh_z = mesh_z
@@ -50,6 +54,7 @@ class EME(object):
         self.custom_monitors = []
         self.forward_periodic_s = []
         self.reverse_periodic_s = []
+        self.parallel = parallel
 
     def add_layer(self, layer):
         """The add_layer method will add a Layer object to the EME object. The object will be geometrically added to the very right side of the structure. Using this method after propagate is useless as the solver has already been called.
@@ -63,13 +68,16 @@ class EME(object):
 
         self.layers.append(layer)
 
-    def reset(self, full_reset=True):
+    def reset(self, full_reset=True, parallel=False):
         """Clears out the layers and s params so the user can reuse the object in memory on a new geometry"""
 
         # Erase all information except number of periods
         if full_reset:
             self.layers = []
             self.wavelength = None
+            self.parallel=parallel
+            if parallel:
+                self._configure_parallel_resources()
             self._update_state(0)
 
         # Only unsolve everything and erase monitors
@@ -95,12 +103,23 @@ class EME(object):
         # Solve modes
         self._update_state(1)
         length = 0.0
-        self.activated_layers = []
+        tasks = []
         sources = self.get_sources()
-        for layer in tqdm(self.layers):
-            self.activated_layers += (layer.activate_layer(sources,length))
+        for layer in tqdm(self.layers,disable=self.quiet):
+            tasks.append((layer.activate_layer,[sources,length],{}))
             length += layer.length
+
+        # Organized solved layers
+        self.activated_layers = []
+        results = self._run_parallel_functions(*tasks)
+        if not results is None:
+            for solved in results:
+                self.activated_layers += solved
+
         self._update_state(2)
+
+    def am_master(self):
+        return self.rank == 0 if self.parallel else True
 
     def get_sources(self):
         srcs = Layer.get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], 0, self._get_total_length())
@@ -292,7 +311,7 @@ class EME(object):
 
         # Fix defaults
         if left_coeffs is None:
-            if not len(right_coeffs) and not len(self.get_monitors()):
+            if not len(right_coeffs) and not len(self.get_sources()):
                 left_coeffs = [1]
             else:
                 left_coeffs = []
@@ -300,16 +319,81 @@ class EME(object):
         # Solve for the modes
         self.solve_modes()
 
-        # Forward pass
-        if self.state == 2:
-            self.network = self._forward_pass()
+        if self.am_master():
 
-        # Reverse pass
-        if self.state == 6:
-            self._reverse_pass()
+            # Forward pass
+            if self.state == 2:
+                self.network = self._forward_pass()
 
-        # Update monitors
-        self._field_propagate(left_coeffs, right_coeffs)
+            # Reverse pass
+            if self.state == 6:
+                self._reverse_pass()
+
+            # Update monitors
+            self._field_propagate(left_coeffs, right_coeffs)
+
+    def _run_parallel_functions(self, *args):
+        """Args should provide tuples of (function, argument list, kwargument dictionary) and the function will magically compute them in parallel"""
+        
+        # Initialize empty completed task list
+        finished_tasks = []
+        finished_tasks_collective = []
+
+        # Complete all tasks and tag based on initial order for either parallel or not
+        if not self.parallel:
+            # Linearly execute tasks
+            for i, a in enumerate(args):
+                func, arguments, kwarguments = a
+                finished_tasks_collective.append([(i,func(*arguments, **kwarguments))])
+        else:
+
+            # Create data
+            solve_data = [(i, a) for i, a in enumerate(args)]
+            if self.am_master():
+                data = []
+                for j in range(self.size):
+                    subdata = []
+                    for i, a in enumerate(args):
+                        if self._should_compute(i,j,self.size):
+                            subdata.append(i)
+                    data.append(subdata)
+            else:
+                data = None
+
+            # Scatter data
+            data = self.comm.scatter(data, root=0)
+
+            # Compute data
+            for i, k in enumerate(data):
+                func, arguments, kwarguments = solve_data[k][1]
+                data[i] = (k,func(*arguments, **kwarguments))
+            
+            # Wait until everyone is finished
+            self.comm.Barrier()
+
+            # Gather data
+            finished_tasks_collective = self.comm.gather(data,root=0)
+
+            # Wait until everyone is finished
+            self.comm.Barrier()
+
+        # Sort by the tag to return in the original order
+        if self.am_master():
+            finished_tasks_collective = sorted(finished_tasks_collective,key=lambda x: x[0][0])
+            finished_tasks_collective = [i[0][1] for i in finished_tasks_collective]
+
+        return finished_tasks_collective
+
+    def _should_compute(self,i,rank,size):
+        return i % size == rank
+
+    def _configure_parallel_resources(self):
+
+        self.comm = MPI.COMM_WORLD
+        self.size = self.comm.Get_size()
+        self.rank = self.comm.Get_rank()
+        if self.am_master():
+            print("Running in parallel on {} cores".format(self.size))
 
     def _get_source_locations(self):
         return Source.extract_source_locations(*[i.sources for i in (self.monitors + self.custom_monitors)])
@@ -343,12 +427,12 @@ class EME(object):
 
         # Assign to layer the right sub matrix
         if self.state == 3:
-            right.S0 = deepcopy(current)
+            right.S0 = make_copy_model(current)
         elif self.state == 7:
-            right.S1 = deepcopy(current)
+            right.S1 = make_copy_model(current)
 
         # Propagate the middle layers
-        for index in tqdm(range(1, len(activated_layers) - 1)):
+        for index in tqdm(range(1, len(activated_layers) - 1),disable=self.quiet):
 
             # Get layers
             layer1 = activated_layers[index]
@@ -361,9 +445,9 @@ class EME(object):
 
             # Assign to layer the right sub matrix
             if self.state == 7:
-                layer2.S1 = deepcopy(current)
+                layer2.S1 = make_copy_model(current)
             elif self.state == 3:
-                activated_layers[-1].S0 = deepcopy(current)
+                layer2.S0 = make_copy_model(current)
 
         # Propagate final two layers
         current = _prop_all(current, activated_layers[-1])
@@ -375,7 +459,7 @@ class EME(object):
         # Forward through the device
         m = self.monitors[0] if len(self.monitors) else self.custom_monitors[0]
         cur_len = 0
-        for layer in tqdm(self.layers):
+        for layer in tqdm(self.layers,disable=self.quiet):
 
             # Get system params
             n = layer.mode_solvers.n
@@ -400,7 +484,7 @@ class EME(object):
 
             length_tracker += self._get_total_length()
             current_layer = _prop_all(current_layer, interface)
-            periodic_s.append(deepcopy(current_layer))
+            periodic_s.append(make_copy_model(current_layer))
             
             # Only care about sources between the ends
             sources = self.get_sources()
@@ -449,7 +533,8 @@ class EME(object):
     def _update_state(self, state):
 
         self.state = state
-        print("current state: {}".format(self.states[self.state]))
+        if self.am_master() and not self.quiet:
+            print("current state: {}".format(self.states[self.state]))
 
     def _reverse_pass(self):
         # Assign state
@@ -530,9 +615,9 @@ class EME(object):
 
                 # Custom left source inputs
                 if "left" in n and "dup" in n and "to" in n:
-                    n = n.split("_")
-                    l, _ = (n[2],n[4])
-                    ind = int(n[1].replace("dup",""))
+                    n_ = n.split("_")
+                    l, _ = (n_[2],n_[4])
+                    ind = int(n_[1].replace("dup",""))
                     for i,s in enumerate(sources):
                         if s.match_label(l) and ind < len(s.mode_coeffs):
                             mapping[n] = s.mode_coeffs[ind]
@@ -588,7 +673,7 @@ class EME(object):
             m.reset_monitor()
 
             # Get full s params for all periods
-            for per in range(self.num_periods):
+            for per in tqdm(range(self.num_periods),disable=self.quiet):
                 cur_len = 0
 
                 # Periodic layers
@@ -608,7 +693,6 @@ class EME(object):
         # Finish state
         self._update_state(11)
 
-    
     def _layer_field_propagate(self, l, m, per, r, f, cur_len, num_left, num_right, left_coeffs, right_coeffs):
 
         """
@@ -639,21 +723,27 @@ class EME(object):
         right = Duplicator(l.wavelength, l.modes, l.length-z_temp, pk=[0 for _ in range(len(l.modes))],nk=l.nk,special_right=special_right)
 
         # Compute field propagation
-        prop = [deepcopy(f), deepcopy(S0), deepcopy(left), deepcopy(right), deepcopy(S1), deepcopy(r)]
+        prop = [make_copy_model(f), make_copy_model(S0), make_copy_model(left), make_copy_model(right), make_copy_model(S1), make_copy_model(r)]
         S = _prop_all(
             *[t for t in prop if not (t is None) and not (isinstance(t, list) and not len(t))]
         )
 
         # Get input array
         input_map = self._build_input_array(left_coeffs, right_coeffs, S, num_modes=len(l.modes))
-        coeffs_ = S.compute(input_map, 0)
-        coeff = np.zeros(len(l.modes), dtype=complex)
+        coeffs_ = compute(S, input_map, 0)
+        coeff_left = np.zeros(len(l.modes), dtype=complex)
+        coeff_right = np.zeros(len(l.modes), dtype=complex)
         for i in range(len(l.modes)):
-            coeff[i] = coeffs_["left_dup{}".format(i)] + coeffs_["right_dup{}".format(i)]
+            coeff_left[i] = 0
+            coeff_right[i] = 0
+            if "left_dup{}".format(i) in coeffs_:
+                coeff_left[i] += coeffs_["left_dup{}".format(i)]
+            if "right_dup{}".format(i) in coeffs_:
+                coeff_right[i] += coeffs_["right_dup{}".format(i)]
 
         # Calculate field
-        modes = np.array([[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes],dtype=complex)
-        coeff = np.array(coeff,dtype=complex)
+        modes = np.array([[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes])
+        coeff = coeff_left + coeff_right
         fields = modes * coeff[:, np.newaxis, np.newaxis, np.newaxis]
         results = {}
         results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
@@ -666,22 +756,27 @@ class EME(object):
         while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
 
             # Get coe
+            z_old = deepcopy(z)
             z = m.remaining_lengths[0][0]
+            z_diff = z - z_old
             eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
-            phase = np.exp(z * 1j * eig) 
-            coeff_ = coeff*phase
+            phase_left = np.exp(-z_diff * 1j * eig) 
+            phase_right = np.exp(z_diff * 1j * eig) 
+            coeff_left = coeff_left*phase_left
+            coeff_right = coeff_right*phase_right
+            coeff = coeff_left + coeff_right
 
             # Create field
-            fields_ = modes * coeff_[:, np.newaxis, np.newaxis, np.newaxis]
+            fields_ = modes * coeff[:, np.newaxis, np.newaxis, np.newaxis]
             results = {}
             results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
                 "Hz"
             ] = fields_.sum(0)
             results["n"] = l.modes[0].n
-            self._set_monitor(m, per, m.remaining_lengths[0][0], results)
+            self._set_monitor(m, per, z, results)
             
         return cur_len
-
+    
     def _set_monitor(self, m, i, z, results, n=False, last_period=True):
         for key, field in results.items():
 
