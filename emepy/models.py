@@ -6,6 +6,7 @@ from copy import deepcopy
 from emepy.mode import Mode, Mode1D
 from emepy.fd import ModeSolver1D
 
+
 class Layer(object):
     """Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures."""
 
@@ -777,3 +778,45 @@ class InterfaceMultiMode(Model):
         """Clears the scattering matrix in the object"""
 
         self.s_params = None
+
+class CopyModel(Model):
+
+    def __init__(self, model, **kwargs):
+
+        self.num_modes = model.num_modes if hasattr(model,"num_modes") else None
+        self.modes = model.modes if hasattr(model,"modes") else []
+        self.wavelength = model.wavelength if hasattr(model,"wavelength") else None
+        self.length = model.length if hasattr(model,"length") else None
+        self.left_pins = model.left_pins if hasattr(model,"left_pins") else []
+        self.right_pins = model.right_pins if hasattr(model,"right_pins") else []
+        self.left_ports = model.left_ports if hasattr(model,"left_ports") else []
+        self.right_ports = model.right_ports if hasattr(model,"right_ports") else []
+
+        self.S0 = make_copy_model(model.S0) if hasattr(model,"S0") else None
+        self.S1 = make_copy_model(model.S1) if hasattr(model,"S1") else None
+        self.nk = model.nk if hasattr(model,"nk") else []
+        self.pk = model.pk if hasattr(model,"pk") else []
+        self.pins = model.pins if hasattr(model,"pins") else []
+        self.s_params = model.s_parameters([0])
+        
+        super().__init__(**kwargs, pins=self.pins)
+        return
+
+    def s_parameters(self, freqs: "np.array") -> "np.ndarray":
+
+        return self.s_params
+
+def make_copy_model(model):
+    new_model = deepcopy(model) if not model is None else None
+    return new_model
+
+def compute(model, pin_values: "dict", freq : "float") -> "np.ndarray":
+    """Takes a dictionary mapping each pin name to a coefficent and multiplies by the S matrix"""
+    cfs = np.zeros(len(model.pins))
+    pin_names = [i.name for i in model.pins]
+    key_index = dict(zip(pin_names, [pin_names.index(i) for i in pin_names]))
+    for key, value in pin_values.items():
+        cfs[key_index[key]] = value
+    matrix = model.s_parameters(np.array([freq]))
+    output = np.matmul(matrix, cfs)[0]
+    return dict(zip(pin_names, output))
