@@ -787,8 +787,6 @@ class CopyModel(Model):
         self.modes = model.modes if hasattr(model,"modes") else []
         self.wavelength = model.wavelength if hasattr(model,"wavelength") else None
         self.length = model.length if hasattr(model,"length") else None
-        self.left_pins = model.left_pins if hasattr(model,"left_pins") else []
-        self.right_pins = model.right_pins if hasattr(model,"right_pins") else []
         self.left_ports = model.left_ports if hasattr(model,"left_ports") else []
         self.right_ports = model.right_ports if hasattr(model,"right_ports") else []
 
@@ -796,7 +794,9 @@ class CopyModel(Model):
         self.S1 = make_copy_model(model.S1) if hasattr(model,"S1") else None
         self.nk = model.nk if hasattr(model,"nk") else []
         self.pk = model.pk if hasattr(model,"pk") else []
-        self.pins = model.pins if hasattr(model,"pins") else []
+        self.pins = self.copy_pins(model.pins) if hasattr(model,"pins") else []
+        self.left_pins = model.left_pins if hasattr(model,"left_pins") else [] #[self.find_pin(pin) for pin in model.left_pins] if hasattr(model,"left_pins") else []
+        self.right_pins = model.right_pins if hasattr(model,"right_pins") else [] #[self.find_pin(pin) for pin in model.right_pins] if hasattr(model,"right_pins") else []
         self.s_params = model.s_parameters([0])
         
         super().__init__(**kwargs, pins=self.pins)
@@ -806,8 +806,18 @@ class CopyModel(Model):
 
         return self.s_params
 
+    def copy_pins(self, pins):
+
+        return [Pin(self, p.name) for p in pins]
+
+    def find_pin(self, pin):
+        for p in self.pins:
+            if p.name == pin.name:
+                return p 
+        return Pin(self, pin.name)
+
 def make_copy_model(model):
-    new_model = deepcopy(model) if not model is None else None
+    new_model = CopyModel(model) if not model is None else None
     return new_model
 
 def compute(model, pin_values: "dict", freq : "float") -> "np.ndarray":
