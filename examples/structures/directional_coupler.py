@@ -15,6 +15,7 @@ from emepy.fd import MSEMpy
 import numpy as np
 from matplotlib import pyplot as plt
 from emepy.tools import Si, SiO2
+import time
 
 # Geometric parameters
 wavelength = 1.55e-6  # Wavelength
@@ -32,7 +33,7 @@ n = np.ones(mesh) * cladding_index
 # ### Define structure and verify shape
 
 # Create simulation
-eme = EME()
+eme = EME(quiet=True,parallel=True)
 
 # Create left waveguide
 single_left_edge = -gap / 2 - width
@@ -73,11 +74,12 @@ two_channel = MSEMpy(
     n=n,
 )
 
-eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
+for i in range(30):
+    eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
-eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
+# eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
 
 # draw
 # plt.figure()
@@ -92,8 +94,11 @@ monitor = eme.add_monitor(axes="xz",sources=[])
 
 
 # # ### Propagate
+t = time.time()
 eme.solve_modes()
-eme.propagate(left_coeffs=[1])  # propagate at given wavelength
+if eme.am_master():
+    print("time to solve for 30 modes: {}".format(time.time()-t))
+# eme.propagate(left_coeffs=[1])  # propagate at given wavelength
 
 # # print(np.matmul(eme.s_parameters()[0],np.array([1,0])))
 # # print(eme.s_parameters()[0])
@@ -105,8 +110,8 @@ eme.propagate(left_coeffs=[1])  # propagate at given wavelength
 # plt.colorbar()
 # plt.show()
 
-plt.figure()
-monitor.visualize(component="Hy")
-plt.colorbar()
-plt.show()
+# plt.figure()
+# monitor.visualize(component="Hy")
+# plt.colorbar()
+# plt.show()
 

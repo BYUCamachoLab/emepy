@@ -44,8 +44,11 @@ class EME(object):
 
         """
 
-        self.quiet = quiet
-        self.reset(parallel=parallel)
+        self.parallel=parallel
+        if parallel:
+            self._configure_parallel_resources()
+        self.quiet = quiet or not self.am_master()
+        self.reset(parallel=parallel, configure_parallel=False)
         self.layers = layers[:]
         self.num_periods = num_periods
         self.mesh_z = mesh_z
@@ -68,7 +71,7 @@ class EME(object):
 
         self.layers.append(layer)
 
-    def reset(self, full_reset=True, parallel=False):
+    def reset(self, full_reset=True, parallel=False, configure_parallel=True):
         """Clears out the layers and s params so the user can reuse the object in memory on a new geometry"""
 
         # Erase all information except number of periods
@@ -76,7 +79,7 @@ class EME(object):
             self.layers = []
             self.wavelength = None
             self.parallel=parallel
-            if parallel:
+            if parallel and configure_parallel:
                 self._configure_parallel_resources()
             self._update_state(0)
 
