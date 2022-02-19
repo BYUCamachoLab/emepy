@@ -48,7 +48,6 @@ class EME(object):
         self.layers = layers[:]
         self.num_periods = num_periods
         self.mesh_z = mesh_z
-        self.s_params = None
         self.monitors = []
         self.custom_monitors = []
         self.forward_periodic_s = []
@@ -85,9 +84,10 @@ class EME(object):
                 self.layers[i].clear()
             self._update_state(2)
 
-        self.s_params = None
         self.monitors = []
         self.custom_monitors = []
+        self.network = None
+        self.periodic_network = None
 
     def solve_modes(self):
         # Check if already solved
@@ -147,23 +147,19 @@ class EME(object):
 
         # Propagate
         results = self._run_parallel_functions(*tasks)
-        if not results is None:
 
-            # Calculate period interface in case multiple periods
-            self.periodic_interface = InterfaceMultiMode(self.activated_layers[-1], self.activated_layers[0])
-            
-            # Only keep what we need
-            for i, result in enumerate(results[:-1]):
-                layer, cascaded = result
-                attributes = layer.__dict__
-                self.activated_layers[i] = cascaded
-                self.activated_layers[i].length = attributes['length']
-                self.activated_layers[i].wavelength = attributes['wavelength']
-                self.activated_layers[i].modes = attributes['modes']
-                self.activated_layers[i].num_modes = attributes['num_modes']
-
-        else:
-            self.activated_layers = []
+        # Calculate period interface in case multiple periods
+        self.periodic_interface = InterfaceMultiMode(self.activated_layers[-1], self.activated_layers[0])
+        
+        # Only keep what we need
+        for i, result in enumerate(results[:-1]):
+            layer, cascaded = result
+            attributes = layer.__dict__
+            self.activated_layers[i] = cascaded
+            self.activated_layers[i].length = attributes['length']
+            self.activated_layers[i].wavelength = attributes['wavelength']
+            self.activated_layers[i].modes = attributes['modes']
+            self.activated_layers[i].num_modes = attributes['num_modes']
 
         # Finish state
         self._update_state(4)
@@ -187,8 +183,12 @@ class EME(object):
             The s_params acquired during propagation
         """
 
-        if self.s_params is None:
+        if self.network is None and self.periodic_network is None:
             self.propagate()
+        elif not self.periodic_network is None:
+            return self.periodic_network.s_parameters(freqs)
+        else:
+            return self.network.s_parameters(freqs)
 
         return self.s_params
 
@@ -379,10 +379,8 @@ class EME(object):
         if self.num_periods > 1:
             self.periodic_network = _prop_all(*([self.network] + [self.periodic_interface, self.network] * (self.num_periods - 1)))
 
-        if self.am_master():
-
-            # Update monitors
-            self._field_propagate(left_coeffs, right_coeffs)
+        # Update monitors
+        self._field_propagate(left_coeffs, right_coeffs)
 
     def _run_parallel_functions(self, *args):
         """Args should provide tuples of (function, argument list, kwargument dictionary) and the function will magically compute them in parallel"""
@@ -414,27 +412,30 @@ class EME(object):
 
             # Scatter data
             data = self.comm.scatter(data, root=0)
+            new_data = []
 
             # Compute data
             for i, k in enumerate(data):
                 func, arguments, kwarguments = solve_data[k][1]
-                data[i] = (k,func(*arguments, **kwarguments))
+                new_data.append((k,func(*arguments, **kwarguments)))
             
             # Wait until everyone is finished
             self.comm.Barrier()
 
             # Gather data
-            finished_tasks_collective = self.comm.allgather(data)
+            finished_tasks_collective = self.comm.allgather(new_data)
+            for row in finished_tasks_collective:
+                finished_tasks += row
 
             # Wait until everyone is finished
             self.comm.Barrier()
 
         # Sort by the tag to return in the original order
-        finished_tasks_collective = [i for i in finished_tasks_collective if len(i)]
-        finished_tasks_collective = sorted(finished_tasks_collective,key=lambda x: x[0][0])
-        finished_tasks_collective = [i[0][1] for i in finished_tasks_collective]
+        finished_tasks = [i for i in finished_tasks if len(i)]
+        finished_tasks = sorted(finished_tasks,key=lambda x: x[0])
+        finished_tasks = [i[1] for i in finished_tasks]
 
-        return finished_tasks_collective
+        return finished_tasks
 
     def _should_compute(self,i,rank,size):
         return i % size == rank
@@ -580,23 +581,37 @@ class EME(object):
             m.reset_monitor()
 
             # Get full s params for all periods
+            cur_len = 0
+            full_z_list = []
+            tasks = []
             for per in tqdm(range(self.num_periods),disable=self.quiet):
-                cur_len = 0
 
                 # Forward through the device
                 for i, layer in enumerate(self.activated_layers):
-                    cur_len = self._layer_field_propagate(i, layer, m, per, cur_len, left_coeffs, right_coeffs)
-                
-                # Prepare for new period
-                m.soft_reset()
+                    z_list = m.get_z_list(cur_len, cur_len+layer.length)
+                    just_z_list = [i[1] for i in z_list]
+                    task = (self._layer_field_propagate,[i*1, make_copy_model(layer), per*1, left_coeffs[:], right_coeffs[:], cur_len*1, just_z_list[:]],{})
+                    full_z_list.append(z_list)
+                    tasks.append(task)
+                    cur_len += layer.length
+
+            # Get restults
+            results = self._run_parallel_functions(*tasks)
+
+            # Assign results to monitor
+            # if self.am_master():
+            #     print(len(results),len(tasks))
+            for z_l, result_l in zip(full_z_list, results):
+                for z, r in zip(z_l, result_l):
+                    self._set_monitor(m, z[0], r)
         
         # Finish state
         self._update_state(6)
 
-    def _layer_field_propagate(self, i, l, m, per, cur_len, left_coeffs, right_coeffs):
+    def _layer_field_propagate(self, i, l, per, left_coeffs, right_coeffs, cur_len, z_list):
 
-        # Get length
-        cur_len += l.length
+        # Create output
+        result_list = []
 
         # get SP0
         SP0 = [self.network, self.periodic_interface] * (per)
@@ -609,12 +624,10 @@ class EME(object):
         S1 = [lay for lay in self.activated_layers[i+1:]]
 
         # Distance params
-        z = m.remaining_lengths[0][0]
         dup = Duplicator(l.wavelength, l.modes)
 
         # create all prop layers
         prop = [*SP0, *S0, dup, l, *S1, *SP1]
-        # print(prop,"\n")
 
         # Compute field propagation
         S = _prop_all(
@@ -626,6 +639,7 @@ class EME(object):
         coeffs_ = compute(S, input_map, 0)
         coeff_left = np.zeros(len(l.modes), dtype=complex)
         coeff_right = np.zeros(len(l.modes), dtype=complex)
+        modes = np.array([[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes])
         for i in range(len(l.modes)):
             coeff_left[i] = 0
             coeff_right[i] = 0
@@ -634,24 +648,10 @@ class EME(object):
             if "right_dup{}".format(i) in coeffs_:
                 coeff_right[i] += coeffs_["right_dup{}".format(i)]
 
-        # Calculate field
-        modes = np.array([[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes])
-        coeff = coeff_left + coeff_right
-        fields = modes * coeff[:, np.newaxis, np.newaxis, np.newaxis]
-        results = {}
-        results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results[
-            "Hz"
-        ] = fields.sum(0)
-        results["n"] = l.modes[0].n
-        self._set_monitor(m, per, z, results)
-
         # Iterate through z
-        while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
+        for z_diff in [z_list[0]-cur_len]+np.diff(z_list).tolist():
 
             # Get coe
-            z_old = z * 1.0
-            z = m.remaining_lengths[0][0]
-            z_diff = z - z_old
             eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
             phase_left = np.exp(-z_diff * 1j * eig) 
             phase_right = np.exp(z_diff * 1j * eig) 
@@ -666,11 +666,11 @@ class EME(object):
                 "Hz"
             ] = fields_.sum(0)
             results["n"] = l.modes[0].n
-            self._set_monitor(m, per, z, results)
-            
-        return cur_len
+            result_list.append(results)
+                
+        return result_list
     
-    def _set_monitor(self, m, i, z, results, n=False, last_period=True):
+    def _set_monitor(self, m, i, results, n=False):
         for key, field in results.items():
 
             key = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"].index(key) if not n else 0
@@ -683,18 +683,15 @@ class EME(object):
             elif m.axes in ["z"]:
                 raise Exception("z not implemented")
 
-            # z Location
-            z_loc = np.argwhere(m.lengths[key] == self._get_total_length() * i + z).sum()
-
             # Implemented fields
             if m.axes in ["xy", "yx"]:
-                m[key, :, :, last_period] = field[:, :]
+                m[key, :, :] = field[:, :]
             elif m.axes in ["xz", "zx"]:
-                m[key, :, z_loc, last_period] = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
+                m[key, :, i] = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
             elif m.axes in ["yz", "zy"]:
-                m[key, :, z_loc, last_period] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
+                m[key, :, i] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
             elif m.axes in ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]:
-                m[key, :, :, z_loc, last_period] = field[:, :]
+                m[key, :, :, i] = field[:, :]
 
         return
 

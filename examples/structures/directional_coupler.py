@@ -33,7 +33,7 @@ n = np.ones(mesh) * cladding_index
 # ### Define structure and verify shape
 
 # Create simulation
-eme = EME(quiet=True,parallel=True,num_periods=1)
+eme = EME(quiet=True,parallel=True,num_periods=2)
 
 # Create left waveguide
 single_left_edge = -gap / 2 - width
@@ -74,7 +74,7 @@ two_channel = MSEMpy(
     n=n,
 )
 
-for i in range(20):
+for i in range(2):
     eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
