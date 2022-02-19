@@ -33,7 +33,7 @@ n = np.ones(mesh) * cladding_index
 # ### Define structure and verify shape
 
 # Create simulation
-eme = EME(quiet=True,parallel=True)
+eme = EME(quiet=True,parallel=True,num_periods=1)
 
 # Create left waveguide
 single_left_edge = -gap / 2 - width
@@ -74,7 +74,7 @@ two_channel = MSEMpy(
     n=n,
 )
 
-for i in range(30):
+for i in range(20):
     eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
@@ -82,9 +82,10 @@ for i in range(30):
 # eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
 
 # draw
-# plt.figure()
-# eme.draw()
-# plt.show()
+# if eme.am_master():
+    # plt.figure()
+    # eme.draw()
+    # plt.show()
 
 
 # ### Add a monitor
@@ -96,22 +97,23 @@ monitor = eme.add_monitor(axes="xz",sources=[])
 # # ### Propagate
 t = time.time()
 eme.solve_modes()
-if eme.am_master():
-    print("time to solve for 30 modes: {}".format(time.time()-t))
-# eme.propagate(left_coeffs=[1])  # propagate at given wavelength
+# if eme.am_master():
+#     print("time to solve for 30 modes: {}".format(time.time()-t))
+eme.propagate(left_coeffs=[1],right_coeffs=[1])  # propagate at given wavelength
 
 # # print(np.matmul(eme.s_parameters()[0],np.array([1,0])))
 # # print(eme.s_parameters()[0])
 
 # # ### Visualize Monitors
 
-# plt.figure()
-# monitor.visualize(component="n")
-# plt.colorbar()
-# plt.show()
+if eme.am_master():
+    # plt.figure()
+    # monitor.visualize(component="n")
+    # plt.colorbar()
+    # plt.show()
 
-# plt.figure()
-# monitor.visualize(component="Hy")
-# plt.colorbar()
-# plt.show()
+    plt.figure()
+    monitor.visualize(component="Hy")
+    plt.colorbar()
+    plt.show()
 

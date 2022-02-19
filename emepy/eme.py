@@ -20,14 +20,10 @@ class EME(object):
         0: "start",
         1: "mode_solving",
         2: "finished_modes",
-        3: "forward_propagating",
-        5: "cascading_forward_periods",
-        6: "finished_forward",
-        7: "reverse_propagating",
-        8: "cascading_reverse_periods",
-        9: "finished_reverse",
-        10: "field_propagating",
-        11: "finished",
+        3: "layer_propagating",
+        4: "finished_layer",
+        5: "field_propagating",
+        6: "finished",
     }
 
     def __init__(self, layers=[], num_periods=1, mesh_z=200, parallel=False, quiet=False):
@@ -90,7 +86,6 @@ class EME(object):
             self._update_state(2)
 
         self.s_params = None
-        self.interface = None
         self.monitors = []
         self.custom_monitors = []
 
@@ -120,6 +115,60 @@ class EME(object):
                 self.activated_layers += solved
 
         self._update_state(2)
+
+    def propagate_layers(self):
+
+        tasks = []
+
+        # Check state
+        if self.state == 2:
+            self._update_state(3)
+        else:
+            raise Exception("In the wrong place")
+        
+        # See if only one layer or no layer
+        if not len(self.activated_layers):
+            raise Exception("No activated layers in system")
+        elif len(self.activated_layers) == 1:
+            self.periodic_interface = InterfaceMultiMode(self.activated_layers[-1], self.activated_layers[0])
+            return self.activated_layers[0]
+
+        # Configure interface
+        num_modes = max([len(l.modes) for l in self.activated_layers])
+        interface_type = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
+
+        # Define tasks
+        def task(l,r):
+            return l, _prop_all(l, interface_type(l, r))
+
+        # Setup parallel layer prop tasks
+        for left, right in tqdm(zip(self.activated_layers[:-1],self.activated_layers[1:]),disable=self.quiet):
+            tasks.append((task,[left, right],{}))
+
+        # Propagate
+        results = self._run_parallel_functions(*tasks)
+        if not results is None:
+
+            # Calculate period interface in case multiple periods
+            self.periodic_interface = InterfaceMultiMode(self.activated_layers[-1], self.activated_layers[0])
+            
+            # Only keep what we need
+            for i, result in enumerate(results[:-1]):
+                layer, cascaded = result
+                attributes = layer.__dict__
+                self.activated_layers[i] = cascaded
+                self.activated_layers[i].length = attributes['length']
+                self.activated_layers[i].wavelength = attributes['wavelength']
+                self.activated_layers[i].modes = attributes['modes']
+                self.activated_layers[i].num_modes = attributes['num_modes']
+
+        else:
+            self.activated_layers = []
+
+        # Finish state
+        self._update_state(4)
+
+        return _prop_all(*self.activated_layers)
 
     def am_master(self):
         return self.rank == 0 if self.parallel else True
@@ -322,15 +371,15 @@ class EME(object):
         # Solve for the modes
         self.solve_modes()
 
+        # Forward pass
+        if self.state == 2:
+            self.network = self.propagate_layers()
+
+        # Periodic
+        if self.num_periods > 1:
+            self.periodic_network = _prop_all(*([self.network] + [self.periodic_interface, self.network] * (self.num_periods - 1)))
+
         if self.am_master():
-
-            # Forward pass
-            if self.state == 2:
-                self.network = self._forward_pass()
-
-            # Reverse pass
-            if self.state == 6:
-                self._reverse_pass()
 
             # Update monitors
             self._field_propagate(left_coeffs, right_coeffs)
@@ -375,15 +424,15 @@ class EME(object):
             self.comm.Barrier()
 
             # Gather data
-            finished_tasks_collective = self.comm.gather(data,root=0)
+            finished_tasks_collective = self.comm.allgather(data)
 
             # Wait until everyone is finished
             self.comm.Barrier()
 
         # Sort by the tag to return in the original order
-        if self.am_master():
-            finished_tasks_collective = sorted(finished_tasks_collective,key=lambda x: x[0][0])
-            finished_tasks_collective = [i[0][1] for i in finished_tasks_collective]
+        finished_tasks_collective = [i for i in finished_tasks_collective if len(i)]
+        finished_tasks_collective = sorted(finished_tasks_collective,key=lambda x: x[0][0])
+        finished_tasks_collective = [i[0][1] for i in finished_tasks_collective]
 
         return finished_tasks_collective
 
@@ -401,61 +450,6 @@ class EME(object):
     def _get_source_locations(self):
         return Source.extract_source_locations(*[i.sources for i in (self.monitors + self.custom_monitors)])
 
-    def _propagate_period(self, activated_layers):
-        """The _propagate_period method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters for ONE period of the structure. If num_periods is set to 1 (default), this method is the same as propagate, except for it returns values.
-
-        Returns
-        -------
-        s_params
-            The s_params acquired during propagation
-
-        mode_set1
-            The set of Mode objects that were solved for on the input layer
-
-        mode_set2
-            The set of Mode objects that were solved for on the output layer
-        """
-
-        # See if only one layer or no layer
-        if not len(activated_layers):
-            raise Exception("No activated layers in system")
-        elif len(activated_layers) == 1:
-            return activated_layers[0].s_params
-
-        # Propagate the first two layers
-        left, right = (activated_layers[0], activated_layers[1])
-        current = Current(self.wavelength, left)
-        interface = self.interface(left, right)
-        current = _prop_all(current, interface)
-
-        # Assign to layer the right sub matrix
-        if self.state == 3:
-            right.S0 = make_copy_model(current)
-        elif self.state == 7:
-            right.S1 = make_copy_model(current)
-
-        # Propagate the middle layers
-        for index in tqdm(range(1, len(activated_layers) - 1),disable=self.quiet):
-
-            # Get layers
-            layer1 = activated_layers[index]
-            layer2 = activated_layers[index + 1]
-
-            # Propagate layers together
-            interface = self.interface(layer1, layer2)
-            current = _prop_all(current, layer1)
-            current = _prop_all(current, interface) 
-
-            # Assign to layer the right sub matrix
-            if self.state == 7:
-                layer2.S1 = make_copy_model(current)
-            elif self.state == 3:
-                layer2.S0 = make_copy_model(current)
-
-        # Propagate final two layers
-        current = _prop_all(current, activated_layers[-1])
-
-        return current
 
     def _propagate_n_only(self):
 
@@ -479,97 +473,12 @@ class EME(object):
 
         return
 
-    def _cascade_periods(self, current_layer, interface, period_layer, periodic_s):
-
-        length_tracker = 0.0
-        # Cascade params for each period
-        for l in range(self.num_periods - 1):
-
-            length_tracker += self._get_total_length()
-            current_layer = _prop_all(current_layer, interface)
-            periodic_s.append(make_copy_model(current_layer))
-            
-            # Only care about sources between the ends
-            sources = self.get_sources()
-            custom_sources = self.get_sources(sources, length_tracker, self._get_total_length())
-
-            # If no custom sources
-            if not len(custom_sources):
-                current_layer = _prop_all(current_layer, period_layer)
-            # Other sources
-            else:
-                current_layers = Layer.parse_activated_layers(self.activated_layer[:], custom_sources, length_tracker)
-                current_layer_period = self._propagate_period(current_layers)
-                current_layer = _prop_all(current_layer, current_layer_period)
-
-        return current_layer
-
-    def _forward_pass(self):
-
-        # Start forward
-        self._update_state(3)
-
-        # Decide routine
-        num_modes = max([l.num_modes for l in self.layers])
-        self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
-
-        # Propagate
-        left = self.activated_layers[0]
-        right = self.activated_layers[-1]
-        single_period = self._propagate_period(self.activated_layers)
-        self.interface = InterfaceMultiMode
-
-        # Create an interface between the two returns layers
-        period_layer = PeriodicLayer(left.modes, right.modes, single_period)
-        current_layer = PeriodicLayer(left.modes, right.modes, single_period)
-        interface = self.interface(right, left)
-        interface.solve()
-
-        # Cascade periods
-        self._update_state(5)
-        network = self._cascade_periods(current_layer, interface, period_layer, self.forward_periodic_s)
-
-        self._update_state(6)
-
-        return network
 
     def _update_state(self, state):
 
         self.state = state
         if self.am_master() and not self.quiet:
             print("current state: {}".format(self.states[self.state]))
-
-    def _reverse_pass(self):
-        # Assign state
-        self._update_state(7)
-
-        # Reverse geometry
-        self.activated_layers = self.activated_layers[::-1]
-
-        # Decide routine
-        num_modes = max([l.num_modes for l in self.activated_layers])
-        self.interface = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
-
-        # Propagate
-        left = self.activated_layers[0]
-        right = self.activated_layers[-1]
-        single_period = self._propagate_period(self.activated_layers)
-        self.interface = InterfaceMultiMode
-
-        # Create an interface between the two returns layers
-        period_layer = PeriodicLayer(left.modes, right.modes, single_period)
-        current_layer = PeriodicLayer(left.modes, right.modes, single_period)
-        interface = self.interface(right, left)
-        interface.solve()
-
-        # Cascade periods
-        self._update_state(8)
-        network = self._cascade_periods(current_layer, interface, period_layer, self.reverse_periodic_s)
-
-        # Fix geometry
-        self.activated_layers = self.activated_layers[::-1]
-
-        return network
 
     def _build_input_array(self, left_coeffs, right_coeffs, model, num_modes=1):
 
@@ -642,7 +551,6 @@ class EME(object):
 
         except Exception as e:
             raise Exception("Improper format of sources")
-
         return mapping
 
     def _swap(self, s):
@@ -664,14 +572,10 @@ class EME(object):
 
     def _field_propagate(self, left_coeffs, right_coeffs):
         # Start state
-        self._update_state(10)
-
-        # Reused params
-        num_left = len(self.activated_layers[0].left_pins)
-        num_right = len(self.activated_layers[-1].right_pins)
+        self._update_state(5)
 
         # Update all monitors
-        for m in self.monitors:
+        for m in self.custom_monitors + self.monitors:
             # Reset monitor
             m.reset_monitor()
 
@@ -679,54 +583,40 @@ class EME(object):
             for per in tqdm(range(self.num_periods),disable=self.quiet):
                 cur_len = 0
 
-                # Periodic layers
-                f = self.forward_periodic_s[per - 1] if per - 1 > -1 else None
-                r = self.reverse_periodic_s[self.num_periods - per - 2] if self.num_periods - per - 2 > -1 else None
-                
-                # Reformat r to be in forward reference frame
-                r = self._swap(r)
-
                 # Forward through the device
-                for layer in self.activated_layers:
-                    cur_len = self._layer_field_propagate(layer, m, per, r, f, cur_len, num_left, num_right, left_coeffs, right_coeffs)
+                for i, layer in enumerate(self.activated_layers):
+                    cur_len = self._layer_field_propagate(i, layer, m, per, cur_len, left_coeffs, right_coeffs)
                 
                 # Prepare for new period
                 m.soft_reset()
         
         # Finish state
-        self._update_state(11)
+        self._update_state(6)
 
-    def _layer_field_propagate(self, l, m, per, r, f, cur_len, num_left, num_right, left_coeffs, right_coeffs):
-
-        """
-            TODO
-            1) finish creation of input_array from sources
-            2) enable the sources to do something during main propagation
-            
-        """
+    def _layer_field_propagate(self, i, l, m, per, cur_len, left_coeffs, right_coeffs):
 
         # Get length
-        cur_last = deepcopy(cur_len)
         cur_len += l.length
 
-        # Get system params
-        S0, S1 = (l.S0, l.S1)
+        # get SP0
+        SP0 = [self.network, self.periodic_interface] * (per)
 
-        # Reformat S1
-        S1 = self._swap(S1)
+        # get SP1
+        SP1 = [self.periodic_interface, self.network] * (self.num_periods - (per) - 1) 
+
+        # Get system params
+        S0 = [lay for lay in self.activated_layers[:i]]
+        S1 = [lay for lay in self.activated_layers[i+1:]]
 
         # Distance params
         z = m.remaining_lengths[0][0]
-        z_temp = z - cur_last
-        
-        special_left = [pin.name for pin in l.pins if "left" in pin.name and "dup" in pin.name]
-        special_right = [pin.name for pin in l.pins if "right" in pin.name and "dup" in pin.name]
+        dup = Duplicator(l.wavelength, l.modes)
 
-        left = Duplicator(l.wavelength, l.modes, z_temp, pk=l.pk,nk=[0 for _ in range(len(l.modes))],special_left=special_left)
-        right = Duplicator(l.wavelength, l.modes, l.length-z_temp, pk=[0 for _ in range(len(l.modes))],nk=l.nk,special_right=special_right)
+        # create all prop layers
+        prop = [*SP0, *S0, dup, l, *S1, *SP1]
+        # print(prop,"\n")
 
         # Compute field propagation
-        prop = [make_copy_model(f), make_copy_model(S0), make_copy_model(left), make_copy_model(right), make_copy_model(S1), make_copy_model(r)]
         S = _prop_all(
             *[t for t in prop if not (t is None) and not (isinstance(t, list) and not len(t))]
         )
@@ -759,7 +649,7 @@ class EME(object):
         while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
 
             # Get coe
-            z_old = deepcopy(z)
+            z_old = z * 1.0
             z = m.remaining_lengths[0][0]
             z_diff = z - z_old
             eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
