@@ -1,3 +1,4 @@
+from optparse import make_option
 import numpy as np
 from simphony import Model
 from simphony.pins import Pin
@@ -102,7 +103,7 @@ class Layer(object):
             label = "_{}_to_{}".format(left,right)
 
             # Create duplicators
-            dups.append(Duplicator(wavelength,modes,length,pk=pk,nk=nk,label=label))
+            dups.append(SourceDuplicator(wavelength,modes,length,pk=pk,nk=nk,label=label))
 
         return dups
 
@@ -120,8 +121,9 @@ class Layer(object):
 
     @staticmethod
     def _prop_all(*args):
-        temp_s = args[0]
-        for s in args[1:]:
+        layers = [make_copy_model(a) for a in args if not a is None]
+        temp_s = layers[0]
+        for s in layers[1:]:
             Subcircuit.clear_scache()
 
             # make sure the components are completely disconnected
@@ -209,22 +211,18 @@ class Layer(object):
 
 
 class Duplicator(Model):
-    def __init__(self, wavelength, modes, length, pk=[],nk=[], label="", special_left=[], special_right=[], **kwargs):
+    def __init__(self, wavelength, modes, label="", **kwargs):
+        self.modes = modes
         self.num_modes = len(modes)
         self.wavelength = wavelength
-        self.modes = modes
-        self.length = length
-        self.pk = pk
-        self.nk = nk
 
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)] + [
-            "left_dup{}{}".format(str(i),label) for i in range(len(pk)*(not len(special_left)))
-        ] + special_left
+            "left_dup{}{}".format(str(i),label) for i in range(self.num_modes)
+        ] 
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)] + [
-            "right_dup{}{}".format(str(i),label) for i in range(len(nk)*(not len(special_right)))
-        ] + special_right
+            "right_dup{}{}".format(str(i),label) for i in range(self.num_modes)
+        ] 
         self.S0 = None
-        self.S1 = None
 
         # create the pins for the model
         pins = []
@@ -248,11 +246,8 @@ class Duplicator(Model):
         # Create template for final s matrix
         m = self.num_modes
 
-        # Create eigenvalue vector
-        eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes * 4]) / (self.wavelength)
-
         # Create propagation diagonal matrix
-        propagation_matrix1 = np.diag(np.exp(self.length * 1j * eigenvalues1))
+        propagation_matrix1 = np.diag(np.exp((0j) * np.ones(self.num_modes * 4)))
 
         # Create sub matrix
         s_matrix = np.zeros((2 * m, 2 * m), dtype=complex)
@@ -261,12 +256,6 @@ class Duplicator(Model):
         s_matrix[0:m, m : 2 * m] = propagation_matrix1[m : 2 * m, m : 2 * m]
         s_matrix[m : 2 * m, m : 2 * m] = propagation_matrix1[0:m, m : 2 * m]
         
-        # Insert new rows and cols
-        # s_matrix1 = np.insert(s_matrix,[m],s_matrix[:m,:],axis=0)
-        # s_matrix1 = np.insert(s_matrix1,[m],s_matrix1[:,:m],axis=1)
-        # s_matrix2 = np.insert(s_matrix,[m],s_matrix[m:,:],axis=0)
-        # s_matrix2 = np.insert(s_matrix2,[m],s_matrix2[:,m:],axis=1)
-
         # Join all
         s_matrix_new = np.zeros((4*m,4*m),dtype=complex)
         s_matrix_new[:m,3*m:] = s_matrix[:m,m:]
@@ -275,23 +264,14 @@ class Duplicator(Model):
         s_matrix_new[:m,2*m:3*m] = s_matrix[m:,:m]
         s_matrix_new[2*m:3*m,:m] = s_matrix[m:,:m]
         s_matrix_new[3*m:,:m] = s_matrix[m:,:m]
+        s_matrix_new[m:3*m,m:3*m] = s_matrix[:,:]
         s_matrix = s_matrix_new
-
-        # Delete rows and cols
-        pk_remove = m-len(self.pk)
-        nk_remove = m-len(self.nk)
-        for _ in range(nk_remove):
-            s_matrix = np.delete(s_matrix,-m-1,axis=0)
-            s_matrix = np.delete(s_matrix,-m-1,axis=1)
-        for _ in range(pk_remove):
-            s_matrix = np.delete(s_matrix,-m-len(self.nk)-1,axis=0)
-            s_matrix = np.delete(s_matrix,-m-len(self.nk)-1,axis=1)
 
         # Assign number of ports
         self.right_ports = m  # 2 * m - self.which_s * m
         self.left_ports = m  # 2 * m - (1 - self.which_s) * m
         self.num_ports = 2 * m  # 3 * m
-        s_matrix = s_matrix.reshape(1,2*m + len(self.pk) + len(self.nk),2*m + len(self.pk) + len(self.nk))
+        s_matrix = s_matrix.reshape(1,4*m,4*m)
 
         return s_matrix
 
@@ -385,7 +365,6 @@ class ActivatedLayer(Model):
         self.left_pins = ["left" + str(i) for i in range(self.num_modes)]
         self.right_pins = ["right" + str(i) for i in range(self.num_modes)]
         self.S0 = None
-        self.S1 = None
         self.nk = []
         self.pk = []
         if not n_only:
@@ -779,6 +758,95 @@ class InterfaceMultiMode(Model):
 
         self.s_params = None
 
+class SourceDuplicator(Model):
+    def __init__(self, wavelength, modes, length, pk=[],nk=[], label="", special_left=[], special_right=[], **kwargs):
+        self.num_modes = len(modes)
+        self.wavelength = wavelength
+        self.modes = modes
+        self.length = length
+        self.pk = pk
+        self.nk = nk
+
+        self.left_pins = ["left" + str(i) for i in range(self.num_modes)] + [
+            "left_dup{}{}".format(str(i),label) for i in range(len(pk)*(not len(special_left)))
+        ] + special_left
+        self.right_pins = ["right" + str(i) for i in range(self.num_modes)] + [
+            "right_dup{}{}".format(str(i),label) for i in range(len(nk)*(not len(special_right)))
+        ] + special_right
+        self.S0 = None
+        self.S1 = None
+
+        # create the pins for the model
+        pins = []
+        for name in self.left_pins:
+            pins.append(Pin(self, name))
+        for name in self.right_pins:
+            if "dup" in name:
+                pins.append(Pin(self, name))
+        for name in self.right_pins:
+            if not "dup" in name:
+                pins.append(Pin(self, name))
+        self.pins = pins
+        super().__init__(**kwargs, pins=pins)
+        self.s_params = self.calculate_s_params()
+
+    def s_parameters(self, freqs: "np.array") -> "np.ndarray":
+
+        return self.s_params
+
+    def calculate_s_params(self):
+        # Create template for final s matrix
+        m = self.num_modes
+
+        # Create eigenvalue vector
+        eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes * 4]) / (self.wavelength)
+
+        # Create propagation diagonal matrix
+        propagation_matrix1 = np.diag(np.exp(self.length * 1j * eigenvalues1))
+
+        # Create sub matrix
+        s_matrix = np.zeros((2 * m, 2 * m), dtype=complex)
+        s_matrix[0:m, 0:m] = propagation_matrix1[m : 2 * m, 0:m]
+        s_matrix[m : 2 * m, 0:m] = propagation_matrix1[0:m, 0:m]
+        s_matrix[0:m, m : 2 * m] = propagation_matrix1[m : 2 * m, m : 2 * m]
+        s_matrix[m : 2 * m, m : 2 * m] = propagation_matrix1[0:m, m : 2 * m]
+        
+        # Insert new rows and cols
+        # s_matrix1 = np.insert(s_matrix,[m],s_matrix[:m,:],axis=0)
+        # s_matrix1 = np.insert(s_matrix1,[m],s_matrix1[:,:m],axis=1)
+        # s_matrix2 = np.insert(s_matrix,[m],s_matrix[m:,:],axis=0)
+        # s_matrix2 = np.insert(s_matrix2,[m],s_matrix2[:,m:],axis=1)
+
+        # Join all
+        s_matrix_new = np.zeros((4*m,4*m),dtype=complex)
+        s_matrix_new[:m,3*m:] = s_matrix[:m,m:]
+        s_matrix_new[m:2*m,3*m:] = s_matrix[:m,m:]
+        s_matrix_new[3*m:,m:2*m] = s_matrix[:m,m:]
+        s_matrix_new[:m,2*m:3*m] = s_matrix[m:,:m]
+        s_matrix_new[2*m:3*m,:m] = s_matrix[m:,:m]
+        s_matrix_new[3*m:,:m] = s_matrix[m:,:m]
+        s_matrix_new[m:3*m,m:3*m] = s_matrix[:,:]
+        s_matrix = s_matrix_new
+
+        # Delete rows and cols
+        pk_remove = m-len(self.pk)
+        nk_remove = m-len(self.nk)
+        for _ in range(nk_remove):
+            s_matrix = np.delete(s_matrix,-m-1,axis=0)
+            s_matrix = np.delete(s_matrix,-m-1,axis=1)
+        for _ in range(pk_remove):
+            s_matrix = np.delete(s_matrix,-m-len(self.nk)-1,axis=0)
+            s_matrix = np.delete(s_matrix,-m-len(self.nk)-1,axis=1)
+
+        # Assign number of ports
+        self.right_ports = m  # 2 * m - self.which_s * m
+        self.left_ports = m  # 2 * m - (1 - self.which_s) * m
+        self.num_ports = 2 * m  # 3 * m
+        s_matrix = s_matrix.reshape(1,2*m + len(self.pk) + len(self.nk),2*m + len(self.pk) + len(self.nk))
+
+        return s_matrix
+
+
 class CopyModel(Model):
 
     def __init__(self, model, **kwargs):
@@ -791,7 +859,6 @@ class CopyModel(Model):
         self.right_ports = model.right_ports if hasattr(model,"right_ports") else []
 
         self.S0 = make_copy_model(model.S0) if hasattr(model,"S0") else None
-        self.S1 = make_copy_model(model.S1) if hasattr(model,"S1") else None
         self.nk = model.nk if hasattr(model,"nk") else []
         self.pk = model.pk if hasattr(model,"pk") else []
         self.pins = self.copy_pins(model.pins) if hasattr(model,"pins") else []
@@ -822,7 +889,7 @@ def make_copy_model(model):
 
 def compute(model, pin_values: "dict", freq : "float") -> "np.ndarray":
     """Takes a dictionary mapping each pin name to a coefficent and multiplies by the S matrix"""
-    cfs = np.zeros(len(model.pins))
+    cfs = np.zeros(len(model.pins), dtype=complex)
     pin_names = [i.name for i in model.pins]
     key_index = dict(zip(pin_names, [pin_names.index(i) for i in pin_names]))
     for key, value in pin_values.items():
