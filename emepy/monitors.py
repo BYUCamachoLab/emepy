@@ -74,8 +74,6 @@ class Monitor(object):
         self.dimensions = dimensions
         self.field = np.zeros(dimensions).astype(complex)
         self.lengths = deepcopy(lengths)
-        self.remaining_lengths = deepcopy(remaining_lengths) 
-        self.remaining_lengths_reset = deepcopy(remaining_lengths) 
         self.sources = sources
 
         self.components = components
@@ -85,7 +83,6 @@ class Monitor(object):
         self.grid_z = grid_z
 
     def reset_monitor(self):
-        self.remaining_lengths = deepcopy(self.remaining_lengths_reset)
         self.field *= 0
 
     def soft_reset(self):
@@ -96,23 +93,14 @@ class Monitor(object):
 
     def __setitem__(self, subscript, item):
 
-        # Extract if final period
-        last_period = subscript[-1]
-        subscript = subscript[:-1]
-
         # Only set item if it's in the valid z_range
         self.field[subscript] = item
 
-        if not last_period:
-            return
-
-        if len(self.remaining_lengths[int(subscript[0])]) > 1:
-            self.remaining_lengths[int(subscript[0])] = self.remaining_lengths[int(subscript[0])][1:]
-        else:
-            self.remaining_lengths[int(subscript[0])] = []
-
     def __delitem__(self, subscript):
         del self.field[subscript]
+
+    def get_z_list(self, start, end):
+        return [(i, l) for i, l in enumerate(self.lengths[0]) if start <= l <= end]
 
     def normalize(self):
         self.field[:-1] /= 1  # np.max(np.abs(self.field[:-1, :, 0]))
