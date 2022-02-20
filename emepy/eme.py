@@ -10,7 +10,7 @@ if not (importlib.util.find_spec("mpi4py") is None):
 from emepy.fd import *
 from emepy.models import *
 from emepy.source import *
-_prop_all = Layer._prop_all
+_prop_all = ModelTools._prop_all
 
 
 class EME(object):
@@ -170,7 +170,7 @@ class EME(object):
         return self.rank == 0 if self.parallel else True
 
     def get_sources(self):
-        srcs = Layer.get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], 0, self._get_total_length())
+        srcs = ModelTools.get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], 0, self._get_total_length())
         srcs.sort(key=lambda s: s.z)
         return srcs
 
@@ -375,9 +375,9 @@ class EME(object):
         if self.state == 2:
             self.network = self.propagate_layers()
 
-        # Periodic
-        if self.num_periods > 1:
-            self.periodic_network = _prop_all(*([self.network] + [self.periodic_interface, self.network] * (self.num_periods - 1)))
+        # Periodic ### ToDo, parallelize this process using a log2 n technique
+        # if self.num_periods > 1:
+        #     self.periodic_network = _prop_all(*([self.network] + [self.periodic_interface, self.network] * (self.num_periods - 1)))
 
         # Update monitors
         self._field_propagate(left_coeffs, right_coeffs)
@@ -457,21 +457,18 @@ class EME(object):
         # Forward through the device
         m = self.monitors[0] if len(self.monitors) else self.custom_monitors[0]
         cur_len = 0
-        for layer in tqdm(self.layers,disable=self.quiet):
+        for per in range(self.num_periods):
+            for layer in tqdm(self.layers,disable=self.quiet):
 
-            # Get system params
-            n = layer.mode_solvers.n
-            cur_len += layer.length
+                # Get system params
+                z_list = m.get_z_list(cur_len, cur_len+layer.length)
+                n = layer.mode_solvers.n
 
-            # Iterate through z
-            while len(m.remaining_lengths[0]) and m.remaining_lengths[0][0] <= cur_len:
-                z = m.remaining_lengths[0][0]
+                # Iterate through z
+                for i, z in z_list:
+                    self._set_monitor(m, i, {"n": n}, n=True)
 
-                # Get full s params for all periods
-                for i in range(self.num_periods):
-
-                    self._set_monitor(m, i, z, {"n": n}, n=True, last_period=(i==self.num_periods-1))
-
+                cur_len += layer.length
         return
 
 
@@ -599,8 +596,6 @@ class EME(object):
             results = self._run_parallel_functions(*tasks)
 
             # Assign results to monitor
-            # if self.am_master():
-            #     print(len(results),len(tasks))
             for z_l, result_l in zip(full_z_list, results):
                 for z, r in zip(z_l, result_l):
                     self._set_monitor(m, z[0], r)
@@ -612,22 +607,49 @@ class EME(object):
 
         # Create output
         result_list = []
+        
+        # Period length
+        perf = ModelTools.periodic_duplicate_format
+        per_length = self._get_total_length()
 
         # get SP0
-        SP0 = [self.network, self.periodic_interface] * (per)
+        SP0 = []
+        for p in range(per):
+            SP0.append(perf(self.network, p*per_length, (p+1)*per_length))
+            SP0.append(self.periodic_interface)
 
         # get SP1
-        SP1 = [self.periodic_interface, self.network] * (self.num_periods - (per) - 1) 
+        SP1 = []
+        for p in range(self.num_periods - (per) - 1):
+            p = per + p + 1
+            SP1.append(self.periodic_interface)
+            SP1.append(perf(self.network, p*per_length, (p+1)*per_length))
+
 
         # Get system params
-        S0 = [lay for lay in self.activated_layers[:i]]
-        S1 = [lay for lay in self.activated_layers[i+1:]]
+        # S0 = [lay for lay in self.activated_layers[:i]]
+        # S1 = [lay for lay in self.activated_layers[i+1:]]
+
+        # Get S0
+        S0, S0_length = ([],per*per_length)
+        for lay in self.activated_layers[:i]:
+            S0.append(perf(lay, S0_length, S0_length+lay.length))
+            S0_length += lay.length
+
+        # Get S1
+        S1, S1_length = ([],S0_length+self.activated_layers[i].length)
+        for lay in self.activated_layers[i+1:]:
+            S1.append(perf(lay, S1_length, S1_length+lay.length))
+            S1_length += lay.length
 
         # Distance params
         dup = Duplicator(l.wavelength, l.modes)
 
+        # See if need to remove sources for periodic l
+        checked_l = perf(l, cur_len, cur_len+l.length)
+
         # create all prop layers
-        prop = [*SP0, *S0, dup, l, *S1, *SP1]
+        prop = [*SP0, *S0, dup, checked_l, *S1, *SP1]
 
         # Compute field propagation
         S = _prop_all(
@@ -637,6 +659,7 @@ class EME(object):
         # Get input array
         input_map = self._build_input_array(left_coeffs, right_coeffs, S, num_modes=len(l.modes))
         coeffs_ = compute(S, input_map, 0)
+        # print(np.abs(S.s_parameters([0])),"\n")
         coeff_left = np.zeros(len(l.modes), dtype=complex)
         coeff_right = np.zeros(len(l.modes), dtype=complex)
         modes = np.array([[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes])
