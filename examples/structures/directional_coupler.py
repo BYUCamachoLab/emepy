@@ -22,7 +22,7 @@ wavelength = 1.55e-6  # Wavelength
 width = 0.4e-6  # Width of left waveguide
 gap = 0.2e-6  # Gap between waveguides
 thickness = 0.22e-6  # Thickness of left waveguide
-num_modes = 2  # Number of modes
+num_modes = 1  # Number of modes
 mesh = 100  # Number of mesh points
 core_index = Si(wavelength * 1e6)  # Silicon core
 cladding_index = SiO2(wavelength * 1e6)  # Oxide cladding
@@ -74,7 +74,7 @@ two_channel = MSEMpy(
     n=n,
 )
 
-for i in range(2):
+for i in range(3):
     eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
 # eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
@@ -90,8 +90,8 @@ for i in range(2):
 
 # ### Add a monitor
 
-# source = em.Source(z=0.2e-6,mode_coeffs=[1,0],k=0)
-monitor = eme.add_monitor(axes="xz",sources=[])
+source = em.Source(z=0.7e-6,mode_coeffs=[1],k=1)
+monitor = eme.add_monitor(axes="xz",sources=[source])
 
 
 # # ### Propagate
@@ -99,7 +99,7 @@ t = time.time()
 eme.solve_modes()
 # if eme.am_master():
 #     print("time to solve for 30 modes: {}".format(time.time()-t))
-eme.propagate(left_coeffs=[1],right_coeffs=[1])  # propagate at given wavelength
+eme.propagate(left_coeffs=[],right_coeffs=[])  # propagate at given wavelength
 
 # # print(np.matmul(eme.s_parameters()[0],np.array([1,0])))
 # # print(eme.s_parameters()[0])

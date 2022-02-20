@@ -306,7 +306,7 @@ class Monitor(object):
 
         return grid_field
 
-    def visualize(self, ax=None, component="Hy", axes=None, location=0, z_range=None):
+    def visualize(self, ax=None, component="Hy", axes=None, location=0, z_range=None, show_geometry=True):
         """Creates a matplotlib axis displaying the provides field component
 
         Parameters
@@ -342,6 +342,7 @@ class Monitor(object):
         else:
             raise Exception("Incorrect axes format")
 
+        yn, zn, n = self.get_array(component="n", axes=axes, location=location, z_range=z_range)
         y, z, field = self.get_array(component=component, axes=axes, location=location, z_range=z_range)
 
         # Color map lookup table
@@ -360,19 +361,33 @@ class Monitor(object):
         # Create plots
         if axes in ["xz", "zx", "yz", "zy"]:
             if ax:
+                if show_geometry:
+                    n_im = ax.imshow(
+                        np.real(n),
+                        extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
+                        cmap=cmap_lookup["n"]
+                    )
                 im = ax.imshow(
                     np.real(field),
                     extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
+                    alpha=1 if not show_geometry else 0.9
                 )
                 ax.set_xlabel(np.real(axes[1]))
                 ax.set_ylabel(np.real(axes[0]))
                 ax.set_title(component)
             else:
+                if show_geometry:
+                    n_im = plt.imshow(
+                        np.real(n),
+                        extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
+                        cmap=cmap_lookup["n"]
+                    )
                 im = plt.imshow(
                     np.real(field),
                     extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
+                    alpha=1 if not show_geometry else 0.9
                 )
                 plt.xlabel(np.real(axes[1]))
                 plt.ylabel(np.real(axes[0]))

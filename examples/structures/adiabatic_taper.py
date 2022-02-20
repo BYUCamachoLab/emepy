@@ -4,7 +4,6 @@ from emepy.mode import Mode
 from emepy.fd import MSEMpy
 import numpy as np
 from matplotlib import pyplot as plt
-import bezier
 
 # Design parameters
 taper_length = 7e-6  # The length of the taper
@@ -41,7 +40,7 @@ num_modes_first_half = 10 # Number of modes to solve for
 num_modes_second_half = 20 # Number of modes to solve for
 mesh=90 # Number of mesh points in each xy dimension
 
-eme = EME(parallel=False)  # Choose either a normal eme or a periodic eme (Periodicparallel=True)
+eme = EME(parallel=True)  # Choose either a normal eme or a periodic eme (Periodicparallel=True)
 
 # first layer is a straight waveguide
 mode1 = MSEMpy(
