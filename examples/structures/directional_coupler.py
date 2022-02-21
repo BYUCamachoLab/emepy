@@ -90,7 +90,7 @@ for i in range(3):
 
 # ### Add a monitor
 
-source = em.Source(z=2e-6,mode_coeffs=[1],k=-1)
+source = em.Source(z=1.0e-6,mode_coeffs=[1],k=-1)
 monitor = eme.add_monitor(axes="xz",sources=[source])
 
 
