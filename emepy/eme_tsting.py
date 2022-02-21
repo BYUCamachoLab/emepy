@@ -104,15 +104,17 @@ class EME(object):
         tasks = []
         sources = self.get_sources()
         for layer in tqdm(self.layers,disable=self.quiet):
-            tasks.append((layer.activate_layer,[sources,length],{}))
+            tasks.append((layer.activate_layer,[sources,length,self.num_periods,self._get_total_length()],{}))
             length += layer.length
 
         # Organized solved layers
-        self.activated_layers = []
+        self.activated_layers_total = []
         results = self._run_parallel_functions(*tasks)
+        self.activated_layers = []
         if not results is None:
             for solved in results:
-                self.activated_layers += solved
+                self.activated_layers_total.append(solved)
+                self.activated_layers += solved[0]
 
         self._update_state(2)
 
@@ -132,6 +134,8 @@ class EME(object):
         elif len(self.activated_layers) == 1:
             self.periodic_interface = InterfaceMultiMode(self.activated_layers[-1], self.activated_layers[0])
             return self.activated_layers[0]
+
+        # NEED TO FIX ACTIVATED LAYERS TOTAL
 
         # Configure interface
         num_modes = max([len(l.modes) for l in self.activated_layers])
@@ -170,7 +174,10 @@ class EME(object):
         return self.rank == 0 if self.parallel else True
 
     def get_sources(self):
-        srcs = ModelTools.get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], 0, self._get_total_length())
+        srcs = []
+        period_length = self._get_total_length()
+        for i in range(self.num_periods):
+            srcs += ModelTools.get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], i*period_length+0, i*period_length+self._get_total_length())
         srcs.sort(key=lambda s: s.z)
         return srcs
 
@@ -478,14 +485,14 @@ class EME(object):
         if self.am_master() and not self.quiet:
             print("current state: {}".format(self.states[self.state]))
 
-    def _build_input_array(self, left_coeffs, right_coeffs, model, num_modes=1):
+    def _build_input_array(self, left_coeffs, right_coeffs, model, num_modes=1, layers=[]):
 
         # Case 1: left_coeffs > num_modes
-        if len(left_coeffs) > self.activated_layers[0].num_modes:
+        if len(left_coeffs) > layers[0].num_modes:
             raise Exception("Too many mode coefficients in the left input")
 
         # Case 2: right_coeffs > num_modes
-        if len(left_coeffs) > self.activated_layers[-1].num_modes:
+        if len(left_coeffs) > layers[-1].num_modes:
             raise Exception("Too many mode coefficients in the right input")
 
         # Start mapping
@@ -584,10 +591,15 @@ class EME(object):
             for per in tqdm(range(self.num_periods),disable=self.quiet):
 
                 # Forward through the device
-                for i, layer in enumerate(self.activated_layers):
+                layers = self.activated_layers
+                for i, layer_ in enumerate(layers):
+                    layers[i] = self.activated_layers_total[i][per] if len(self.activated_layers_total[i][per]) else layer_
+                layers = [i for ll in layers for i in ll]
+                for i, layer in enumerate(layers):
                     z_list = m.get_z_list(cur_len, cur_len+layer.length)
                     just_z_list = [i[1] for i in z_list]
-                    task = (self._layer_field_propagate,[i*1, make_copy_model(layer), per*1, left_coeffs[:], right_coeffs[:], cur_len*1, just_z_list[:]],{})
+                    task = (self._layer_field_propagate,[i*1, make_copy_model(layer), layers, per*1, left_coeffs[:], right_coeffs[:], cur_len*1, just_z_list[:]],{})
+                    task = (self._layer_field_propagate,[i*1, make_copy_model(layer), layers, per*1, left_coeffs[:], right_coeffs[:], cur_len*1, just_z_list[:]],{})
                     full_z_list.append(z_list)
                     tasks.append(task)
                     cur_len += layer.length
@@ -603,7 +615,7 @@ class EME(object):
         # Finish state
         self._update_state(6)
 
-    def _layer_field_propagate(self, i, l, per, left_coeffs, right_coeffs, cur_len, z_list):
+    def _layer_field_propagate(self, i, l, layers, per, left_coeffs, right_coeffs, cur_len, z_list):
 
         # Create output
         result_list = []
@@ -625,20 +637,15 @@ class EME(object):
             SP1.append(self.periodic_interface)
             SP1.append(perf(self.network, p*per_length, (p+1)*per_length))
 
-
-        # Get system params
-        # S0 = [lay for lay in self.activated_layers[:i]]
-        # S1 = [lay for lay in self.activated_layers[i+1:]]
-
         # Get S0
         S0, S0_length = ([],per*per_length)
-        for lay in self.activated_layers[:i]:
+        for lay in layers[:i]:
             S0.append(perf(lay, S0_length, S0_length+lay.length))
             S0_length += lay.length
 
         # Get S1
-        S1, S1_length = ([],S0_length+self.activated_layers[i].length)
-        for lay in self.activated_layers[i+1:]:
+        S1, S1_length = ([],S0_length+layers[i].length)
+        for lay in layers[i+1:]:
             S1.append(perf(lay, S1_length, S1_length+lay.length))
             S1_length += lay.length
 
@@ -657,7 +664,7 @@ class EME(object):
         )
 
         # Get input array
-        input_map = self._build_input_array(left_coeffs, right_coeffs, S, num_modes=len(l.modes))
+        input_map = self._build_input_array(left_coeffs, right_coeffs, S, num_modes=len(l.modes), layers=layers)
         coeffs_ = compute(S, input_map, 0)
         coeff_left = np.zeros(len(l.modes), dtype=complex)
         coeff_right = np.zeros(len(l.modes), dtype=complex)
@@ -677,7 +684,6 @@ class EME(object):
         # Reverse phase if looking from right end
         diffs = [z_list[0]-cur_len]+np.diff(z_list).tolist()
         eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
-        # print(cur_len, l.length)
         if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]):
             coeff_left[i] *= np.exp(1j * eig * l.length)
             coeff_right[i] *= np.exp(-1j * eig * l.length)
