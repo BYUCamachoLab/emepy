@@ -649,7 +649,7 @@ class EME(object):
         checked_l = perf(l, cur_len, cur_len+l.length)
 
         # create all prop layers
-        prop = [*SP0, *S0, dup, checked_l, *S1, *SP1]
+        prop = [*SP0, *S0, checked_l, dup, *S1, *SP1] if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]) else [*SP0, *S0, dup, checked_l, *S1, *SP1]
 
         # Compute field propagation
         S = _prop_all(
@@ -659,7 +659,6 @@ class EME(object):
         # Get input array
         input_map = self._build_input_array(left_coeffs, right_coeffs, S, num_modes=len(l.modes))
         coeffs_ = compute(S, input_map, 0)
-        # print(np.abs(S.s_parameters([0])),"\n")
         coeff_left = np.zeros(len(l.modes), dtype=complex)
         coeff_right = np.zeros(len(l.modes), dtype=complex)
         modes = np.array([[i.Ex, i.Ey, i.Ez, i.Hx, i.Hy, i.Hz] for i in l.modes])
@@ -671,11 +670,21 @@ class EME(object):
             if "right_dup{}".format(i) in coeffs_:
                 coeff_right[i] += coeffs_["right_dup{}".format(i)]
 
+        # Case where layer has size 0 (when source at edge of a layer)
+        if not len(z_list):
+            return result_list
+
+        # Reverse phase if looking from right end
+        diffs = [z_list[0]-cur_len]+np.diff(z_list).tolist()
+        eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
+        if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]):
+            coeff_left[i] *= np.exp(1j * eig * l.length)
+            coeff_right[i] *= np.exp(-1j * eig * l.length)
+        
         # Iterate through z
-        for z_diff in [z_list[0]-cur_len]+np.diff(z_list).tolist():
+        for z_diff in diffs:
 
             # Get coe
-            eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
             phase_left = np.exp(-z_diff * 1j * eig) 
             phase_right = np.exp(z_diff * 1j * eig) 
             coeff_left = coeff_left*phase_left
