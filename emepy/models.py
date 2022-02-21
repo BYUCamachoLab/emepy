@@ -190,7 +190,6 @@ class Duplicator(Model):
         s_matrix_new[:m,2*m:3*m] = s_matrix[m:,:m]
         s_matrix_new[2*m:3*m,:m] = s_matrix[m:,:m]
         s_matrix_new[3*m:,:m] = s_matrix[m:,:m]
-        s_matrix_new[m:3*m,m:3*m] = s_matrix[:,:]
         s_matrix = s_matrix_new
 
         # Assign number of ports
@@ -752,7 +751,7 @@ class SourceDuplicator(Model):
         s_matrix_new[:m,2*m:3*m] = s_matrix[m:,:m]
         s_matrix_new[2*m:3*m,:m] = s_matrix[m:,:m]
         s_matrix_new[3*m:,:m] = s_matrix[m:,:m]
-        s_matrix_new[m:3*m,m:3*m] = s_matrix[:,:]
+        # s_matrix_new[m:3*m,m:3*m] = s_matrix[:,:]
         s_matrix = s_matrix_new
 
         # Delete rows and cols
@@ -820,7 +819,8 @@ def compute(model, pin_values: "dict", freq : "float") -> "np.ndarray":
     pin_names = [i.name for i in model.pins]
     key_index = dict(zip(pin_names, [pin_names.index(i) for i in pin_names]))
     for key, value in pin_values.items():
-        cfs[key_index[key]] = value
+        if key in key_index:
+            cfs[key_index[key]] = value
     matrix = model.s_parameters(np.array([freq]))
     output = np.matmul(matrix, cfs)[0]
     return dict(zip(pin_names, output))
@@ -864,7 +864,6 @@ class ModelTools(object):
             left = custom_sources[i-1].get_label() if (i-1) > -1 else "n"+str(length_tracker)
             right = custom_sources[i].get_label() if (i) < len(custom_sources) else "n"+str(length_tracker+length)
             label = "_{}_to_{}".format(left,right)
-            print(start,left,right,label,start,length)
 
             # Create duplicators
             dups.append(SourceDuplicator(wavelength,modes,length,pk=pk,nk=nk,label=label))
