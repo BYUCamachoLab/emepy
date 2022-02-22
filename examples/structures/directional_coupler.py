@@ -22,7 +22,7 @@ wavelength = 1.55e-6  # Wavelength
 width = 0.4e-6  # Width of left waveguide
 gap = 0.2e-6  # Gap between waveguides
 thickness = 0.22e-6  # Thickness of left waveguide
-num_modes = 1  # Number of modes
+num_modes = 2  # Number of modes
 mesh = 100  # Number of mesh points
 core_index = Si(wavelength * 1e6)  # Silicon core
 cladding_index = SiO2(wavelength * 1e6)  # Oxide cladding
@@ -33,7 +33,7 @@ n = np.ones(mesh) * cladding_index
 # ### Define structure and verify shape
 
 # Create simulation
-eme = EME(quiet=True,parallel=True,num_periods=2)
+eme = EME(quiet=True,parallel=True,num_periods=3)
 
 # Create left waveguide
 single_left_edge = -gap / 2 - width
@@ -90,7 +90,7 @@ for i in range(3):
 
 # ### Add a monitor
 
-source = em.Source(z=2.3e-6,mode_coeffs=[1],k=-1)
+source = em.Source(z=0.7e-6,mode_coeffs=[1],k=1)
 monitor = eme.add_monitor(axes="xz",sources=[source])
 
 

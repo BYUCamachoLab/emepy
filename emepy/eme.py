@@ -712,8 +712,9 @@ class EME(object):
         eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
         # print(cur_len, l.length)
         if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]):
-            coeff_left[i] *= np.exp(1j * eig * l.length)
-            coeff_right[i] *= np.exp(-1j * eig * l.length)
+            print(coeff_left)
+            coeff_left *= np.exp(1j * eig * l.length)
+            coeff_right *= np.exp(-1j * eig * l.length)
         
         # Iterate through z
         for z_diff in diffs:
