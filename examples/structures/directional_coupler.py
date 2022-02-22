@@ -115,5 +115,5 @@ if eme.am_master():
     plt.figure()
     monitor.visualize(component="Hy")
     plt.colorbar()
-    plt.show()
+    plt.savefig("hx")
 

@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 # Design parameters
 taper_length = 7e-6  # The length of the taper
-taper_density = 40 # Number of taper segments
+taper_density = 2 # Number of taper segments
 alpha = 3 # Strength of function (either tanh or bezier) -> 0 = linear
 type_tanh = True # "bezier"
 
@@ -38,7 +38,7 @@ wavelength = 1.55e-6  # Wavelength of light (m)
 length = 3e-6  # Length of the waveguides
 num_modes_first_half = 10 # Number of modes to solve for
 num_modes_second_half = 20 # Number of modes to solve for
-mesh=90 # Number of mesh points in each xy dimension
+mesh=120 # Number of mesh points in each xy dimension
 
 eme = EME(parallel=True)  # Choose either a normal eme or a periodic eme (Periodicparallel=True)
 
@@ -76,7 +76,7 @@ monitor = eme.add_monitor(axes="xz")
 
 if eme.am_master():
     eme.draw() 
-    plt.show()
+    plt.savefig('geom')
 
 eme.propagate(left_coeffs=[], right_coeffs=[1])  # Run the eme
 
@@ -84,7 +84,7 @@ if eme.am_master():
     plt.figure()
     monitor.visualize(component="Hy")
     plt.colorbar()
-    plt.show()
+    plt.savefig('backward')
 
 eme.propagate(left_coeffs=[1], right_coeffs=[])  # Run the eme
 
@@ -92,4 +92,4 @@ if eme.am_master():
     plt.figure()
     monitor.visualize(component="Hy")
     plt.colorbar()
-    plt.show()
+    plt.savefig('forward')
