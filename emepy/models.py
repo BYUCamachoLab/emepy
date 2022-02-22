@@ -33,7 +33,7 @@ class Layer(object):
         self.activated_layers = []
 
 
-    def activate_layer(self, sources=[], start=0.0):
+    def activate_layer(self, sources=[], start=0.0, period_length=0.0):
         """Solves for the modes in the layer and creates an ActivatedLayer object"""
 
         modes = []
@@ -53,16 +53,37 @@ class Layer(object):
         # Purge spurious mode
         modes = ModelTools.purge_spurious(modes)
 
-        # Only care about sources between the ends\
-        custom_sources = ModelTools.get_sources(sources, start, start+self.length)
+        # Create activated layers
+        self.activated_layers = dict(zip(sources.keys(), [[] for _ in range(len(sources.keys()))]))
 
-        # If no custom sources
-        if not len(custom_sources):
-            self.activated_layers = [ActivatedLayer(modes, self.wavelength, self.length)]
+        # Loop through all periods
+        for per, srcs in sources.items():
 
-        # Other sources
-        else:
-            self.activated_layers = ModelTools.get_source_system(modes, self.wavelength, self.length, custom_sources, start)
+            # Only care about sources between the ends
+            start_ = start + per * period_length
+            custom_sources = ModelTools.get_sources(srcs, start_, start_+self.length)
+
+            # First period
+            if not per:
+
+                # If no custom sources
+                if not len(custom_sources):
+                    self.activated_layers[per] += [ActivatedLayer(modes, self.wavelength, self.length)]
+
+                # Other sources
+                else:
+                    self.activated_layers[per] += ModelTools.get_source_system(modes, self.wavelength, self.length, custom_sources, start_)
+
+            # Any other period
+            else:
+
+                # If no custom sources
+                if not len(custom_sources):
+                    self.activated_layers[per] += [None]
+
+                # Other sources
+                else:
+                    self.activated_layers[per] += ModelTools.get_source_system(modes, self.wavelength, self.length, custom_sources, start_)
 
         return self.activated_layers
 
