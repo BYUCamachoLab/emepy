@@ -86,7 +86,7 @@ class EME(object):
 
         self.monitors = []
         self.custom_monitors = []
-        self.network = None
+        self.networks = None
         self.periodic_network = None
 
     def solve_modes(self):
@@ -104,15 +104,19 @@ class EME(object):
         tasks = []
         sources = self.get_sources()
         for layer in tqdm(self.layers,disable=self.quiet):
-            tasks.append((layer.activate_layer,[sources,length],{}))
+            tasks.append((layer.activate_layer,[sources,length,self._get_total_length()],{}))
             length += layer.length
 
         # Organized solved layers
-        self.activated_layers = []
+        self.activated_layers = dict(zip(range(self.num_periods), [[] for _ in range(self.num_periods)]))
         results = self._run_parallel_functions(*tasks)
         if not results is None:
             for solved in results:
-                self.activated_layers += solved
+                for per, layers in solved.items():
+                    if not sum([not i is None for so in results for p, s in so.items() for i in s if p == per]):
+                        self.activated_layers[per] = None
+                    else:
+                        self.activated_layers[per] += layers if not layers[0] is None else solved[0]
 
         self._update_state(2)
 
@@ -125,53 +129,78 @@ class EME(object):
             self._update_state(3)
         else:
             raise Exception("In the wrong place")
+
+        # Create return dict
+        final_activated_layers = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
+        periodic_interfaces = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
+
+        # Loop through all periods in case of custom sources
+        for per, activated_layers in self.activated_layers.items():
+            
+            # Most cases
+            if per and activated_layers is None:
+                continue
         
-        # See if only one layer or no layer
-        if not len(self.activated_layers):
-            raise Exception("No activated layers in system")
-        elif len(self.activated_layers) == 1:
-            self.periodic_interface = InterfaceMultiMode(self.activated_layers[-1], self.activated_layers[0])
-            return self.activated_layers[0]
+            # See if only one layer or no layer
+            if not per and activated_layers is None:
+                raise Exception("No activated layers in system")
+            elif len(activated_layers) == 1:
+                periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
+                final_activated_layers[per] = activated_layers[0]
+                continue
 
-        # Configure interface
-        num_modes = max([len(l.modes) for l in self.activated_layers])
-        interface_type = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
+            # Configure interface
+            num_modes = max([len(l.modes) for l in activated_layers])
+            interface_type = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
 
-        # Define tasks
-        def task(l,r):
-            return l, _prop_all(l, interface_type(l, r))
+            # Define tasks
+            def task(l,r):
+                return l, _prop_all(l, interface_type(l, r))
 
-        # Setup parallel layer prop tasks
-        for left, right in tqdm(zip(self.activated_layers[:-1],self.activated_layers[1:]),disable=self.quiet):
-            tasks.append((task,[left, right],{}))
+            # Setup parallel layer prop tasks
+            for left, right in tqdm(zip(activated_layers[:-1],activated_layers[1:]),disable=self.quiet):
+                tasks.append((task,[left, right],{}))
 
-        # Propagate
-        results = self._run_parallel_functions(*tasks)
+            # Propagate
+            results = self._run_parallel_functions(*tasks)
 
-        # Calculate period interface in case multiple periods
-        self.periodic_interface = InterfaceMultiMode(self.activated_layers[-1], self.activated_layers[0])
-        
-        # Only keep what we need
-        for i, result in enumerate(results[:-1]):
-            layer, cascaded = result
-            attributes = layer.__dict__
-            self.activated_layers[i] = cascaded
-            self.activated_layers[i].length = attributes['length']
-            self.activated_layers[i].wavelength = attributes['wavelength']
-            self.activated_layers[i].modes = attributes['modes']
-            self.activated_layers[i].num_modes = attributes['num_modes']
+            # Calculate period interface in case multiple periods
+            periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
+            
+            # Only keep what we need
+            for i, result in enumerate(results[:-1]):
+                layer, cascaded = result
+                attributes = layer.__dict__
+                activated_layers[i] = cascaded
+                activated_layers[i].length = attributes['length']
+                activated_layers[i].wavelength = attributes['wavelength']
+                activated_layers[i].modes = attributes['modes']
+                activated_layers[i].num_modes = attributes['num_modes']
+
+            # Add to cascaded list
+            final_activated_layers[per] =_prop_all(*activated_layers)
+
+        # Update
+        self.networks = final_activated_layers
+        self.periodic_interfaces = periodic_interfaces
 
         # Finish state
         self._update_state(4)
 
-        return _prop_all(*self.activated_layers)
+        return self.networks
 
     def am_master(self):
         return self.rank == 0 if self.parallel else True
 
     def get_sources(self):
-        srcs = ModelTools.get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], 0, self._get_total_length())
-        srcs.sort(key=lambda s: s.z)
+        srcs = dict(zip(range(self.num_periods), [[] for _ in range(self.num_periods)]))
+        for per in range(self.num_periods):
+            start = self._get_total_length() * per
+            end = self._get_total_length() * (per+1)
+            src = ModelTools.get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], start, end)
+            src.sort(key=lambda s: s.z)
+            srcs[per] = src
+        
         return srcs
 
     def s_parameters(self, freqs=None):
@@ -183,12 +212,9 @@ class EME(object):
             The s_params acquired during propagation
         """
 
-        if self.network is None and self.periodic_network is None:
+        if self.networks is None and self.periodic_network is None:
             self.propagate()
-        elif not self.periodic_network is None:
-            return self.periodic_network.s_parameters(freqs)
-        else:
-            return self.network.s_parameters(freqs)
+        return self.periodic_network.s_parameters(freqs)
 
         return self.s_params
 
@@ -363,7 +389,7 @@ class EME(object):
 
         # Fix defaults
         if left_coeffs is None:
-            if not len(right_coeffs) and not len(self.get_sources()):
+            if not len(right_coeffs) and not len([i for i in self.get_sources().values() if len(i)]):
                 left_coeffs = [1]
             else:
                 left_coeffs = []
@@ -373,11 +399,18 @@ class EME(object):
 
         # Forward pass
         if self.state == 2:
-            self.network = self.propagate_layers()
+            self.propagate_layers()
 
         # Periodic ### ToDo, parallelize this process using a log2 n technique
-        # if self.num_periods > 1:
-        #     self.periodic_network = _prop_all(*([self.network] + [self.periodic_interface, self.network] * (self.num_periods - 1)))
+        networks = []
+        for per, network in self.networks.items():
+            start = per * self._get_total_length()
+            end = (per + 1) * self._get_total_length()
+            n = network if not network is None else self.networks[0]
+            networks.append(ModelTools.periodic_duplicate_format(n, start, end))
+            if not per:
+                networks.append(self.periodic_interfaces[per] if not self.periodic_interfaces[per] is None else self.periodic_interfaces[0])
+        self.periodic_network = _prop_all(*networks)
 
         # Update monitors
         self._field_propagate(left_coeffs, right_coeffs)
@@ -481,18 +514,18 @@ class EME(object):
     def _build_input_array(self, left_coeffs, right_coeffs, model, num_modes=1):
 
         # Case 1: left_coeffs > num_modes
-        if len(left_coeffs) > self.activated_layers[0].num_modes:
+        if len(left_coeffs) > self.activated_layers[0][0].num_modes:
             raise Exception("Too many mode coefficients in the left input")
 
         # Case 2: right_coeffs > num_modes
-        if len(left_coeffs) > self.activated_layers[-1].num_modes:
+        if len(left_coeffs) > self.activated_layers[0][-1].num_modes:
             raise Exception("Too many mode coefficients in the right input")
 
         # Start mapping
         mapping = {}
 
         # Get sources
-        sources = self.get_sources()
+        sources = [x for i in self.get_sources().values() for x in i ]
 
         # Form mapping
         try:
@@ -581,10 +614,11 @@ class EME(object):
             cur_len = 0
             full_z_list = []
             tasks = []
-            for per in tqdm(range(self.num_periods),disable=self.quiet):
+            for per, activated_layers in tqdm(self.activated_layers.items(),disable=self.quiet):
 
                 # Forward through the device
-                for i, layer in enumerate(self.activated_layers):
+                activated_layers = activated_layers if not activated_layers is None else self.activated_layers[0]
+                for i, layer in enumerate(activated_layers):
                     z_list = m.get_z_list(cur_len, cur_len+layer.length)
                     just_z_list = [i[1] for i in z_list]
                     task = (self._layer_field_propagate,[i*1, make_copy_model(layer), per*1, left_coeffs[:], right_coeffs[:], cur_len*1, just_z_list[:]],{})
@@ -607,6 +641,8 @@ class EME(object):
 
         # Create output
         result_list = []
+        activated_layers = self.activated_layers[per] if not self.activated_layers[per] is None else self.activated_layers[0]
+        print(per, activated_layers)
         
         # Period length
         perf = ModelTools.periodic_duplicate_format
@@ -615,30 +651,29 @@ class EME(object):
         # get SP0
         SP0 = []
         for p in range(per):
-            SP0.append(perf(self.network, p*per_length, (p+1)*per_length))
-            SP0.append(self.periodic_interface)
+            network = self.networks[p] if not self.networks[p] is None else self.networks[0]
+            interface = self.periodic_interfaces[p] if not self.periodic_interfaces[p] is None else self.periodic_interfaces[0]
+            SP0.append(perf(network, p*per_length, (p+1)*per_length))
+            SP0.append(interface)
 
         # get SP1
         SP1 = []
         for p in range(self.num_periods - (per) - 1):
             p = per + p + 1
-            SP1.append(self.periodic_interface)
-            SP1.append(perf(self.network, p*per_length, (p+1)*per_length))
-
-
-        # Get system params
-        # S0 = [lay for lay in self.activated_layers[:i]]
-        # S1 = [lay for lay in self.activated_layers[i+1:]]
+            network = self.networks[p] if not self.networks[p] is None else self.networks[0]
+            interface = self.periodic_interfaces[p] if not self.periodic_interfaces[p] is None else self.periodic_interfaces[0]
+            SP1.append(interface)
+            SP1.append(perf(network, p*per_length, (p+1)*per_length))
 
         # Get S0
         S0, S0_length = ([],per*per_length)
-        for lay in self.activated_layers[:i]:
+        for lay in activated_layers[:i]:
             S0.append(perf(lay, S0_length, S0_length+lay.length))
             S0_length += lay.length
 
         # Get S1
-        S1, S1_length = ([],S0_length+self.activated_layers[i].length)
-        for lay in self.activated_layers[i+1:]:
+        S1, S1_length = ([],S0_length+activated_layers[i].length)
+        for lay in activated_layers[i+1:]:
             S1.append(perf(lay, S1_length, S1_length+lay.length))
             S1_length += lay.length
 
