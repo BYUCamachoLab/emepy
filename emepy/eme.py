@@ -122,8 +122,6 @@ class EME(object):
 
     def propagate_layers(self):
 
-        tasks = []
-
         # Check state
         if self.state == 2:
             self._update_state(3)
@@ -136,6 +134,7 @@ class EME(object):
 
         # Loop through all periods in case of custom sources
         for per, activated_layers in self.activated_layers.items():
+            tasks = []
             
             # Most cases
             if per and activated_layers is None:
@@ -642,7 +641,6 @@ class EME(object):
         # Create output
         result_list = []
         activated_layers = self.activated_layers[per] if not self.activated_layers[per] is None else self.activated_layers[0]
-        print(per, activated_layers)
         
         # Period length
         perf = ModelTools.periodic_duplicate_format
