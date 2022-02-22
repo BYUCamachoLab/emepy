@@ -608,6 +608,8 @@ class EME(object):
         for m in self.custom_monitors + self.monitors:
             # Reset monitor
             m.reset_monitor()
+            m.left_source = len(left_coeffs) > 0
+            m.right_source = len(right_coeffs) > 0
 
             # Get full s params for all periods
             cur_len = 0

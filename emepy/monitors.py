@@ -75,6 +75,8 @@ class Monitor(object):
         self.field = np.zeros(dimensions).astype(complex)
         self.lengths = deepcopy(lengths)
         self.sources = sources
+        self.left_source = False
+        self.right_source = False
 
         self.components = components
         self.layers = {}
@@ -306,7 +308,23 @@ class Monitor(object):
 
         return grid_field
 
-    def visualize(self, ax=None, component="Hy", axes=None, location=0, z_range=None, show_geometry=True):
+    def get_source_visual(self):
+        z = self.lengths[:]
+        array = np.zeros(self.dimensions[1:])
+        l = self.dimensions[-1] // 200
+        if self.right_source:
+            array[:,-l:] = 1
+        if self.left_source:
+            array[:,:l] = 1
+        for source in self.sources:
+            difference_start = lambda list_value : abs(list_value - source.z)
+            i = self.lengths[0].index(min(self.lengths[0], key=difference_start))
+            array[:,i-l//2:i+l//2] = 1
+
+            pass
+        return array
+
+    def visualize(self, ax=None, component="Hy", axes=None, location=0, z_range=None, show_geometry=True, show_sources=True):
         """Creates a matplotlib axis displaying the provides field component
 
         Parameters
@@ -383,11 +401,17 @@ class Monitor(object):
                         extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
                         cmap=cmap_lookup["n"]
                     )
+                vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
+                if show_sources:
+                    srcs = np.real(self.get_source_visual())
+                    field = np.where(srcs, -max(np.abs(vmax),np.abs(vmin))*1000, field)
                 im = plt.imshow(
                     np.real(field),
                     extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
-                    alpha=1 if not show_geometry else 0.9
+                    alpha=1 if not show_geometry else 0.9,
+                    vmin=vmin,
+                    vmax=vmax
                 )
                 plt.xlabel(np.real(axes[1]))
                 plt.ylabel(np.real(axes[0]))
