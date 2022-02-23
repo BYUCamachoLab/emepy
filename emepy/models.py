@@ -12,7 +12,9 @@ from copy import deepcopy
 class Layer(object):
     """Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures."""
 
-    def __init__(self, mode_solver: ModeSolver, num_modes: int, wavelength: float, length: float) -> None:
+    def __init__(
+        self, mode_solver: ModeSolver, num_modes: int, wavelength: float, length: float
+    ) -> None:
         """Layer class constructor
 
         Parameters
@@ -33,9 +35,11 @@ class Layer(object):
         self.length = length
         self.activated_layers = []
 
-    def activate_layer(self, sources: list = [], start: float = 0.0, period_length: float = 0.0) -> dict:
+    def activate_layer(
+        self, sources: list = [], start: float = 0.0, period_length: float = 0.0
+    ) -> dict:
         """Solves for the modes in the layer and creates an ActivatedLayer object
-        
+
         Parameters
         ----------
         sources : list[Source]
@@ -49,7 +53,7 @@ class Layer(object):
         -------
         dict
             a dictionary that maps the period number to the activated layers. If there is no source in a period, it will be None instead at that index
-        
+
         """
 
         modes = []
@@ -63,7 +67,9 @@ class Layer(object):
         modes = ModelTools.purge_spurious(modes)
 
         # Create activated layers
-        self.activated_layers = dict(zip(sources.keys(), [[] for _ in range(len(sources.keys()))]))
+        self.activated_layers = dict(
+            zip(sources.keys(), [[] for _ in range(len(sources.keys()))])
+        )
 
         # Loop through all periods
         for per, srcs in sources.items():
@@ -77,7 +83,9 @@ class Layer(object):
 
                 # If no custom sources
                 if not len(custom_sources):
-                    self.activated_layers[per] += [ActivatedLayer(modes, self.wavelength, self.length)]
+                    self.activated_layers[per] += [
+                        ActivatedLayer(modes, self.wavelength, self.length)
+                    ]
 
                 # Other sources
                 else:
@@ -134,12 +142,14 @@ class Layer(object):
 class Duplicator(Model):
     """Duplicator is used for observing scattering parameters in the middle of an arbitrary network"""
 
-    def __init__(self, wavelength: float, num_modes: int, label: str = "", **kwargs) -> None:
+    def __init__(
+        self, wavelength: float, num_modes: int, label: str = "", **kwargs
+    ) -> None:
         """Creates an instance of Duplicator which is used only for finding the scattering values inside of an arbitrary network after cascaded
 
         Parameters
         ----------
-        wavelength : float 
+        wavelength : float
             the wavelength of the simulation
         num_modes : int
             number of modes in the layer being duplicated
@@ -279,7 +289,14 @@ class Current(Model):
 class ActivatedLayer(Model):
     """ActivatedLayer is produced by the Layer class after the ModeSolvers calculate eigenmodes. This is used to create interfaces. This inherits from Simphony's Model class."""
 
-    def __init__(self, modes: list, wavelength: float, length: float, n_only: bool = False, **kwargs) -> None:
+    def __init__(
+        self,
+        modes: list,
+        wavelength: float,
+        length: float,
+        n_only: bool = False,
+        **kwargs,
+    ) -> None:
         """ActivatedLayer class constructor
 
         Parameters
@@ -336,7 +353,11 @@ class ActivatedLayer(Model):
         s_matrix = np.zeros((1, 2 * m, 2 * m), dtype=complex)
 
         # Create eigenvalue vector
-        eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes * 2]) / (self.wavelength)
+        eigenvalues1 = (
+            (2 * np.pi)
+            * np.array([mode.neff for mode in self.modes * 2])
+            / (self.wavelength)
+        )
 
         # Create propagation diagonal matrix
         propagation_matrix1 = np.diag(np.exp(self.length * 1j * eigenvalues1))
@@ -452,7 +473,7 @@ class InterfaceSingleMode(Model):
         a = 0.5 * left.inner_product(right) + 0.5 * right.inner_product(left)
         b = 0.5 * left.inner_product(right) - 0.5 * right.inner_product(left)
 
-        t = (a ** 2 - b ** 2) / a
+        t = (a**2 - b**2) / a
         r = 1 - t / (a + b)
 
         return -r, t
@@ -531,7 +552,9 @@ class InterfaceMultiMode(Model):
         self.layer1 = None
         self.layer2 = None
 
-    def get_t(self, p: int, left: "EigenMode", right: "EigenMode", curr_ports: int) -> "np.ndarray":
+    def get_t(
+        self, p: int, left: "EigenMode", right: "EigenMode", curr_ports: int
+    ) -> "np.ndarray":
         """Returns the transmission coefficient based on the two modes
 
         Parameters
@@ -555,18 +578,31 @@ class InterfaceMultiMode(Model):
         A = np.array(
             [
                 [
-                    right.modes[k].inner_product(left.modes[i]) + left.modes[i].inner_product(right.modes[k])
+                    right.modes[k].inner_product(left.modes[i])
+                    + left.modes[i].inner_product(right.modes[k])
                     for k in range(self.num_ports - curr_ports)
                 ]
                 for i in range(curr_ports)
             ]
         )
-        b = np.array([0 if i != p else 2 * left.modes[p].inner_product(left.modes[p]) for i in range(curr_ports)])
+        b = np.array(
+            [
+                0 if i != p else 2 * left.modes[p].inner_product(left.modes[p])
+                for i in range(curr_ports)
+            ]
+        )
         x = np.matmul(np.linalg.pinv(A), b)
 
         return x
 
-    def get_r(self, p: int, x: "np.ndarray", left: EigenMode, right: EigenMode, curr_ports: int) -> "np.ndarray":
+    def get_r(
+        self,
+        p: int,
+        x: "np.ndarray",
+        left: EigenMode,
+        right: EigenMode,
+        curr_ports: int,
+    ) -> "np.ndarray":
         """Returns the transmission coefficient based on the two modes
 
         Parameters
@@ -592,7 +628,10 @@ class InterfaceMultiMode(Model):
             [
                 np.sum(
                     [
-                        (right.modes[k].inner_product(left.modes[i]) - left.modes[i].inner_product(right.modes[k]))
+                        (
+                            right.modes[k].inner_product(left.modes[i])
+                            - left.modes[i].inner_product(right.modes[k])
+                        )
                         * x[k]
                         for k in range(self.num_ports - curr_ports)
                     ]
@@ -657,12 +696,18 @@ class SourceDuplicator(Model):
 
         self.left_pins = (
             ["left" + str(i) for i in range(self.num_modes)]
-            + ["left_dup{}{}".format(str(i), label) for i in range(len(pk) * (not len(special_left)))]
+            + [
+                "left_dup{}{}".format(str(i), label)
+                for i in range(len(pk) * (not len(special_left)))
+            ]
             + special_left
         )
         self.right_pins = (
             ["right" + str(i) for i in range(self.num_modes)]
-            + ["right_dup{}{}".format(str(i), label) for i in range(len(nk) * (not len(special_right)))]
+            + [
+                "right_dup{}{}".format(str(i), label)
+                for i in range(len(nk) * (not len(special_right)))
+            ]
             + special_right
         )
         self.S0 = None
@@ -699,7 +744,11 @@ class SourceDuplicator(Model):
         m = self.num_modes
 
         # Create eigenvalue vector
-        eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes * 4]) / (self.wavelength)
+        eigenvalues1 = (
+            (2 * np.pi)
+            * np.array([mode.neff for mode in self.modes * 4])
+            / (self.wavelength)
+        )
 
         # Create propagation diagonal matrix
         propagation_matrix1 = np.diag(np.exp(self.length * 1j * eigenvalues1))
@@ -736,7 +785,9 @@ class SourceDuplicator(Model):
         self.right_ports = m  # 2 * m - self.which_s * m
         self.left_ports = m  # 2 * m - (1 - self.which_s) * m
         self.num_ports = 2 * m  # 3 * m
-        s_matrix = s_matrix.reshape(1, 2 * m + len(self.pk) + len(self.nk), 2 * m + len(self.pk) + len(self.nk))
+        s_matrix = s_matrix.reshape(
+            1, 2 * m + len(self.pk) + len(self.nk), 2 * m + len(self.pk) + len(self.nk)
+        )
 
         return s_matrix
 
@@ -781,7 +832,7 @@ class CopyModel(Model):
 
     def copy_pins(self, pins: list) -> list:
         """Copies the pins by creating new pins that are no longer attached to the original Model's connections
-        
+
         Parameters
         ----------
         pins : list[Pin]
@@ -797,7 +848,7 @@ class CopyModel(Model):
 
     def find_pin(self, pin: "Pin") -> "Pin":
         """Searches the instance's pins for the provided pin based on names
-        
+
         Parameters
         ----------
         pin : Pin
@@ -819,7 +870,7 @@ class ModelTools(object):
     @staticmethod
     def purge_spurious(modes: list) -> list:
         """Purges all spurious modes in the dataset to prevent EME failure for high mode simulations
-        
+
         Parameters
         ----------
         modes : list[EigenMode]
@@ -860,15 +911,20 @@ class ModelTools(object):
         return [
             i
             for i in sources
-            if not i.z is None and (((start <= i.z < end) and i.k) or ((start < i.z <= end) and not i.k))
+            if not i.z is None
+            and (((start <= i.z < end) and i.k) or ((start < i.z <= end) and not i.k))
         ]
 
     @staticmethod
     def get_source_system(
-        modes: list, wavelength: float, length: float, custom_sources: list, start: float = 0.0
+        modes: list,
+        wavelength: float,
+        length: float,
+        custom_sources: list,
+        start: float = 0.0,
     ) -> list:
-        """Creates SourceDuplicators matching the provided source locations and modes provided. This is a replacement for creating ActivatedLayers which contain no information about sources. 
-        
+        """Creates SourceDuplicators matching the provided source locations and modes provided. This is a replacement for creating ActivatedLayers which contain no information about sources.
+
         Parameters
         ----------
         modes : list[EigenMode]
@@ -904,12 +960,22 @@ class ModelTools(object):
                 nk = custom_sources[i].mode_coeffs
 
             # Create label
-            left = custom_sources[i - 1].get_label() if (i - 1) > -1 else "n" + str(length_tracker)
-            right = custom_sources[i].get_label() if (i) < len(custom_sources) else "n" + str(length_tracker + length)
+            left = (
+                custom_sources[i - 1].get_label()
+                if (i - 1) > -1
+                else "n" + str(length_tracker)
+            )
+            right = (
+                custom_sources[i].get_label()
+                if (i) < len(custom_sources)
+                else "n" + str(length_tracker + length)
+            )
             label = "_{}_to_{}".format(left, right)
 
             # Create duplicators
-            dups.append(SourceDuplicator(wavelength, modes, length, pk=pk, nk=nk, label=label))
+            dups.append(
+                SourceDuplicator(wavelength, modes, length, pk=pk, nk=nk, label=label)
+            )
             length_tracker += length
 
         return dups
@@ -928,7 +994,9 @@ class ModelTools(object):
             s.disconnect()
 
             # # connect the components
-            right_pins = [i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name]
+            right_pins = [
+                i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name
+            ]
             for port in range(len(right_pins)):
                 temp_s[f"right{port}"].connect(s[f"left{port}"])
 
@@ -940,11 +1008,11 @@ class ModelTools(object):
     @staticmethod
     def periodic_duplicate_format(model: "Model", start: float, end: float) -> "Model":
         """Checks if the model that has custom sources installed actually needs the installed sources between start and end. If not, removes those pins and rows/columns from the s_matrices
-        
+
         Parameters
         ----------
         model : Model
-            the simphony model to check 
+            the simphony model to check
         start : float
             the starting point of the range of concern
         end : float
@@ -986,7 +1054,9 @@ class ModelTools(object):
                 model.s_params = np.delete(model.s_params, i, 2)
 
         # Remove unwanted pins
-        model.pins = [i for j, i in enumerate(model.pins) if j in wanted or "dup" not in i.name]
+        model.pins = [
+            i for j, i in enumerate(model.pins) if j in wanted or "dup" not in i.name
+        ]
         pin_names = [i.name for i in model.pins]
         model.left_pins = [i for i in model.left_pins if i in pin_names]
         model.right_pins = [i for i in model.right_pins if i in pin_names]
@@ -996,12 +1066,12 @@ class ModelTools(object):
     @staticmethod
     def make_copy_model(model: Model) -> CopyModel:
         """Takes an EMEPy model (inheriting a simphony model) and deepcopies it
-        
+
         Parameters
         ----------
         model: Model
             the EMEPy model to copy
-        
+
         Returns
         -------
         CopyModel
