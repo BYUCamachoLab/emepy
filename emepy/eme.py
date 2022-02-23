@@ -654,7 +654,7 @@ class EME(object):
             # Linearly execute tasks
             for i, a in enumerate(tasks):
                 func, arguments, kwarguments = a
-                finished_tasks_collective.append([(i, func(*arguments, **kwarguments))])
+                finished_tasks.append(func(*arguments, **kwarguments))
         else:
 
             # Create data
@@ -690,10 +690,10 @@ class EME(object):
             # Wait until everyone is finished
             self.comm.Barrier()
 
-        # Sort by the tag to return in the original order
-        finished_tasks = [i for i in finished_tasks if len(i)]
-        finished_tasks = sorted(finished_tasks, key=lambda x: x[0])
-        finished_tasks = [i[1] for i in finished_tasks]
+            # Sort by the tag to return in the original order
+            finished_tasks = [i for i in finished_tasks if len(i)]
+            finished_tasks = sorted(finished_tasks, key=lambda x: x[0])
+            finished_tasks = [i[1] for i in finished_tasks]
 
         return finished_tasks
 
