@@ -9,13 +9,13 @@
 
 # In[1]:
 
-
+import emepy as em
 from emepy.fd import MSEMpy
 from emepy.eme import Layer, EME
 import numpy as np
 from matplotlib import pyplot as plt
 
-num_periods = 5  # Number of Periods for Bragg Grating
+num_periods = 15  # Number of Periods for Bragg Grating
 length = .159e-6 # Length of each segment of BG, Period = Length * 2
 wavelength = 1.55e-6 # Wavelength
 num_modes = 1  # Number of Modes
@@ -63,17 +63,26 @@ eme.add_layer(Layer(mode_solver2, num_modes, wavelength, length))  # Second half
 
 # In[4]:
 
-
-monitor = eme.add_monitor(axes="xz",mesh_z=200)
+positive_source = em.Source(1.2e-6,[1],-1)
+negative_source = em.Source(3.2e-6,[1],1)
+monitor = eme.add_monitor(axes="xz",mesh_z=200,sources=[positive_source, negative_source])
 
 
 # ### Run the simulation
 
 # In[5]:
 
+eme.propagate(left_coeffs=[],right_coeffs=[])  # propagate at given wavelength
+plt.figure()
+monitor.visualize(component="Hy")
+plt.colorbar()
+plt.show()
 
-eme.propagate(left_coeffs=[1],right_coeffs=[1])  # propagate at given wavelength
-
+# eme.propagate(left_coeffs=[],right_coeffs=[1])  # propagate at given wavelength
+# plt.figure()
+# monitor.visualize(component="Hy")
+# plt.colorbar()
+# plt.show()
 
 # ### Visualize monitor
 
@@ -85,10 +94,7 @@ eme.propagate(left_coeffs=[1],right_coeffs=[1])  # propagate at given wavelength
 # plt.colorbar()
 # plt.show()
 
-plt.figure()
-monitor.visualize(component="Hy")
-plt.colorbar()
-plt.show()
+
 
 
 # eme.propagate(input_left=[1],input_right=[0])

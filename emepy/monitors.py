@@ -94,6 +94,9 @@ class Monitor(object):
     def reset_monitor(self) -> None:
         """Resets the fields in the monitor"""
         self.field *= 0
+        # self.sources = []
+        # self.left_source = False
+        # self.right_source = False
 
     def get_z_list(self, start: float, end: float) -> list:
         """Finds all the points in z between start and end
@@ -460,7 +463,7 @@ class Monitor(object):
                         np.real(y[-1]),
                     ],
                     cmap=cmap_lookup[component],
-                    alpha=1 if not show_geometry else 0.9,
+                    alpha=1 if not show_geometry else 0.85,
                 )
                 ax.set_xlabel(np.real(axes[1]))
                 ax.set_ylabel(np.real(axes[0]))
@@ -492,7 +495,7 @@ class Monitor(object):
                         np.real(y[-1]),
                     ],
                     cmap=cmap_lookup[component],
-                    alpha=1 if not show_geometry else 0.9,
+                    alpha=1 if not show_geometry else 0.85,
                     vmin=vmin,
                     vmax=vmax,
                 )
