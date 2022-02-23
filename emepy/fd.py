@@ -1,30 +1,29 @@
 import numpy as np
-
-from emepy.mode import Mode, Mode1D
-from emepy import tools
-import EMpy_gpu
-from EMpy_gpu.modesolvers.FD import stretchmesh
-from emepy.tools import interp, interp1d
 import pickle
 from matplotlib import pyplot as plt
+import EMpy_gpu
+from EMpy_gpu.modesolvers.FD import stretchmesh
+
+from emepy.mode import Mode, Mode1D, EigenMode
+from emepy.tools import interp, interp1d, Si, SiO2, get_epsfunc
 
 
 class ModeSolver(object):
     """The ModeSolver object is the heart of finding eigenmodes for use in eigenmode expansion or simple examination. This parent class should be inherited and used as a wrapper for certain modules such as EMpy, Lumerical, Pickled data, Neural Networks, etc."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs)->None:
         """ModeSolver class constructor"""
         raise NotImplementedError
 
-    def solve(self):
+    def solve(self)->None:
         """Solves the eigenmode solver for the specific eigenmodes of desire"""
         raise NotImplementedError
 
-    def clear(self):
+    def clear(self)->None:
         """Clears the modesolver's eigenmodes to make memory"""
         raise NotImplementedError
 
-    def get_mode(self, mode_num):
+    def get_mode(self, mode_num)->EigenMode:
         """Must extract the mode of choice
 
         Parameters
@@ -120,9 +119,9 @@ class MSEMpy(ModeSolver):
         self.PML = PML
 
         if core_index is None:
-            self.core_index = tools.Si(wl * 1e6)
+            self.core_index = Si(wl * 1e6)
         if cladding_index is None:
-            self.cladding_index = tools.SiO2(wl * 1e6)
+            self.cladding_index = SiO2(wl * 1e6)
         if x is None:
             self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
         if y is None:
@@ -138,7 +137,7 @@ class MSEMpy(ModeSolver):
             factor = 1 + 2j
             self.x, self.y, _, _, _, _ = stretchmesh(self.x, self.y, self.nlayers, factor)
         if epsfunc is None:
-            self.epsfunc = tools.get_epsfunc(
+            self.epsfunc = get_epsfunc(
                 self.width,
                 self.thickness,
                 self.cladding_width,
@@ -297,9 +296,9 @@ class MSEMpy1D(ModeSolver):
         self.PML = PML
 
         if core_index is None:
-            self.core_index = tools.Si(wl * 1e6)
+            self.core_index = Si(wl * 1e6)
         if cladding_index is None:
-            self.cladding_index = tools.SiO2(wl * 1e6)
+            self.cladding_index = SiO2(wl * 1e6)
         if x is None:
             self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
         if self.PML:  # Create a PML at least half a wavelength long
@@ -310,7 +309,7 @@ class MSEMpy1D(ModeSolver):
             factor = 1 + 2j
             self.x, _, _, _, _, _ = stretchmesh(self.x, np.zeros(1), self.nlayers, factor)
         if epsfunc is None:
-            self.epsfunc = tools.get_epsfunc(
+            self.epsfunc = get_epsfunc(
                 self.width,
                 None,
                 self.cladding_width,
