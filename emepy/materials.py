@@ -285,7 +285,7 @@ SiO2_n = [
 ]
 
 
-def Si(wavelength):
+def Si(wavelength:float) -> float:
     """Return the refractive index for Silicon given the wavelength in microns.
 
     Parameters
@@ -303,7 +303,7 @@ def Si(wavelength):
     return f([wavelength, wavelength])[0]
 
 
-def SiO2(wavelength):
+def SiO2(wavelength:float) -> float:
     """Return the refractive index for Silicon Dioxide given the wavelength in microns.
 
     Parameters
