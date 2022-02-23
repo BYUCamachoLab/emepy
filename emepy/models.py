@@ -1,9 +1,10 @@
 import numpy as np
+import numpy
 from simphony import Model
 from simphony.pins import Pin
 from simphony.models import Subcircuit
 from emepy.mode import Mode, Mode1D
-from emepy.fd import ModeSolver1D
+from emepy.fd import ModeSolver1D, ModeSolver
 from emepy.materials import *
 from copy import deepcopy
 
@@ -11,13 +12,13 @@ from copy import deepcopy
 class Layer(object):
     """Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures."""
 
-    def __init__(self, mode_solvers, num_modes, wavelength, length):
+    def __init__(self, mode_solver:ModeSolver, num_modes:int, wavelength:float, length:float) -> None:
         """Layer class constructor
 
         Parameters
         ----------
-        mode_solvers : list [tuple (ModeSolver, int)], Modesolver
-            List of tuples that contain ModeSolver objects and the number of modes that corresponds to each. Should be in order from fundamental mode to least significant mode. If only one ModeSolver is needed, can simply be that object instead of a list.
+        mode_solver : Modesolver
+            ModeSolver object used to solve for the modes
         num_modes : int
             Number of total modes for the layer.
         wavelength : number
@@ -27,28 +28,37 @@ class Layer(object):
         """
 
         self.num_modes = num_modes
-        self.mode_solvers = mode_solvers
+        self.mode_solver = mode_solver
         self.wavelength = wavelength
         self.length = length
         self.activated_layers = []
 
 
-    def activate_layer(self, sources=[], start=0.0, period_length=0.0):
-        """Solves for the modes in the layer and creates an ActivatedLayer object"""
+    def activate_layer(self, sources:list=[], start:float=0.0, period_length:float=0.0) -> dict:
+        """Solves for the modes in the layer and creates an ActivatedLayer object
+        
+        Parameters
+        ----------
+        sources : list[Source]
+            the Sources used to indicate where periodic layers are needed
+        start : number
+            the starting z value
+        periodic_length : number
+            the length of a single period
+
+        Returns
+        -------
+        dict
+            a dictionary that maps the period number to the activated layers. If there is no source in a period, it will be None instead at that index
+        
+        """
 
         modes = []
 
         # Solve for modes 
-        if type(self.mode_solvers) != list:
-            self.mode_solvers.solve()
-            for mode in range(self.num_modes):
-                modes.append(self.mode_solvers.get_mode(mode))
-
-        else:
-            for index in range(len(self.mode_solvers)):
-                self.mode_solvers[index][0].solve()
-                for mode in range(self.mode_solvers[index][1]):
-                    modes.append(self.mode_solvers[index][0].get_mode(mode))
+        self.mode_solver.solve()
+        for mode in range(self.num_modes):
+            modes.append(self.mode_solver.get_mode(mode))
 
         # Purge spurious mode
         modes = ModelTools.purge_spurious(modes)
@@ -88,13 +98,18 @@ class Layer(object):
         return self.activated_layers
 
 
-    def get_activated_layer(self, sources=[], start=0.0):
+    def get_activated_layer(self, sources:list=[], start:float=0.0) -> dict:
         """Gets the activated layer if it exists or calls activate_layer first
+
+        Parameters
+        ----------
+        sources : list[Source]
+            a list of Source objects for this layer
 
         Returns
         -------
-        ActivatedLayer
-            the object that stores the eigenmodes
+        dict
+            a dictionary that maps the period number to the activated layers. If there is no source in a period, it will be None instead at that index
         """
 
         if not len(self.activated_layers):
@@ -102,45 +117,7 @@ class Layer(object):
 
         return self.activated_layers
 
-    def get_n_only(self):
-        """Creates a psuedo layer for accessing the material only no fields
-        """
-
-        modes = []
-
-        if type(self.mode_solvers) != list:
-            for mode in range(self.mode_solvers.num_modes):
-                if not isinstance(self.mode_solvers, ModeSolver1D):
-                    modes.append(
-                        Mode(self.mode_solvers.x, self.mode_solvers.y, self.mode_solvers.wl, n=self.mode_solvers.n)
-                    )
-                else:
-                    modes.append(Mode1D(self.mode_solvers.x, self.mode_solvers.wl, n=self.mode_solvers.n))
-
-        else:
-            for index in range(len(self.mode_solvers)):
-                for mode in range(self.mode_solvers[index][1]):
-                    if not isinstance(self.mode_solvers[index][0], ModeSolver1D):
-                        modes.append(
-                            Mode(
-                                self.mode_solvers[index][0].x,
-                                self.mode_solvers[index][0].y,
-                                self.mode_solvers[index][0].wl,
-                                n=self.mode_solvers[index][0].n,
-                            )
-                        )
-                    else:
-                        modes.append(
-                            Mode1D(
-                                self.mode_solvers[index][0].x,
-                                self.mode_solvers[index][0].wl,
-                                n=self.mode_solvers[index][0].n,
-                            )
-                        )
-
-        return ActivatedLayer(modes, self.wavelength, self.length, n_only=True)
-
-    def clear(self):
+    def clear(self) -> "numpy.ndarray":
         """Empties the modes in the ModeSolver to clear memory
 
         Returns
@@ -149,11 +126,7 @@ class Layer(object):
             the edited image
         """
 
-        if type(self.mode_solvers) != list:
-            self.mode_solvers.clear()
-        else:
-            for index in range(len(self.mode_solvers)):
-                self.mode_solvers[index][0].clear()
+        self.mode_solver.clear()
 
 
 
@@ -365,82 +338,6 @@ class ActivatedLayer(Model):
         return s_matrix
 
     def s_parameters(self, freq=None):
-        """Returns the scattering matrix.
-
-        Returns
-        -------
-        numpy array
-            the scattering matrix
-        """
-
-        return self.s_params
-
-
-class PeriodicLayer(Model):
-    """PeriodicLayer behaves similar to ActivatedLayer. However, this class can represent an entire geometry that is repeated in the periodic structure. It also gets constantly updated as it cascades through periods."""
-
-    def __init__(self, left_modes, right_modes, model, n_only=False, **kwargs):
-        """PeriodicLayer class constructor
-
-        Parameters
-        ----------
-        left_modes : list [Mode]
-            list of the eigenmodes on the left side of the layer
-        right_modes : list [Mode]
-            list of the eigenmodes on the right side of the layer
-        model :
-            the scattering matrix model that represents the layer, which includes both propagation and mode overlaps
-        """
-
-        """
-            TODO:
-            Add capabilities to have the mode source somewhere arbitrarily in the periodic structure
-            Test the whole thing
-            Reformat this class to allow custom source ports in addition to the rest without adding infinitely many new pins upon cascading the same period over and over
-        """
-
-        self.left_modes = left_modes
-        self.right_modes = right_modes
-        self.left_ports = len(self.left_modes)
-        self.right_ports = len(self.right_modes)
-        self.left_pins = ["left" + str(i) for i in range(len(self.left_modes))]
-        self.right_pins = ["right" + str(i) for i in range(len(self.right_modes))]
-        self.s_params = model.s_parameters([0])
-        if not n_only:
-            self.normalize_fields()
-            # self.purge_spurious()
-
-        # create the pins for the model
-        # pins = []
-        # for name in self.left_pins:
-        #     pins.append(Pin(self, name))
-        # for name in self.right_pins:
-        #     pins.append(Pin(self, name))
-
-        super().__init__(**kwargs, pins=model.pins)
-
-    def purge_spurious(self):
-        """Purges all spurious modes in the dataset to prevent EME failure for high mode simulations"""
-
-        for mode in range(len(self.left_modes))[::-1]:
-            if self.left_modes[mode].check_spurious():
-                self.left_modes.pop(mode)
-                self.left_pins.pop(-1)
-
-        for mode in range(len(self.right_modes))[::-1]:
-            if self.right_modes[mode].check_spurious():
-                self.right_modes.pop(mode)
-                self.right_pins.pop(-1)
-
-    def normalize_fields(self):
-        """Normalizes all of the eigenmodes such that the overlap with its self, power, is 1."""
-
-        for mode in range(len(self.left_modes)):
-            self.left_modes[mode].normalize()
-        for mode in range(len(self.right_modes)):
-            self.right_modes[mode].normalize()
-
-    def s_parameters(self, freqs=None):
         """Returns the scattering matrix.
 
         Returns

@@ -1,4 +1,5 @@
 import numpy as np
+import numpy
 from matplotlib import pyplot as plt
 import matplotlib
 from copy import deepcopy
@@ -115,7 +116,7 @@ class Monitor(object):
         """Normalizes the entire field to 1"""
         self.field[:-1] /= 1  # np.max(np.abs(self.field[:-1, :, 0]))
 
-    def get_array(self, component:str="Hy", axes:str=None, location:float=None, z_range:tuple=None, grid_x:np.array=None, grid_y:np.array=None) -> np.array:
+    def get_array(self, component:str="Hy", axes:str=None, location:float=None, z_range:tuple=None, grid_x:np.array=None, grid_y:np.array=None) -> "numpy.ndarray":
         """Creates a matplotlib axis displaying the provides field component
 
         Parameters
@@ -315,7 +316,7 @@ class Monitor(object):
 
         return grid_field
 
-    def get_source_visual(self) -> np.array:
+    def get_source_visual(self) -> "numpy.ndarray":
         """Returns a mask with lines indicating where a source is"""
         z = self.lengths[:]
         array = np.zeros(self.dimensions[1:])
