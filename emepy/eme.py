@@ -626,7 +626,7 @@ class EME(object):
             self.build_network()
 
         # Update monitors
-        if self.state == 6:
+        if self.state >= 6:
             self.field_propagate(left_coeffs, right_coeffs)
 
         return self.network
@@ -987,7 +987,6 @@ class EME(object):
             (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
         )
         if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]):
-            print(coeff_left)
             coeff_left *= np.exp(1j * eig * l.length)
             coeff_right *= np.exp(-1j * eig * l.length)
 

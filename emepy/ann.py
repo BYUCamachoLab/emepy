@@ -438,7 +438,7 @@ class ANN(object):
         self.Hy_model = self.Hy_network()
         self.neff_model = self.neff_regression()
 
-    def neff_regression(self) -> sklearn.linear_model._base.LinearRegression:
+    def neff_regression(self) -> "sklearn.linear_model._base.LinearRegression":
         """Return the opened regression model for the effective index"""
 
         with open(
@@ -446,8 +446,6 @@ class ANN(object):
             "rb",
         ) as f:
             model = pickle.load(f)
-
-        print(type(model))
 
         return model
 

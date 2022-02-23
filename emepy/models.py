@@ -1037,13 +1037,13 @@ class ModelTools(object):
                 n = model.pins[i].name
                 n_ = n.split("_")
                 l, _ = (float(n_[2][1:]), float(n_[4][1:]))
-                if start <= l < end:
+                if start <= l < end or np.isclose(start, l, 1e-5):
                     continue
             else:
                 n = model.pins[i].name
                 n_ = n.split("_")
                 _, r = (float(n_[2][1:]), float(n_[4][1:]))
-                if start < r <= end:
+                if start < r <= end or np.isclose(r, end, 1e-5):
                     continue
             wanted.remove(i)
 
