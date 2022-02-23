@@ -6,6 +6,7 @@ import EMpy_gpu
 from emepy import tools
 from scipy.signal import convolve2d, convolve
 from copy import deepcopy
+from typing import Callable
 
 
 class EigenMode(object):
@@ -113,12 +114,12 @@ class EigenMode(object):
     def __isub__(self, other):
         return self.change_fields(self, other, lambda a, b: a - b)
 
-    def inner_product(self, mode2):
+    def inner_product(self, mode2) -> float:
         """Takes the inner product between self and the provided Mode
 
         Parameters
         ----------
-        mode2 : Mode
+        mode2 : EigenMode
             second eigenmode in the operation
 
         Returns
@@ -127,9 +128,11 @@ class EigenMode(object):
             the inner product between the modes
         """
 
-        return self._inner_product(self, mode2)  
+        return self._inner_product(self, mode2)
 
-    def check_spurious(self, threshold_power=0.05, threshold_neff=0.9):
+    def check_spurious(
+        self, threshold_power: float = 0.05, threshold_neff: float = 0.9
+    ) -> bool:
         """Takes in a mode and determine whether the mode is likely spurious based on the ratio of confined to not confined power
 
         Parameters
@@ -147,20 +150,31 @@ class EigenMode(object):
 
         power_bool = self.get_confined_power() < threshold_power
         neff_bool = (np.real(self.neff) / np.abs(self.neff)) < threshold_neff
-        return (power_bool or neff_bool)
+        return power_bool or neff_bool
 
-    def normalize(self):
+    def normalize(self) -> None:
         """Normalizes the Mode to power 1."""
         self.zero_phase()
         factor = self.inner_product(self)
         self /= np.sqrt(factor)
-        return
 
 
 class Mode1D(EigenMode):
     """Object that holds the field profiles and effective index for a 1D eigenmode"""
 
-    def __init__(self, x=None, wl=None, neff=None, Hx=None, Hy=None, Hz=None, Ex=None, Ey=None, Ez=None, n=None):
+    def __init__(
+        self,
+        x: "np.ndarray" = None,
+        wl: float = None,
+        neff: float = None,
+        Hx: "np.ndarray" = None,
+        Hy: "np.ndarray" = None,
+        Hz: "np.ndarray" = None,
+        Ex: "np.ndarray" = None,
+        Ey: "np.ndarray" = None,
+        Ez: "np.ndarray" = None,
+        n: "np.ndarray" = None,
+    ) -> None:
         """Constructor for Mode1D Object (one dimensional eigenmode)
 
         Parameters
@@ -197,10 +211,14 @@ class Mode1D(EigenMode):
         self.Ey = Ey if not (Ey is None) else self.Hx * 0
         self.Ez = Ez if not (Ez is None) else self.Hx * 0
         self.n = n
-        self.H = np.sqrt(np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2)
-        self.E = np.sqrt(np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2)
+        self.H = np.sqrt(
+            np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2
+        )
+        self.E = np.sqrt(
+            np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2
+        )
 
-    def plot(self, operation="Real", normalize=True):
+    def plot(self, operation: str = "Real", normalize: bool = True) -> None:
         """Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
 
         Parameters
@@ -212,13 +230,21 @@ class Mode1D(EigenMode):
         """
 
         temp = (
-            self / max([np.abs(np.real(np.amax(i))) for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]])
+            self
+            / max(
+                [
+                    np.abs(np.real(np.amax(i)))
+                    for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]
+                ]
+            )
             if normalize
             else self / 1
         )
 
         # Parse operation
-        op_name = operation.__name__ if hasattr(operation, "__name__") else str(operation)
+        op_name = (
+            operation.__name__ if hasattr(operation, "__name__") else str(operation)
+        )
         if operation == "Imaginary":
             operation = lambda a: np.imag(a)
         elif operation == "Abs":
@@ -228,7 +254,9 @@ class Mode1D(EigenMode):
         elif operation == "Real":
             operation = lambda a: np.real(a)
         try:
-            t = self.change_fields(deepcopy(temp), deepcopy(temp), lambda a, b: operation(b))
+            t = self.change_fields(
+                deepcopy(temp), deepcopy(temp), lambda a, b: operation(b)
+            )
             Hx, Hy, Hz, Ex, Ey, Ez = [t.Hx, t.Hy, t.Hz, t.Ex, t.Ey, t.Ez]
         except:
             raise Exception(
@@ -244,7 +272,9 @@ class Mode1D(EigenMode):
             plt.ylabel("{}({})".format(op_name, fields[i]))
         plt.tight_layout()
 
-    def _inner_product(self, mode1, mode2, mask=None):
+    def _inner_product(
+        self, mode1: EigenMode, mode2: EigenMode, mask: "np.ndarray" = None
+    ) -> float:
         """Helper function that takes the inner product between Modes mode1 and mode2
 
         Parameters
@@ -253,6 +283,8 @@ class Mode1D(EigenMode):
             first eigenmode in the operation
         mode2 : Mode
             second eigenmode in the operation
+        mask : np.ndarray
+            a mask to multiply on the field profiles before conducting the inner product
 
         Returns
         -------
@@ -271,7 +303,7 @@ class Mode1D(EigenMode):
 
         return np.trapz(cross, np.real(mode1.x))
 
-    def get_confined_power(self, num_pixels=None):
+    def get_confined_power(self, num_pixels: int = None) -> float:
         """Takes in a mode and returns the percentage of power confined in the core
 
         Parameters
@@ -293,10 +325,12 @@ class Mode1D(EigenMode):
         kernel = np.ones(num_pixels + 1)
         mask = convolve(mask, kernel, "same")
         mask = np.where(mask > 0, 1, 0)
-        ratio = self._inner_product(self, self, mask=mask) / self._inner_product(self, self, mask=None)
+        ratio = self._inner_product(self, self, mask=mask) / self._inner_product(
+            self, self, mask=None
+        )
         return ratio
 
-    def zero_phase(self):
+    def zero_phase(self) -> None:
         """Changes the phase such that the z components are all imaginary and the xy components are all real."""
 
         index = int(self.Hy.shape[0] / 2)
@@ -305,7 +339,9 @@ class Mode1D(EigenMode):
         if (np.sum(np.real(self.Hy))) < 0:
             self *= -1
 
-    def plot_material(self, operation=np.real):
+    def plot_material(
+        self, operation: Callable[["np.ndarray"], "np.ndarray"] = np.real
+    ) -> None:
         """Plots the index of refraction profile"""
         plt.plot(self.x, operation(self.n))
         plt.title("Index of Refraction")
@@ -316,7 +352,20 @@ class Mode1D(EigenMode):
 class Mode(EigenMode):
     """Object that holds the field profiles and effective index for a 2D eigenmode"""
 
-    def __init__(self, x=None, y=None, wl=None, neff=None, Hx=None, Hy=None, Hz=None, Ex=None, Ey=None, Ez=None, n=None):
+    def __init__(
+        self,
+        x: "np.ndarray" = None,
+        y: "np.ndarray" = None,
+        wl: float = None,
+        neff: float = None,
+        Hx: "np.ndarray" = None,
+        Hy: "np.ndarray" = None,
+        Hz: "np.ndarray" = None,
+        Ex: "np.ndarray" = None,
+        Ey: "np.ndarray" = None,
+        Ez: "np.ndarray" = None,
+        n: "np.ndarray" = None,
+    ) -> None:
         """Constructor for Mode Object
 
         Parameters
@@ -356,10 +405,16 @@ class Mode(EigenMode):
         self.Ey = Ey if not (Ey is None) else self.Hx * 0
         self.Ez = Ez if not (Ez is None) else self.Hx * 0
         self.n = n
-        self.H = np.sqrt(np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2)
-        self.E = np.sqrt(np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2)
+        self.H = np.sqrt(
+            np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2
+        )
+        self.E = np.sqrt(
+            np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2
+        )
 
-    def plot(self, operation="Real", colorbar=True, normalize=True):
+    def plot(
+        self, operation: str = "Real", colorbar: bool = True, normalize: bool = True
+    ) -> None:
         """Plots the fields in the mode using pyplot. Should call plt.figure() before and plt.show() or plt.savefig() after
 
         Parameters
@@ -373,13 +428,21 @@ class Mode(EigenMode):
         """
 
         temp = (
-            self / max([np.abs(np.real(np.amax(i))) for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]])
+            self
+            / max(
+                [
+                    np.abs(np.real(np.amax(i)))
+                    for i in [self.Ex, self.Ey, self.Ez, self.Hx, self.Hy, self.Hz]
+                ]
+            )
             if normalize
             else self / 1
         )
 
         # Parse operation
-        op_name = operation.__name__ if hasattr(operation, "__name__") else str(operation)
+        op_name = (
+            operation.__name__ if hasattr(operation, "__name__") else str(operation)
+        )
         if operation == "Imaginary":
             operation = lambda a: np.imag(a)
         elif operation == "Abs":
@@ -389,7 +452,9 @@ class Mode(EigenMode):
         elif operation == "Real":
             operation = lambda a: np.real(a)
         try:
-            t = self.change_fields(deepcopy(temp), deepcopy(temp), lambda a, b: operation(b))
+            t = self.change_fields(
+                deepcopy(temp), deepcopy(temp), lambda a, b: operation(b)
+            )
             Hx, Hy, Hz, Ex, Ey, Ez = [t.Hx, t.Hy, t.Hz, t.Ex, t.Ey, t.Ez]
         except:
             raise Exception(
@@ -399,14 +464,21 @@ class Mode(EigenMode):
         # Plot fields
         fields = ["Hx", "Hy", "Hz", "Ex", "Ey", "Ez"]
         for i, field in enumerate([Hx, Hy, Hz, Ex, Ey, Ez]):
-            plt.subplot(2, 3, i + 1, adjustable="box", aspect=field.shape[0] / field.shape[1])
+            plt.subplot(
+                2, 3, i + 1, adjustable="box", aspect=field.shape[0] / field.shape[1]
+            )
             v = max(abs(field.min()), abs(field.max()))
             plt.imshow(
                 field.T,
                 cmap="RdBu",
                 vmin=-v,
                 vmax=v,
-                extent=[temp.x[0] * 1e6, temp.x[-1] * 1e6, temp.y[0] * 1e6, temp.y[-1] * 1e6],
+                extent=[
+                    temp.x[0] * 1e6,
+                    temp.x[-1] * 1e6,
+                    temp.y[0] * 1e6,
+                    temp.y[-1] * 1e6,
+                ],
             )
             plt.title("{}({})".format(op_name, fields[i]))
             if colorbar:
@@ -416,16 +488,19 @@ class Mode(EigenMode):
 
         plt.tight_layout()
 
-    def _inner_product(self, mode1, mode2, mask=None):
+    def _inner_product(
+        self, mode1: EigenMode, mode2: EigenMode, mask: "np.ndarray" = None
+    ) -> float:
         """Helper function that takes the inner product between Modes mode1 and mode2
 
         Parameters
         ----------
-        mode1 : Mode
+        mode1 : EigenMode
             first eigenmode in the operation
-        mode2 : Mode
+        mode2 : EigenMode
             second eigenmode in the operation
-
+        mask : np.ndarray
+            a mask to multiply on the field profiles before conducting the inner product
         Returns
         -------
         number
@@ -441,12 +516,9 @@ class Mode(EigenMode):
 
         cross = Ex * Hy - Ey * Hx
 
-        return np.trapz(
-            np.trapz(cross, np.real(mode1.x)), np.real(mode1.y)
-        ) 
+        return np.trapz(np.trapz(cross, np.real(mode1.x)), np.real(mode1.y))
 
-
-    def get_confined_power(self, num_pixels=None):
+    def get_confined_power(self, num_pixels: int = None) -> float:
         """Takes in a mode and returns the percentage of power confined in the core
 
         Parameters
@@ -468,10 +540,12 @@ class Mode(EigenMode):
         kernel = np.ones((num_pixels + 1, num_pixels + 1))
         mask = convolve2d(mask, kernel, "same")
         mask = np.where(mask > 0, 1, 0)
-        ratio = self._inner_product(self, self, mask=mask) / self._inner_product(self, self, mask=None)
+        ratio = self._inner_product(self, self, mask=mask) / self._inner_product(
+            self, self, mask=None
+        )
         return ratio
 
-    def zero_phase(self):
+    def zero_phase(self) -> None:
         """Changes the phase such that the z components are all imaginary and the xy components are all real."""
 
         index = int(self.Hy.shape[0] / 2)
@@ -480,18 +554,48 @@ class Mode(EigenMode):
         if (np.sum(np.real(self.Hy))) < 0:
             self *= -1
 
-    def plot_material(self):
+    def plot_material(self) -> None:
         """Plots the index of refraction profile"""
-        plt.imshow(np.real(self.n).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6])
+        plt.imshow(
+            np.real(self.n).T,
+            extent=[
+                self.x[0] * 1e6,
+                self.x[-1] * 1e6,
+                self.y[0] * 1e6,
+                self.y[-1] * 1e6,
+            ],
+        )
         plt.colorbar()
         plt.title("Index of Refraction")
         plt.xlabel("x (µm)")
         plt.ylabel("y (µm)")
 
-    def compute_other_fields(self, epsfunc_1, epsfunc_2, boundary="0000"):
-        """Given the Hx and Hy fields, maxwell's curl relations can be used to calculate the remaining field; adapted from the EMpy"""
+    def compute_other_fields(
+        self,
+        epsfunc_1: Callable[["np.ndarray", "np.ndarray"], "np.ndarray"],
+        epsfunc_2: Callable[["np.ndarray", "np.ndarray"], "np.ndarray"],
+        boundary: str = "0000",
+    ) -> None:
+        """Given the Hx and Hy fields, maxwell's curl relations can be used to calculate the remaining field; adapted from the EMpy
 
-        self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez = tools.compute_other_fields_2D(
+        Parameters
+        ----------
+        epsfunc_1 : function
+            epsfunc for computing other fields
+        epsfunc_2 : function
+            epsfunc for computing final refractive index profile
+        boundary : str
+            the boundary conditions as defined by electromagneticpython
+        """
+
+        (
+            self.Hx,
+            self.Hy,
+            self.Hz,
+            self.Ex,
+            self.Ey,
+            self.Ez,
+        ) = tools.compute_other_fields_2D(
             self.neff, self.Hx, self.Hy, self.wl, self.x, self.y, boundary, epsfunc_1
         )
         x_ = (self.x[1:] + self.x[:-1]) / 2.0
@@ -501,7 +605,10 @@ class Mode(EigenMode):
         self.Ez = tools.interp(self.x, self.y, x_, y_, self.Ez, False)
         self.x = self.x - self.x[int(len(self.x) / 2)]
         self.y = self.y - self.y[int(len(self.y) / 2)]
-        self.H = np.sqrt(np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2)
-        self.E = np.sqrt(np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2)
+        self.H = np.sqrt(
+            np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2
+        )
+        self.E = np.sqrt(
+            np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2
+        )
         self.n = epsfunc_2(self.x, self.y)
-

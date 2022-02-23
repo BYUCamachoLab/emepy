@@ -7,22 +7,51 @@ import EMpy_gpu
 import collections
 from matplotlib import pyplot as plt
 from emepy.materials import *
-
+from typing import Callable
 
 
 def get_epsfunc(
-    width,
-    thickness,
-    cladding_width,
-    cladding_thickness,
-    core_index,
-    cladding_index,
-    compute=False,
-    profile=None,
-    nx=None,
-    ny=None,
-):
-    """Returns the epsfunc for given parameters"""
+    width: float,
+    thickness: float,
+    cladding_width: float,
+    cladding_thickness: float,
+    core_index: float,
+    cladding_index: float,
+    compute: bool = False,
+    profile: "np.ndarray" = None,
+    nx: int = None,
+    ny: int = None,
+) -> Callable[["np.ndarray", "np.ndarray"], "np.ndarray"]:
+    """Returns the epsfunc for given parameters for a rectangular waveguide
+    
+    Parameters
+    ----------
+    width: float
+        the width of the geometry
+    thickness: float
+        the thickess of the geometry
+    cladding_width: float
+        the width of the surrounding cladding (note this is total width and should be > core width)
+    cladding_thickness: float
+        the thicknes of the surrounding cladding (note this is total thickness and should be > core thickness)
+    core_index: float
+        refractive index of the core
+    cladding_index: float
+        refractive index of the cladding
+    compute: bool = False
+        if true, will not place rectangle at center. This should only be necessary for compute_other_fields
+    profile: "np.ndarray" = None
+        the refractive index profile
+    nx: int = None
+        number of points in the x direction
+    ny: int = None
+        number of points in the y direction
+
+    Returns
+    -------
+    function
+        an epsfunc function that takes an x,y grid arrays and returns the refractive index profile
+    """
 
     # Case 1 : width and thickness are defined
     def epsfunc_2D_1(x_, y_):
@@ -45,14 +74,15 @@ def get_epsfunc(
             n = np.where(
                 (np.abs(np.real(xx.T) - cladding_width * 0.5) <= width * 0.5)
                 * (np.abs(np.real(yy.T) - cladding_thickness * 0.5) <= thickness * 0.5),
-                core_index ** 2 + 0j,
-                cladding_index ** 2 + 0j,
+                core_index**2 + 0j,
+                cladding_index**2 + 0j,
             )
         else:
             n = np.where(
-                (np.abs(np.real(xx.T)) <= width * 0.5) * (np.abs(np.real(yy.T)) <= thickness * 0.5),
-                core_index ** 2 + 0j,
-                cladding_index ** 2 + 0j,
+                (np.abs(np.real(xx.T)) <= width * 0.5)
+                * (np.abs(np.real(yy.T)) <= thickness * 0.5),
+                core_index**2 + 0j,
+                cladding_index**2 + 0j,
             )
         return n
 
@@ -63,7 +93,10 @@ def get_epsfunc(
         xx, yy = np.meshgrid(np.real(x_), np.real(y_))
         n = np.interp(np.real(x_), np.real(nx), n).astype(complex)
         n = np.repeat(n, len(y_)).reshape((len(n), len(y_)))
-        n = np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j) ** 2
+        n = (
+            np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j)
+            ** 2
+        )
         return n
 
     # Case 3 : 2D n is defined
@@ -82,17 +115,21 @@ def get_epsfunc(
     def epsfunc_1D_1(x_, y_):
 
         n = np.where(
-                (np.abs(np.real(x_)) <= width * 0.5),
-                core_index ** 2 + 0j,
-                cladding_index ** 2 + 0j,
-            ).reshape(len(x_), 1)
+            (np.abs(np.real(x_)) <= width * 0.5),
+            core_index**2 + 0j,
+            cladding_index**2 + 0j,
+        ).reshape(len(x_), 1)
 
         return n
 
     # Case 5: 1D n only
     def epsfunc_1D_2(x_, y_):
 
-        n = np.interp(np.real(x_), np.real(nx), profile).astype(complex).reshape(len(x_), 1)
+        n = (
+            np.interp(np.real(x_), np.real(nx), profile)
+            .astype(complex)
+            .reshape(len(x_), 1)
+        )
         return n
 
     if not (width is None) and not (thickness is None):
@@ -103,17 +140,21 @@ def get_epsfunc(
 
     elif (width is None) and (thickness is None) and not (profile is None):
         return epsfunc_2D_3
-    
+
     elif (thickness is None) and not (width is None):
         return epsfunc_1D_1
 
     elif (thickness is None) and (width is None) and not (profile is None):
         return epsfunc_1D_2
 
-    raise Exception("Need to provide width & thickness, or 1D profile and thickness, or 2D profile, or width for 1D, or 1D profile for 1D")
+    raise Exception(
+        "Need to provide width & thickness, or 1D profile and thickness, or 2D profile, or width for 1D, or 1D profile for 1D"
+    )
 
 
-def get_epsfunc_epsfunc(epsfunc_xx, epsfunc_yy, epsfunc_zz, epsfunc_xy=None, epsfunc_yx=None):
+def get_epsfunc_epsfunc(
+    epsfunc_xx, epsfunc_yy, epsfunc_zz, epsfunc_xy=None, epsfunc_yx=None
+) -> Callable[["np.ndarray", "np.ndarray"], "np.ndarray"]:
     """Returns an epsfunction for an isotropic medium"""
 
     def epsfunc_iso(x_, y_):
@@ -128,7 +169,26 @@ def get_epsfunc_epsfunc(epsfunc_xx, epsfunc_yy, epsfunc_zz, epsfunc_xy=None, eps
     return epsfunc_iso
 
 
-def create_polygon(x, y, n, detranslate=True):
+def create_polygon(x:"np.ndarray", y:"np.ndarray", n:"np.ndarray", detranslate:bool=True) -> list:
+    """Given a grid and a refractive index profile, will return the verticies of the polygon for importing into libraries such as Lumerical
+
+    Parameters
+    ----------
+    x : "np.ndarray"
+        the x grid
+    y : "np.ndarray"
+        the y grid    
+    n :"np.ndarray"
+        the refractive index profile
+    detranslate : bool
+        if True, will detranslate the verticies
+
+    Returns
+    -------
+    list[tuples]
+        the resulting verticies
+    
+    """
 
     x0, y0 = [x.copy(), y.copy()]
     diff = np.abs(np.diff(n, axis=1))
@@ -159,8 +219,29 @@ def create_polygon(x, y, n, detranslate=True):
         return [np.array(list(od.values())).astype(float), tx, ty]
 
 
-def interp(x, y, x0, y0, f, centered):
-    """Interpolate a 2D complex array."""
+def interp(x:"np.ndarray", y:"np.ndarray", x0:"np.ndarray", y0:"np.ndarray", f:"np.ndarray", centered:bool) -> "np.ndarray":
+    """Interpolate a 2D complex array.
+    
+    Parameters
+    ----------
+    x:"np.ndarray"
+        the new x grid
+    y:"np.ndarray"
+        the new y grid
+    x0:"np.ndarray"
+        the original x grid
+    y0:"np.ndarray"
+        the original y grid
+    f:"np.ndarray"
+        the field to interpolate 
+    centered:bool
+        whether or not it needs to stil be shifted
+    
+    Returns
+    -------
+    np.ndarray
+        the interpolated field
+    """
 
     if centered:
         # electric fields and intensity are centered
@@ -179,8 +260,26 @@ def interp(x, y, x0, y0, f, centered):
         fi[:, iy] = np.interp(x, x0, f1i[:, iy])
     return fr + 1j * fi
 
-def interp1d(x, x0, f, centered):
-    """Interpolate a 2D complex array."""
+
+def interp1d(x:"np.ndarray", x0:"np.ndarray", f:"np.ndarray", centered:bool) -> "np.ndarray":
+    """Interpolate a 1D complex array.
+    
+    Parameters
+    ----------
+    x:"np.ndarray"
+        the new grid
+    x0:"np.ndarray"
+        the original grid
+    f:"np.ndarray"
+        the field to interpolate 
+    centered:bool
+        whether or not it needs to stil be shifted
+    
+    Returns
+    -------
+    np.ndarray
+        the interpolated field
+    """
 
     if centered:
         # electric fields and intensity are centered
@@ -191,15 +290,17 @@ def interp1d(x, x0, f, centered):
     return f1r + 1j * f1i
 
 
-def into_chunks(location, name, chunk_size=20000000):
+def into_chunks(location:str, name:str, chunk_size:int=20000000) -> None:
     """Takes a large serialized file and breaks it up into smaller chunk files
 
-    Paramters
+    Parameters
     ---------
     location : string
         the absolute or relative path of the large file
     name : string
         the name of the serialized smaller components (will have _chunk_# appended to it)
+    chunk_size : int
+        how big each save chunk should be
     """
     CHUNK_SIZE = chunk_size
     f = open(location, "rb")
@@ -213,7 +314,7 @@ def into_chunks(location, name, chunk_size=20000000):
     f.close()
 
 
-def from_chunks(location, name):
+def from_chunks(location:str, name:str) -> None:
     """Takes a directory of serialized chunks that were made using into_chunks and combines them back into a large serialized file
 
     Parameters
@@ -234,7 +335,7 @@ def from_chunks(location, name):
     f.close()
 
 
-def _get_eps(xc, yc, epsfunc):
+def _get_eps(xc:"np.ndarray", yc:"np.ndarray", epsfunc:Callable[["np.ndarray", "np.ndarray"], "np.ndarray"]) -> tuple:
     """Used by compute_other_fields and adapted from the EMpy library"""
     tmp = epsfunc(xc, yc)
 
@@ -263,7 +364,42 @@ def _get_eps(xc, yc, epsfunc):
     return epsxx, epsxy, epsyx, epsyy, epszz
 
 
-def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
+def compute_other_fields_2D(
+    neff: float,
+    Hx: "np.ndarray",
+    Hy: "np.ndarray",
+    wl: float,
+    x: "np.ndarray",
+    y: "np.ndarray",
+    boundary: str,
+    epsfunc: Callable[["np.ndarray", "np.ndarray"], "np.ndarray"],
+) -> list:
+    """ Given the Hx and Hy fields, will calculate the rest
+
+    Parameters
+    ----------
+    neff: float
+        the effective index of the EigenMode
+    Hx: "np.ndarray"
+        the Hx field profile
+    Hy: "np.ndarray"
+        the Hy field profile
+    wl: float
+        the wavelength of the simulation
+    x: "np.ndarray"
+        the x numpy grid array
+    y: "np.ndarray"
+        the y numpy grid array
+    boundary: str
+        a string representing the boundary conditions as defined for the electromagneticpython library
+    epsfunc: function
+        a function of (x,y) that can be called to return the refractive index field profile for the domain
+
+    Returns
+    -------
+    list
+        a list of the field profile np.ndarrays [Hx,Hy,Hz,Ex,Ey,Ez]
+    """
 
     dx = np.diff(x)
     dy = np.diff(y)
@@ -435,14 +571,14 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
             * ezz1
             * ezz2
             / eyy1
-            * (2 * eyy1 / ezz1 / n ** 2 + eyx1 / ezz1 / n / w)
+            * (2 * eyy1 / ezz1 / n**2 + eyx1 / ezz1 / n / w)
             + 0.5
             * (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
             * n
             * ezz4
             * ezz3
             / eyy4
-            * (2 * eyy4 / ezz4 / n ** 2 - eyx4 / ezz4 / n / e)
+            * (2 * eyy4 / ezz4 / n**2 - eyx4 / ezz4 / n / e)
         )
         / ezz4
         / ezz3
@@ -462,14 +598,20 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
             * (
                 0.5
                 * ezz4
-                * ((1 - exx1 / ezz1) / n / w - exy1 / ezz1 * (2.0 / n ** 2 - 2 / n ** 2 * s / (n + s)))
+                * (
+                    (1 - exx1 / ezz1) / n / w
+                    - exy1 / ezz1 * (2.0 / n**2 - 2 / n**2 * s / (n + s))
+                )
                 / exx1
                 * ezz1
                 * w
                 + (ezz4 - ezz1) * s / n / (n + s)
                 + 0.5
                 * ezz1
-                * (-(1 - exx4 / ezz4) / n / e - exy4 / ezz4 * (2.0 / n ** 2 - 2 / n ** 2 * s / (n + s)))
+                * (
+                    -(1 - exx4 / ezz4) / n / e
+                    - exy4 / ezz4 * (2.0 / n**2 - 2 / n**2 * s / (n + s))
+                )
                 / exx4
                 * ezz4
                 * e
@@ -504,14 +646,14 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
             * ezz2
             * ezz1
             / eyy2
-            * (2 * eyy2 / ezz2 / s ** 2 - eyx2 / ezz2 / s / w)
+            * (2 * eyy2 / ezz2 / s**2 - eyx2 / ezz2 / s / w)
             + 0.5
             * (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
             * s
             * ezz3
             * ezz4
             / eyy3
-            * (2 * eyy3 / ezz3 / s ** 2 + eyx3 / ezz3 / s / e)
+            * (2 * eyy3 / ezz3 / s**2 + eyx3 / ezz3 / s / e)
         )
         / ezz4
         / ezz3
@@ -537,14 +679,20 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
             * (
                 0.5
                 * ezz3
-                * (-(1 - exx2 / ezz2) / s / w - exy2 / ezz2 * (2.0 / s ** 2 - 2 / s ** 2 * n / (n + s)))
+                * (
+                    -(1 - exx2 / ezz2) / s / w
+                    - exy2 / ezz2 * (2.0 / s**2 - 2 / s**2 * n / (n + s))
+                )
                 / exx2
                 * ezz2
                 * w
                 - (ezz3 - ezz2) * n / s / (n + s)
                 + 0.5
                 * ezz2
-                * ((1 - exx3 / ezz3) / s / e - exy3 / ezz3 * (2.0 / s ** 2 - 2 / s ** 2 * n / (n + s)))
+                * (
+                    (1 - exx3 / ezz3) / s / e
+                    - exy3 / ezz3 * (2.0 / s**2 - 2 / s**2 * n / (n + s))
+                )
                 / exx3
                 * ezz3
                 * e
@@ -568,8 +716,8 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
     bzxe = (
         (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
         * (
-            0.5 * n * ezz4 * ezz3 / eyy4 * (2.0 / e ** 2 - eyx4 / ezz4 / n / e)
-            + 0.5 * s * ezz3 * ezz4 / eyy3 * (2.0 / e ** 2 + eyx3 / ezz3 / s / e)
+            0.5 * n * ezz4 * ezz3 / eyy4 * (2.0 / e**2 - eyx4 / ezz4 / n / e)
+            + 0.5 * s * ezz3 * ezz4 / eyy3 * (2.0 / e**2 + eyx3 / ezz3 / s / e)
         )
         / ezz4
         / ezz3
@@ -585,8 +733,20 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
         * eyy2
         * e
         + (
-            -0.5 * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e) * ezz1 * (1 - exx4 / ezz4) / n / exx4 * ezz4
-            - 0.5 * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e) * ezz2 * (1 - exx3 / ezz3) / s / exx3 * ezz3
+            -0.5
+            * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
+            * ezz1
+            * (1 - exx4 / ezz4)
+            / n
+            / exx4
+            * ezz4
+            - 0.5
+            * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
+            * ezz2
+            * (1 - exx3 / ezz3)
+            / s
+            / exx3
+            * ezz3
         )
         / ezz3
         / ezz2
@@ -606,8 +766,8 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
     bzxw = (
         (-n * ezz4 * ezz3 / eyy4 - s * ezz3 * ezz4 / eyy3)
         * (
-            0.5 * n * ezz1 * ezz2 / eyy1 * (2.0 / w ** 2 + eyx1 / ezz1 / n / w)
-            + 0.5 * s * ezz2 * ezz1 / eyy2 * (2.0 / w ** 2 - eyx2 / ezz2 / s / w)
+            0.5 * n * ezz1 * ezz2 / eyy1 * (2.0 / w**2 + eyx1 / ezz1 / n / w)
+            + 0.5 * s * ezz2 * ezz1 / eyy2 * (2.0 / w**2 - eyx2 / ezz2 / s / w)
         )
         / ezz4
         / ezz3
@@ -623,8 +783,20 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
         * eyy2
         * e
         + (
-            0.5 * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e) * ezz4 * (1 - exx1 / ezz1) / n / exx1 * ezz1
-            + 0.5 * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e) * ezz3 * (1 - exx2 / ezz2) / s / exx2 * ezz2
+            0.5
+            * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
+            * ezz4
+            * (1 - exx1 / ezz1)
+            / n
+            / exx1
+            * ezz1
+            + 0.5
+            * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
+            * ezz3
+            * (1 - exx2 / ezz2)
+            / s
+            / exx2
+            * ezz2
         )
         / ezz3
         / ezz2
@@ -650,13 +822,23 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 * ezz1
                 * ezz2
                 / eyy1
-                * (-2.0 / w ** 2 - 2 * eyy1 / ezz1 / n ** 2 + k ** 2 * eyy1 - eyx1 / ezz1 / n / w)
+                * (
+                    -2.0 / w**2
+                    - 2 * eyy1 / ezz1 / n**2
+                    + k**2 * eyy1
+                    - eyx1 / ezz1 / n / w
+                )
                 + 0.5
                 * s
                 * ezz2
                 * ezz1
                 / eyy2
-                * (-2.0 / w ** 2 - 2 * eyy2 / ezz2 / s ** 2 + k ** 2 * eyy2 + eyx2 / ezz2 / s / w)
+                * (
+                    -2.0 / w**2
+                    - 2 * eyy2 / ezz2 / s**2
+                    + k**2 * eyy2
+                    + eyx2 / ezz2 / s / w
+                )
             )
             + (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
             * (
@@ -665,13 +847,23 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 * ezz4
                 * ezz3
                 / eyy4
-                * (-2.0 / e ** 2 - 2 * eyy4 / ezz4 / n ** 2 + k ** 2 * eyy4 + eyx4 / ezz4 / n / e)
+                * (
+                    -2.0 / e**2
+                    - 2 * eyy4 / ezz4 / n**2
+                    + k**2 * eyy4
+                    + eyx4 / ezz4 / n / e
+                )
                 + 0.5
                 * s
                 * ezz3
                 * ezz4
                 / eyy3
-                * (-2.0 / e ** 2 - 2 * eyy3 / ezz3 / s ** 2 + k ** 2 * eyy3 - eyx3 / ezz3 / s / e)
+                * (
+                    -2.0 / e**2
+                    - 2 * eyy3 / ezz3 / s**2
+                    + k**2 * eyy3
+                    - eyx3 / ezz3 / s / e
+                )
             )
         )
         / ezz4
@@ -693,9 +885,9 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 0.5
                 * ezz4
                 * (
-                    -(k ** 2) * exy1
+                    -(k**2) * exy1
                     - (1 - exx1 / ezz1) / n / w
-                    - exy1 / ezz1 * (-2.0 / n ** 2 - 2 / n ** 2 * (n - s) / s)
+                    - exy1 / ezz1 * (-2.0 / n**2 - 2 / n**2 * (n - s) / s)
                 )
                 / exx1
                 * ezz1
@@ -704,9 +896,9 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 + 0.5
                 * ezz1
                 * (
-                    -(k ** 2) * exy4
+                    -(k**2) * exy4
                     + (1 - exx4 / ezz4) / n / e
-                    - exy4 / ezz4 * (-2.0 / n ** 2 - 2 / n ** 2 * (n - s) / s)
+                    - exy4 / ezz4 * (-2.0 / n**2 - 2 / n**2 * (n - s) / s)
                 )
                 / exx4
                 * ezz4
@@ -717,9 +909,9 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 0.5
                 * ezz3
                 * (
-                    -(k ** 2) * exy2
+                    -(k**2) * exy2
                     + (1 - exx2 / ezz2) / s / w
-                    - exy2 / ezz2 * (-2.0 / s ** 2 + 2 / s ** 2 * (n - s) / n)
+                    - exy2 / ezz2 * (-2.0 / s**2 + 2 / s**2 * (n - s) / n)
                 )
                 / exx2
                 * ezz2
@@ -728,9 +920,9 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 + 0.5
                 * ezz2
                 * (
-                    -(k ** 2) * exy3
+                    -(k**2) * exy3
                     - (1 - exx3 / ezz3) / s / e
-                    - exy3 / ezz3 * (-2.0 / s ** 2 + 2 / s ** 2 * (n - s) / n)
+                    - exy3 / ezz3 * (-2.0 / s**2 + 2 / s**2 * (n - s) / n)
                 )
                 / exx3
                 * ezz3
@@ -866,8 +1058,20 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
 
     bzyn = (
         (
-            0.5 * (-n * ezz4 * ezz3 / eyy4 - s * ezz3 * ezz4 / eyy3) * ezz1 * ezz2 / eyy1 * (1 - eyy1 / ezz1) / w
-            - 0.5 * (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2) * ezz4 * ezz3 / eyy4 * (1 - eyy4 / ezz4) / e
+            0.5
+            * (-n * ezz4 * ezz3 / eyy4 - s * ezz3 * ezz4 / eyy3)
+            * ezz1
+            * ezz2
+            / eyy1
+            * (1 - eyy1 / ezz1)
+            / w
+            - 0.5
+            * (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
+            * ezz4
+            * ezz3
+            / eyy4
+            * (1 - eyy4 / ezz4)
+            / e
         )
         / ezz4
         / ezz3
@@ -884,8 +1088,8 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
         * e
         + (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
         * (
-            0.5 * ezz4 * (2.0 / n ** 2 + exy1 / ezz1 / n / w) / exx1 * ezz1 * w
-            + 0.5 * ezz1 * (2.0 / n ** 2 - exy4 / ezz4 / n / e) / exx4 * ezz4 * e
+            0.5 * ezz4 * (2.0 / n**2 + exy1 / ezz1 / n / w) / exx1 * ezz1 * w
+            + 0.5 * ezz1 * (2.0 / n**2 - exy4 / ezz4 / n / e) / exx4 * ezz4 * e
         )
         / ezz3
         / ezz2
@@ -904,8 +1108,20 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
 
     bzys = (
         (
-            -0.5 * (-n * ezz4 * ezz3 / eyy4 - s * ezz3 * ezz4 / eyy3) * ezz2 * ezz1 / eyy2 * (1 - eyy2 / ezz2) / w
-            + 0.5 * (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2) * ezz3 * ezz4 / eyy3 * (1 - eyy3 / ezz3) / e
+            -0.5
+            * (-n * ezz4 * ezz3 / eyy4 - s * ezz3 * ezz4 / eyy3)
+            * ezz2
+            * ezz1
+            / eyy2
+            * (1 - eyy2 / ezz2)
+            / w
+            + 0.5
+            * (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
+            * ezz3
+            * ezz4
+            / eyy3
+            * (1 - eyy3 / ezz3)
+            / e
         )
         / ezz4
         / ezz3
@@ -922,8 +1138,8 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
         * e
         - (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
         * (
-            0.5 * ezz3 * (2.0 / s ** 2 - exy2 / ezz2 / s / w) / exx2 * ezz2 * w
-            + 0.5 * ezz2 * (2.0 / s ** 2 + exy3 / ezz3 / s / e) / exx3 * ezz3 * e
+            0.5 * ezz3 * (2.0 / s**2 - exy2 / ezz2 / s / w) / exx2 * ezz2 * w
+            + 0.5 * ezz2 * (2.0 / s**2 + exy3 / ezz3 / s / e) / exx3 * ezz3 * e
         )
         / ezz3
         / ezz2
@@ -955,13 +1171,19 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 * ezz4
                 * ezz3
                 / eyy4
-                * (-(1 - eyy4 / ezz4) / n / e - eyx4 / ezz4 * (2.0 / e ** 2 - 2 / e ** 2 * w / (e + w)))
+                * (
+                    -(1 - eyy4 / ezz4) / n / e
+                    - eyx4 / ezz4 * (2.0 / e**2 - 2 / e**2 * w / (e + w))
+                )
                 + 0.5
                 * s
                 * ezz3
                 * ezz4
                 / eyy3
-                * ((1 - eyy3 / ezz3) / s / e - eyx3 / ezz3 * (2.0 / e ** 2 - 2 / e ** 2 * w / (e + w)))
+                * (
+                    (1 - eyy3 / ezz3) / s / e
+                    - eyx3 / ezz3 * (2.0 / e**2 - 2 / e**2 * w / (e + w))
+                )
                 + (ezz4 - ezz3) * w / e / (e + w)
             )
         )
@@ -982,14 +1204,14 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
             0.5
             * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
             * ezz1
-            * (2 * exx4 / ezz4 / e ** 2 - exy4 / ezz4 / n / e)
+            * (2 * exx4 / ezz4 / e**2 - exy4 / ezz4 / n / e)
             / exx4
             * ezz4
             * e
             - 0.5
             * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
             * ezz2
-            * (2 * exx3 / ezz3 / e ** 2 + exy3 / ezz3 / s / e)
+            * (2 * exx3 / ezz3 / e**2 + exy3 / ezz3 / s / e)
             / exx3
             * ezz3
             * e
@@ -1018,14 +1240,20 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 * ezz1
                 * ezz2
                 / eyy1
-                * ((1 - eyy1 / ezz1) / n / w - eyx1 / ezz1 * (2.0 / w ** 2 - 2 / w ** 2 * e / (e + w)))
+                * (
+                    (1 - eyy1 / ezz1) / n / w
+                    - eyx1 / ezz1 * (2.0 / w**2 - 2 / w**2 * e / (e + w))
+                )
                 - (ezz1 - ezz2) * e / w / (e + w)
                 + 0.5
                 * s
                 * ezz2
                 * ezz1
                 / eyy2
-                * (-(1 - eyy2 / ezz2) / s / w - eyx2 / ezz2 * (2.0 / w ** 2 - 2 / w ** 2 * e / (e + w)))
+                * (
+                    -(1 - eyy2 / ezz2) / s / w
+                    - eyx2 / ezz2 * (2.0 / w**2 - 2 / w**2 * e / (e + w))
+                )
             )
             + (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
             * (
@@ -1051,14 +1279,14 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
             0.5
             * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
             * ezz4
-            * (2 * exx1 / ezz1 / w ** 2 + exy1 / ezz1 / n / w)
+            * (2 * exx1 / ezz1 / w**2 + exy1 / ezz1 / n / w)
             / exx1
             * ezz1
             * w
             - 0.5
             * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
             * ezz3
-            * (2 * exx2 / ezz2 / w ** 2 - exy2 / ezz2 / s / w)
+            * (2 * exx2 / ezz2 / w**2 - exy2 / ezz2 / s / w)
             / exx2
             * ezz2
             * w
@@ -1088,9 +1316,9 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 * ezz2
                 / eyy1
                 * (
-                    -(k ** 2) * eyx1
+                    -(k**2) * eyx1
                     - (1 - eyy1 / ezz1) / n / w
-                    - eyx1 / ezz1 * (-2.0 / w ** 2 + 2 / w ** 2 * (e - w) / e)
+                    - eyx1 / ezz1 * (-2.0 / w**2 + 2 / w**2 * (e - w) / e)
                 )
                 + (ezz1 - ezz2) * (e - w) / e / w
                 + 0.5
@@ -1099,9 +1327,9 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 * ezz1
                 / eyy2
                 * (
-                    -(k ** 2) * eyx2
+                    -(k**2) * eyx2
                     + (1 - eyy2 / ezz2) / s / w
-                    - eyx2 / ezz2 * (-2.0 / w ** 2 + 2 / w ** 2 * (e - w) / e)
+                    - eyx2 / ezz2 * (-2.0 / w**2 + 2 / w**2 * (e - w) / e)
                 )
             )
             + (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
@@ -1112,9 +1340,9 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 * ezz3
                 / eyy4
                 * (
-                    -(k ** 2) * eyx4
+                    -(k**2) * eyx4
                     + (1 - eyy4 / ezz4) / n / e
-                    - eyx4 / ezz4 * (-2.0 / e ** 2 - 2 / e ** 2 * (e - w) / w)
+                    - eyx4 / ezz4 * (-2.0 / e**2 - 2 / e**2 * (e - w) / w)
                 )
                 + 0.5
                 * s
@@ -1122,9 +1350,9 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
                 * ezz4
                 / eyy3
                 * (
-                    -(k ** 2) * eyx3
+                    -(k**2) * eyx3
                     - (1 - eyy3 / ezz3) / s / e
-                    - eyx3 / ezz3 * (-2.0 / e ** 2 - 2 / e ** 2 * (e - w) / w)
+                    - eyx3 / ezz3 * (-2.0 / e**2 - 2 / e**2 * (e - w) / w)
                 )
                 + (ezz4 - ezz3) * (e - w) / e / w
             )
@@ -1147,13 +1375,23 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
             * (
                 0.5
                 * ezz4
-                * (-2.0 / n ** 2 - 2 * exx1 / ezz1 / w ** 2 + k ** 2 * exx1 - exy1 / ezz1 / n / w)
+                * (
+                    -2.0 / n**2
+                    - 2 * exx1 / ezz1 / w**2
+                    + k**2 * exx1
+                    - exy1 / ezz1 / n / w
+                )
                 / exx1
                 * ezz1
                 * w
                 + 0.5
                 * ezz1
-                * (-2.0 / n ** 2 - 2 * exx4 / ezz4 / e ** 2 + k ** 2 * exx4 + exy4 / ezz4 / n / e)
+                * (
+                    -2.0 / n**2
+                    - 2 * exx4 / ezz4 / e**2
+                    + k**2 * exx4
+                    + exy4 / ezz4 / n / e
+                )
                 / exx4
                 * ezz4
                 * e
@@ -1162,13 +1400,23 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
             * (
                 0.5
                 * ezz3
-                * (-2.0 / s ** 2 - 2 * exx2 / ezz2 / w ** 2 + k ** 2 * exx2 + exy2 / ezz2 / s / w)
+                * (
+                    -2.0 / s**2
+                    - 2 * exx2 / ezz2 / w**2
+                    + k**2 * exx2
+                    + exy2 / ezz2 / s / w
+                )
                 / exx2
                 * ezz2
                 * w
                 + 0.5
                 * ezz2
-                * (-2.0 / s ** 2 - 2 * exx3 / ezz3 / e ** 2 + k ** 2 * exx3 - exy3 / ezz3 / s / e)
+                * (
+                    -2.0 / s**2
+                    - 2 * exx3 / ezz3 / e**2
+                    + k**2 * exx3
+                    - exy3 / ezz3 / s / e
+                )
                 / exx3
                 * ezz3
                 * e
@@ -1286,13 +1534,29 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
     Izx = np.r_[iall, i_w, i_e, i_s, i_n, i_ne, i_se, i_sw, i_nw]
     Jzx = np.r_[iall, i_e, i_w, i_n, i_s, i_sw, i_nw, i_ne, i_se]
     Vzx = np.r_[
-        bzxp[iall], bzxe[i_w], bzxw[i_e], bzxn[i_s], bzxs[i_n], bzxsw[i_ne], bzxnw[i_se], bzxne[i_sw], bzxse[i_nw]
+        bzxp[iall],
+        bzxe[i_w],
+        bzxw[i_e],
+        bzxn[i_s],
+        bzxs[i_n],
+        bzxsw[i_ne],
+        bzxnw[i_se],
+        bzxne[i_sw],
+        bzxse[i_nw],
     ]
 
     Izy = np.r_[iall, i_w, i_e, i_s, i_n, i_ne, i_se, i_sw, i_nw]
     Jzy = np.r_[iall, i_e, i_w, i_n, i_s, i_sw, i_nw, i_ne, i_se] + nx * ny
     Vzy = np.r_[
-        bzyp[iall], bzye[i_w], bzyw[i_e], bzyn[i_s], bzys[i_n], bzysw[i_ne], bzynw[i_se], bzyne[i_sw], bzyse[i_nw]
+        bzyp[iall],
+        bzye[i_w],
+        bzyw[i_e],
+        bzyn[i_s],
+        bzys[i_n],
+        bzysw[i_ne],
+        bzynw[i_se],
+        bzyne[i_sw],
+        bzyse[i_nw],
     ]
 
     I = np.r_[Izx, Izy]
@@ -1316,8 +1580,12 @@ def compute_other_fields_2D(neff, Hx, Hy, wl, x, y, boundary, epsfunc):
     v = n.reshape(nx, ny)[:-1, :-1]
 
     # in xc e yc
-    Dx = neff * EMpy_gpu.utils.centered2d(Hy) + (Hz[:-1, 1:] + Hz[1:, 1:] - Hz[:-1, :-1] - Hz[1:, :-1]) / (2j * k * v)
-    Dy = -neff * EMpy_gpu.utils.centered2d(Hx) - (Hz[1:, :-1] + Hz[1:, 1:] - Hz[:-1, 1:] - Hz[:-1, :-1]) / (2j * k * h)
+    Dx = neff * EMpy_gpu.utils.centered2d(Hy) + (
+        Hz[:-1, 1:] + Hz[1:, 1:] - Hz[:-1, :-1] - Hz[1:, :-1]
+    ) / (2j * k * v)
+    Dy = -neff * EMpy_gpu.utils.centered2d(Hx) - (
+        Hz[1:, :-1] + Hz[1:, 1:] - Hz[:-1, 1:] - Hz[:-1, :-1]
+    ) / (2j * k * h)
     Dz = (
         (Hy[1:, :-1] + Hy[1:, 1:] - Hy[:-1, 1:] - Hy[:-1, :-1]) / (2 * h)
         - (Hx[:-1, 1:] + Hx[1:, 1:] - Hx[:-1, :-1] - Hx[1:, :-1]) / (2 * v)

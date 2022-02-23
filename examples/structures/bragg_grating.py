@@ -54,9 +54,9 @@ mode_solver2 = modesolver(
 eme.add_layer(Layer(mode_solver1, num_modes, wavelength, length))  # First half of bragg grating
 eme.add_layer(Layer(mode_solver2, num_modes, wavelength, length))  # Second half of bragg grating
 
-plt.figure()
-eme.draw()
-plt.show()
+# plt.figure()
+# eme.draw()
+# plt.show()
 
 
 # ### Create a monitor
@@ -72,7 +72,7 @@ monitor = eme.add_monitor(axes="xz",mesh_z=200)
 # In[5]:
 
 
-eme.propagate(input_left=[1],input_right=[1])  # propagate at given wavelength
+eme.propagate(left_coeffs=[1],right_coeffs=[1])  # propagate at given wavelength
 
 
 # ### Visualize monitor
