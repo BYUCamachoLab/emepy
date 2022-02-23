@@ -446,7 +446,7 @@ class EME(object):
             )
 
         # Create monitor
-        monitor = Monitor(axes, dimensions, lengths, components, z_range, grid_x, grid_y, grid_z, location, single_lengths, sources=sources)
+        monitor = Monitor(axes, dimensions, lengths, components, z_range, grid_x, grid_y, grid_z, location, sources=sources)
         
         # Place monitor where it belongs
         if (len(lengths[0]) == self.mesh_z):
