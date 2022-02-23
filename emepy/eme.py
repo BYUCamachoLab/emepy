@@ -1,8 +1,7 @@
 import numpy as np
 from tqdm import tqdm 
-from simphony.models import Subcircuit
 from emepy.monitors import Monitor
-from copy import deepcopy
+import matplotlib 
 import importlib
 if not (importlib.util.find_spec("mpi4py") is None):
     from mpi4py import MPI
@@ -22,11 +21,20 @@ class EME(object):
         2: "finished_modes",
         3: "layer_propagating",
         4: "finished_layer",
-        5: "field_propagating",
-        6: "finished",
+        5: "network_building",
+        6: "finished_network",
+        7: "field_propagating",
+        8: "finished",
     }
 
-    def __init__(self, layers=[], num_periods=1, mesh_z=200, parallel=False, quiet=False):
+    def __init__(self, 
+        layers:list=[], 
+        num_periods:int=1, 
+        mesh_z:int=200, 
+        parallel:bool=False, 
+        quiet:bool=False,
+        **kwargs
+    ) -> None:
         """EME class constructor
 
         Parameters
@@ -36,8 +44,11 @@ class EME(object):
         num_periods : int
             Number of periods if defining a periodic structure (default: 1)
         mesh_z : int
-            Number of mesh points in z per period
-
+            Number of mesh points in z per period for default monitors (default: 200)
+        parallel : bool
+            If true, will allocate parallelized processes for solving modes, propagating layers, and filling monitors with field data (default: False)
+        quiet : bool
+            If true, will not print current state and status of the solver (default: False)
         """
 
         self.parallel=parallel
@@ -53,21 +64,35 @@ class EME(object):
         self.forward_periodic_s = []
         self.reverse_periodic_s = []
         self.parallel = parallel
+        self.network = None
 
-    def add_layer(self, layer):
+    def add_layer(self, layer:Layer) -> None:
         """The add_layer method will add a Layer object to the EME object. The object will be geometrically added to the very right side of the structure. Using this method after propagate is useless as the solver has already been called.
 
         Parameters
         ----------
         layer : Layer
             Layer object to be appended to the list of Layers inside the EME object.
-
         """
 
         self.layers.append(layer)
 
-    def reset(self, full_reset=True, parallel=False, configure_parallel=True):
-        """Clears out the layers and s params so the user can reuse the object in memory on a new geometry"""
+    def reset(self, 
+        full_reset:bool=True, 
+        parallel:bool=False, 
+        configure_parallel:bool=True
+    ) -> None:
+        """Clears out the layers and s params so the user can reuse the object in memory on a new geometry
+        
+        Parameters
+        ----------
+        full_reset : boolean
+            If true, will reset everything inside of the object and allow for reinstancing without memory issues (default: True)
+        parallel : boolean
+            If configure_parallel is True, after reset this method will set the value of parallel. Similar to the constructor (default: False)
+        configure_parallel : boolean
+            If configure_parallel is True, after reset this method will set the value of parallel. Similar to the constructor (default: True)
+        """
 
         # Erase all information except number of periods
         if full_reset:
@@ -87,9 +112,11 @@ class EME(object):
         self.monitors = []
         self.custom_monitors = []
         self.networks = None
-        self.periodic_network = None
+        self.network = None
 
-    def solve_modes(self):
+    def solve_modes(self) -> None:
+        """Solves for the modes in the system and is the first step in the solver's process all in parallel"""
+
         # Check if already solved
         if self.state > 1:
             return
@@ -120,7 +147,8 @@ class EME(object):
 
         self._update_state(2)
 
-    def propagate_layers(self):
+    def propagate_layers(self) -> None:
+        """Propagates each layer with the next by creating interface models and cascading all in parallel. This is the second step for the solver"""
 
         # Check state
         if self.state == 2:
@@ -186,12 +214,82 @@ class EME(object):
         # Finish state
         self._update_state(4)
 
-        return self.networks
+    def build_network(self) -> None:
+        """Builds the full network from the cascaded layers. This is the third step in the solving process."""
 
-    def am_master(self):
+        # Initialize building state
+        self._update_state(5)
+
+        # Place all periods' proper networks into the final network
+        networks = []
+        for per, network in self.networks.items():
+            start = per * self._get_total_length()
+            end = (per + 1) * self._get_total_length()
+            n = network if not network is None else self.networks[0]
+            networks.append(ModelTools.periodic_duplicate_format(n, start, end))
+            if not per:
+                networks.append(self.periodic_interfaces[per] if not self.periodic_interfaces[per] is None else self.periodic_interfaces[0])
+        
+        # Propagate final network with all periods
+        self.network = _prop_all(*networks)
+
+        # Finish building state
+        self._update_state(6)
+
+    def field_propagate(self, left_coeffs:list, right_coeffs:list) -> None:
+        """Propagates the modes through the device to calculate the field profile everywhere
+
+        Parameters
+        ----------
+        left_coeffs : list
+            A list of floats that represent the mode coefficients for the left side of the full geometry
+        right_coeffs : list
+            A list of floats that represent the mode coefficients for the right side of the full geometry
+        """
+
+        # Start state
+        self._update_state(7)
+
+        # Update all monitors
+        for m in self.custom_monitors + self.monitors:
+            # Reset monitor
+            m.reset_monitor()
+            m.left_source = len(left_coeffs) > 0
+            m.right_source = len(right_coeffs) > 0
+
+            # Get full s params for all periods
+            cur_len = 0
+            full_z_list = []
+            tasks = []
+            for per, activated_layers in tqdm(self.activated_layers.items(),disable=self.quiet):
+
+                # Forward through the device
+                activated_layers = activated_layers if not activated_layers is None else self.activated_layers[0]
+                for i, layer in enumerate(activated_layers):
+                    z_list = m.get_z_list(cur_len, cur_len+layer.length)
+                    just_z_list = [i[1] for i in z_list]
+                    task = (self._layer_field_propagate,[i*1, make_copy_model(layer), per*1, left_coeffs[:], right_coeffs[:], cur_len*1, just_z_list[:]],{})
+                    full_z_list.append(z_list)
+                    tasks.append(task)
+                    cur_len += layer.length
+
+            # Get restults
+            results = self._run_parallel_functions(*tasks)
+
+            # Assign results to monitor
+            for z_l, result_l in zip(full_z_list, results):
+                for z, r in zip(z_l, result_l):
+                    self._set_monitor(m, z[0], r)
+        
+        # Finish state
+        self._update_state(8)
+
+    def am_master(self) -> bool:
+        """Returns true for the master process if the user is running a parallel process using mpi. This is essential for I/O"""
         return self.rank == 0 if self.parallel else True
 
-    def get_sources(self):
+    def get_sources(self) -> dict:
+        """Returns a dictionary of each period and the Source objects that can be found inside each"""
         srcs = dict(zip(range(self.num_periods), [[] for _ in range(self.num_periods)]))
         for per in range(self.num_periods):
             start = self._get_total_length() * per
@@ -202,7 +300,7 @@ class EME(object):
         
         return srcs
 
-    def s_parameters(self, freqs=None):
+    def s_parameters(self, freqs=None) -> np.array:
         """Returns the s_parameters if they exist. If they don't exist yet, propagate() will be called first.
 
         Returns
@@ -211,18 +309,16 @@ class EME(object):
             The s_params acquired during propagation
         """
 
-        if self.networks is None and self.periodic_network is None:
+        if self.network is None:
             self.propagate()
-        return self.periodic_network.s_parameters(freqs)
+        return self.network.s_parameters(freqs)
 
-        return self.s_params
-
-    def add_monitor(self, axes="xz", sources=[], mesh_z=None, z_range=None, location=None, components=None, exempt=True):
+    def add_monitor(self, axes:str="xz", sources:list=[], mesh_z:int=None, z_range:tuple=None, location:float=None, components:list=None, exempt:bool=True) -> Monitor:
         """Creates a monitor associated with the eme object BEFORE the simulation is ran
 
         Parameters
         ----------
-        axes : string
+        axes : str
             the spacial axes to capture fields in. Options : 'xz' (default), 'xy', 'xz', 'xyz', 'x', 'y', 'z'. Currently only 'xz' is implemented. Note, propagation is always in z.
         sources : list[Source]
             the user can specify custom mode sources to use for this monitor (default: input left)
@@ -234,7 +330,7 @@ class EME(object):
             z coordinate where to save data for a 'xy' monitor
         components : list[string]
             a list of the field components to include. Unless the user is worried about memory, this is best left alone. (Default: ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"])
-        exempt : boolean
+        exempt : bool
             flag used for very specific case when using PML for MSEMpy. The user never has to change this value. 
 
         Returns
@@ -279,7 +375,7 @@ class EME(object):
             # Create lengths
             l = self._get_total_length()
             single_lengths = np.linspace(0, l, mesh_z, endpoint=False).tolist()
-            lengths = deepcopy(single_lengths)
+            lengths = np.linspace(0, l, mesh_z, endpoint=False).tolist()
             
             for i in range(1,self.num_periods):
                 lengths += (np.array(single_lengths) + l * i).tolist()
@@ -360,8 +456,21 @@ class EME(object):
 
         return monitor
 
-    def draw(self, z_range=None, mesh_z=200):
-        """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. This will change in the future."""
+    def draw(self, z_range:tuple=None, mesh_z:int=200) -> matplotlib.image.AxesImage:
+        """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. This will change in the future.
+        
+        Parameters
+        ----------
+        z_range : tuple
+            tuple or list of the form (start, end) representing the range of the z values to extract
+        mesh_z : int
+            the number of mesh points in z to calculate index profiles for
+
+        Returns
+        -------
+        matplotlib.image.AxesImage
+            the image used to plot the index profile
+        """
 
         temp_storage = [self.monitors, self.custom_monitors]
         self.monitors, self.custom_monitors = [[],[]]
@@ -371,13 +480,20 @@ class EME(object):
         self.monitors, self.custom_monitors = temp_storage
         return im
 
-    def propagate(self, left_coeffs=None, right_coeffs=[]):
-        """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters.
+    def propagate(self, left_coeffs:list=None, right_coeffs:list=[]) -> Model:
+        """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters. The defulat
 
         Parameters
         ----------
-        input_array : numpy array
-            the array representing the input to the device in s parameter format: [left port mode 1, left port mode 2, ... left port mode n, right port mode 1, right port mode 2, ... right port mode n] (default : [1,0,0,...]) the default represents sending in the fundamental mode of the left port
+        left_coeffs : list
+            A list of floats that represent the mode coefficients for the left side of the full geometry. The default is determined on whether or not any custom mode sources or right_coeffs are defined. If they are, (default:[]) else (default"[1])
+        right_coeffs : list
+            A list of floats that represent the mode coefficients for the right side of the full geometry. (default:[])
+
+        Returns
+        -------
+        simphony.models.Model
+            The simphony model that represents the entire device
         """
 
         # Check for layers
@@ -394,28 +510,36 @@ class EME(object):
                 left_coeffs = []
 
         # Solve for the modes
-        self.solve_modes()
+        if self.state == 0:
+            self.solve_modes()
 
         # Forward pass
         if self.state == 2:
             self.propagate_layers()
 
         # Periodic ### ToDo, parallelize this process using a log2 n technique
-        networks = []
-        for per, network in self.networks.items():
-            start = per * self._get_total_length()
-            end = (per + 1) * self._get_total_length()
-            n = network if not network is None else self.networks[0]
-            networks.append(ModelTools.periodic_duplicate_format(n, start, end))
-            if not per:
-                networks.append(self.periodic_interfaces[per] if not self.periodic_interfaces[per] is None else self.periodic_interfaces[0])
-        self.periodic_network = _prop_all(*networks)
+        if self.state == 4:
+            self.build_network()
 
         # Update monitors
-        self._field_propagate(left_coeffs, right_coeffs)
+        if self.state == 6:
+            self.field_propagate(left_coeffs, right_coeffs)
 
-    def _run_parallel_functions(self, *args):
-        """Args should provide tuples of (function, argument list, kwargument dictionary) and the function will magically compute them in parallel"""
+        return self.network
+
+    def _run_parallel_functions(self, *tasks) -> list:
+        """Takes a series of "tasks" as arguments and returns a list of "results" after running in parallel. 
+        
+        Arguments
+        ---------
+        *tasks : tuple
+            Each "task" should take the following form: (function, list of arguments, dictionary of kwarguments) and the function will magically compute them in parallel
+            
+        Returns
+        -------
+        list
+            Each "result" in the return list will be whatever is returned by the function in the corresponding task
+        """
         
         # Initialize empty completed task list
         finished_tasks = []
@@ -424,18 +548,18 @@ class EME(object):
         # Complete all tasks and tag based on initial order for either parallel or not
         if not self.parallel:
             # Linearly execute tasks
-            for i, a in enumerate(args):
+            for i, a in enumerate(tasks):
                 func, arguments, kwarguments = a
                 finished_tasks_collective.append([(i,func(*arguments, **kwarguments))])
         else:
 
             # Create data
-            solve_data = [(i, a) for i, a in enumerate(args)]
+            solve_data = [(i, a) for i, a in enumerate(tasks)]
             if self.am_master():
                 data = []
                 for j in range(self.size):
                     subdata = []
-                    for i, a in enumerate(args):
+                    for i, a in enumerate(tasks):
                         if self._should_compute(i,j,self.size):
                             subdata.append(i)
                     data.append(subdata)
@@ -469,22 +593,37 @@ class EME(object):
 
         return finished_tasks
 
-    def _should_compute(self,i,rank,size):
+    def _should_compute(self,i:int,rank:int,size:int) -> bool:
+        """Returns whether or not the rank (process) should be used to complete the given task
+        
+        Parameters
+        ----------
+        i : int
+            index of the task
+        rank : int
+            process rank
+        size : int
+            number of ranks
+
+        Returns
+        -------
+        bool:
+            true if the process should compute the task
+        """
         return i % size == rank
 
-    def _configure_parallel_resources(self):
+    def _configure_parallel_resources(self) -> None:
+        """Sets up the resources for parallel computing"""
 
+        # Use mpi4py to gather resources
         self.comm = MPI.COMM_WORLD
         self.size = self.comm.Get_size()
         self.rank = self.comm.Get_rank()
         if self.am_master():
             print("Running in parallel on {} cores".format(self.size))
 
-    def _get_source_locations(self):
-        return Source.extract_source_locations(*[i.sources for i in (self.monitors + self.custom_monitors)])
-
-
-    def _propagate_n_only(self):
+    def _propagate_n_only(self) -> None:
+        """Propagates all the layers but only gathers the refractive index profiles"""
 
         # Forward through the device
         m = self.monitors[0] if len(self.monitors) else self.custom_monitors[0]
@@ -501,16 +640,37 @@ class EME(object):
                     self._set_monitor(m, i, {"n": n}, n=True)
 
                 cur_len += layer.length
-        return
 
-
-    def _update_state(self, state):
+    def _update_state(self, state:int) -> None:
+        """Updates the state machine to the provided state
+        
+        Parameters
+        ----------
+        state : int
+            state to move to
+        """
 
         self.state = state
         if self.am_master() and not self.quiet:
             print("current state: {}".format(self.states[self.state]))
 
-    def _build_input_array(self, left_coeffs, right_coeffs, model, num_modes=1):
+    def _build_input_array(self, left_coeffs:list, right_coeffs:list, model:Model) -> dict:
+        """Builds the properly formatted input array to be used to calculate field profiles from s matrices and mode coefficients
+
+        Parameters
+        ----------
+        left_coeffs : list
+            A list of floats that represent the mode coefficients for the left side of the full geometry
+        right_coeffs : list
+            A list of floats that represent the mode coefficients for the right side of the full geometry
+        model : simphony.models.Model
+            The simphony model base class for storing pins and scattering parameters that will be used to multiply the resulting input array
+
+        Returns
+        -------
+        dict
+            a mapping of the pin names found in the model to their corrisponding weights (mode coefficients) for the field profiles
+        """
 
         # Case 1: left_coeffs > num_modes
         if len(left_coeffs) > self.activated_layers[0][0].num_modes:
@@ -581,64 +741,43 @@ class EME(object):
 
         except Exception as e:
             raise Exception("Improper format of sources")
+
         return mapping
 
-    def _swap(self, s):
-        # Reformat to be in forward reference frame
-        if not s is None:
-            for j, pin in enumerate(s.pins):
-                if "left" in pin.name:
-                    name = pin.name
-                    s.pins[j].rename(name.replace("left", "temp"))
-                elif "right" in pin.name:
-                    name = pin.name
-                    s.pins[j].rename(name.replace("right", "left"))
-            for j, pin in enumerate(s.pins):
-                if "temp" in pin.name:
-                    name = pin.name
-                    s.pins[j].rename(name.replace("temp", "right"))
+    def _layer_field_propagate(self, 
+        i:int, 
+        l:Model, 
+        per:int, 
+        left_coeffs:list, 
+        right_coeffs:list, 
+        cur_len:float, 
+        z_list:list
+    ) -> list:
+        """Propagates the fields through the current layer only. Implements the "field spider/peaker" technique of extracting fields at an arbitrary location without approximating the reflections and actually finding the fully cascaded values. 
 
-        return s
+        Parameters
+        ----------
+        i : int
+            The index of the current layer in the period
+        l : Model
+            The model that represents the solved layer
+        per : int
+            The index of the period
+        left_coeffs : list
+            A list of floats that represent the mode coefficients for the left side of the full geometry
+        right_coeffs : list
+            A list of floats that represent the mode coefficients for the right side of the full geometry
+        cur_len : float
+            The current length within the geometry (As it iterates through all the layers)
+        z_list : list
+            A list of the z points that matter for this layer
 
-    def _field_propagate(self, left_coeffs, right_coeffs):
-        # Start state
-        self._update_state(5)
+        Returns
+        -------
+        list 
+            A list of the fields for each point in the input z_list
 
-        # Update all monitors
-        for m in self.custom_monitors + self.monitors:
-            # Reset monitor
-            m.reset_monitor()
-            m.left_source = len(left_coeffs) > 0
-            m.right_source = len(right_coeffs) > 0
-
-            # Get full s params for all periods
-            cur_len = 0
-            full_z_list = []
-            tasks = []
-            for per, activated_layers in tqdm(self.activated_layers.items(),disable=self.quiet):
-
-                # Forward through the device
-                activated_layers = activated_layers if not activated_layers is None else self.activated_layers[0]
-                for i, layer in enumerate(activated_layers):
-                    z_list = m.get_z_list(cur_len, cur_len+layer.length)
-                    just_z_list = [i[1] for i in z_list]
-                    task = (self._layer_field_propagate,[i*1, make_copy_model(layer), per*1, left_coeffs[:], right_coeffs[:], cur_len*1, just_z_list[:]],{})
-                    full_z_list.append(z_list)
-                    tasks.append(task)
-                    cur_len += layer.length
-
-            # Get restults
-            results = self._run_parallel_functions(*tasks)
-
-            # Assign results to monitor
-            for z_l, result_l in zip(full_z_list, results):
-                for z, r in zip(z_l, result_l):
-                    self._set_monitor(m, z[0], r)
-        
-        # Finish state
-        self._update_state(6)
-
-    def _layer_field_propagate(self, i, l, per, left_coeffs, right_coeffs, cur_len, z_list):
+        """
 
         # Create output
         result_list = []
@@ -692,7 +831,7 @@ class EME(object):
         )
 
         # Get input array
-        input_map = self._build_input_array(left_coeffs, right_coeffs, S, num_modes=len(l.modes))
+        input_map = self._build_input_array(left_coeffs, right_coeffs, S)
         coeffs_ = compute(S, input_map, 0)
         coeff_left = np.zeros(len(l.modes), dtype=complex)
         coeff_right = np.zeros(len(l.modes), dtype=complex)
@@ -712,7 +851,6 @@ class EME(object):
         # Reverse phase if looking from right end
         diffs = [z_list[0]-cur_len]+np.diff(z_list).tolist()
         eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
-        # print(cur_len, l.length)
         if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]):
             print(coeff_left)
             coeff_left *= np.exp(1j * eig * l.length)
@@ -739,9 +877,25 @@ class EME(object):
                 
         return result_list
     
-    def _set_monitor(self, m, i, results, n=False):
+    def _set_monitor(self, m:Monitor, i:int, results:dict, n:bool=False) -> None:
+        """Adds provided field data to the provides monitor
+        
+        Parameters
+        ----------
+        m : Monitor
+            the monitor which to add field data to
+        i : int
+            the index within the monitor which to add field data
+        results : dict
+            a dictionary that maps field types (i.e. "Ex", "Hy", "n", etc.) to the field values as a numpy array
+        n : bool
+            if true, will only care about adding refractive index data to the monitor. Used for propagate_n_only and draw
+        """
+
+        # Iterate through all the results
         for key, field in results.items():
 
+            # Really we care about where in the monitor array the field represents
             key = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"].index(key) if not n else 0
 
             # Non implemented fields
@@ -762,7 +916,6 @@ class EME(object):
             elif m.axes in ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]:
                 m[key, :, :, i] = field[:, :]
 
-        return
-
-    def _get_total_length(self):
+    def _get_total_length(self) -> float:
+        """Returns the total length of a single period of the device"""
         return np.sum([layer.length for layer in self.layers])
