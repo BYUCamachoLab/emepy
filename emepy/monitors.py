@@ -11,16 +11,16 @@ class Monitor(object):
 
     def __init__(
         self,
-        axes:str="xz",
-        dimensions:tuple=(1, 1),
-        lengths:list=[],
-        components:list=["E"],
-        z_range:tuple=None,
-        grid_x:np.array=None,
-        grid_y:np.array=None,
-        grid_z:np.array=None,
-        location:float=None,
-        sources:list=[],
+        axes: str = "xz",
+        dimensions: tuple = (1, 1),
+        lengths: list = [],
+        components: list = ["E"],
+        z_range: tuple = None,
+        grid_x: np.array = None,
+        grid_y: np.array = None,
+        grid_z: np.array = None,
+        location: float = None,
+        sources: list = [],
     ) -> None:
         """Monitor class constructor0
 
@@ -76,7 +76,7 @@ class Monitor(object):
                 f"Monitor setup {axes} has not yet been implemented. Please choose from"
                 " the following implemented monitor types: ['xy','yz','xz','xyz']"
             )
-            
+
         # Set parameters globally
         self.dimensions = dimensions
         self.field = np.zeros(dimensions).astype(complex)
@@ -95,7 +95,7 @@ class Monitor(object):
         """Resets the fields in the monitor"""
         self.field *= 0
 
-    def get_z_list(self, start:float, end:float) -> list:
+    def get_z_list(self, start: float, end: float) -> list:
         """Finds all the points in z between start and end
         
         Parameters
@@ -116,7 +116,15 @@ class Monitor(object):
         """Normalizes the entire field to 1"""
         self.field[:-1] /= 1  # np.max(np.abs(self.field[:-1, :, 0]))
 
-    def get_array(self, component:str="Hy", axes:str=None, location:float=None, z_range:tuple=None, grid_x:np.array=None, grid_y:np.array=None) -> "numpy.ndarray":
+    def get_array(
+        self,
+        component: str = "Hy",
+        axes: str = None,
+        location: float = None,
+        z_range: tuple = None,
+        grid_x: np.array = None,
+        grid_y: np.array = None,
+    ) -> "numpy.ndarray":
         """Creates a matplotlib axis displaying the provides field component
 
         Parameters
@@ -322,17 +330,26 @@ class Monitor(object):
         array = np.zeros(self.dimensions[1:])
         l = self.dimensions[-1] // 200
         if self.right_source:
-            array[:,-l:] = 1
+            array[:, -l:] = 1
         if self.left_source:
-            array[:,:l] = 1
+            array[:, :l] = 1
         for source in self.sources:
-            difference_start = lambda list_value : abs(list_value - source.z)
+            difference_start = lambda list_value: abs(list_value - source.z)
             i = self.lengths[0].index(min(self.lengths[0], key=difference_start))
-            array[:,i-l//2:i+l//2] = 1
+            array[:, i - l // 2 : i + l // 2] = 1
 
         return array
 
-    def visualize(self, ax:matplotlib.image.AxesImage=None, component:str="Hy", axes:str=None, location:float=0, z_range:tuple=None, show_geometry:bool=True, show_sources:bool=True) -> matplotlib.image.AxesImage:
+    def visualize(
+        self,
+        ax: matplotlib.image.AxesImage = None,
+        component: str = "Hy",
+        axes: str = None,
+        location: float = 0,
+        z_range: tuple = None,
+        show_geometry: bool = True,
+        show_sources: bool = True,
+    ) -> "matplotlib.image.AxesImage":
         """Creates a matplotlib axis displaying the provides field component
 
         Parameters
@@ -399,13 +416,13 @@ class Monitor(object):
                     n_im = ax.imshow(
                         np.real(n),
                         extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
-                        cmap=cmap_lookup["n"]
+                        cmap=cmap_lookup["n"],
                     )
                 im = ax.imshow(
                     np.real(field),
                     extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
-                    alpha=1 if not show_geometry else 0.9
+                    alpha=1 if not show_geometry else 0.9,
                 )
                 ax.set_xlabel(np.real(axes[1]))
                 ax.set_ylabel(np.real(axes[0]))
@@ -415,19 +432,19 @@ class Monitor(object):
                     n_im = plt.imshow(
                         np.real(n),
                         extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
-                        cmap=cmap_lookup["n"]
+                        cmap=cmap_lookup["n"],
                     )
                 vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
                 if show_sources:
                     srcs = np.real(self.get_source_visual())
-                    field = np.where(srcs, -max(np.abs(vmax),np.abs(vmin))*1000, field)
+                    field = np.where(srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field)
                 im = plt.imshow(
                     np.real(field),
                     extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
                     cmap=cmap_lookup[component],
                     alpha=1 if not show_geometry else 0.9,
                     vmin=vmin,
-                    vmax=vmax
+                    vmax=vmax,
                 )
                 plt.xlabel(np.real(axes[1]))
                 plt.ylabel(np.real(axes[0]))
