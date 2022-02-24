@@ -1,4 +1,6 @@
 '''This script uses EMEPy's new 1D eigenmode solvers and 2D EME method
+
+THIS IS UNDER DEVELOPMENT
 '''
 
 from emepy.fd import MSEMpy1D
