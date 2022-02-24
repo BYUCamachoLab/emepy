@@ -1,4 +1,4 @@
-# EMEPy 0.2.4 Eigenmode Expansion Tool for Python
+# EMEPy 1.0.0 Eigenmode Expansion Tool for Python
 
 <p align="center">
     <img src="docs/images/logo.png" alt="drawing" width="500"/>
