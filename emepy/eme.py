@@ -234,7 +234,7 @@ class EME(object):
             )
 
             # Only keep what we need
-            for i, result in enumerate(results[:-1]):
+            for i, result in enumerate(results):
                 layer, cascaded = result
                 attributes = layer.__dict__
                 activated_layers[i] = cascaded
