@@ -13,11 +13,6 @@ Mode
 EME
 ---
 
-.. autoclass:: emepy.eme.Layer
-   :members:
-
-   .. automethod:: __init__
-
 .. autoclass:: emepy.eme.EME
    :members:
 
@@ -28,27 +23,10 @@ EME
 
    .. automethod:: __init__
 
-.. autoclass:: emepy.eme.Current
-   :members:
+Models 
+------
 
-   .. automethod:: __init__
-
-.. autoclass:: emepy.eme.ActivatedLayer
-   :members:
-
-   .. automethod:: __init__
-
-.. autoclass:: emepy.eme.PeriodicLayer
-   :members:
-
-   .. automethod:: __init__
-
-.. autoclass:: emepy.eme.InterfaceSingleMode
-   :members:
-
-   .. automethod:: __init__
-
-.. autoclass:: emepy.eme.InterfaceMultiMode
+.. autoclass:: emepy.models.Layer
    :members:
 
    .. automethod:: __init__
@@ -72,6 +50,21 @@ ModeSolver
    .. automethod:: __init__
 
 .. autoclass:: emepy.fd.MSPickle
+   :members:
+
+   .. automethod:: __init__
+
+Geometry 
+--------
+
+EMEPy now offers geometry abstractions that allow users to more easily implement the layers needed for their system. This is currently under development and subject to changing. Check out emepy.geometry.py for more examples available for users. 
+
+.. autoclass:: emepy.geometries.Geometry
+   :members:
+
+   .. automethod:: __init__
+
+.. autoclass:: emepy.geometries.Waveguide
    :members:
 
    .. automethod:: __init__
@@ -106,12 +99,22 @@ Neural Network Acceleration
 Tools
 -----
 
+EMEPy offers functions to the user that can be called. These are mostly important for the library backend however. 
+
 .. autofunction:: emepy.tools.get_epsfunc
 
-.. autofunction:: emepy.tools.Si
+.. autofunction:: emepy.tools.get_epsfunc_epsfunc
 
-.. autofunction:: emepy.tools.SiO2
+.. autofunction:: emepy.tools.create_polygon
+
+.. autofunction:: emepy.tools.interp
+
+.. autofunction:: emepy.tools.interp1d
 
 .. autofunction:: emepy.tools.into_chunks
 
 .. autofunction:: emepy.tools.from_chunks
+
+.. autofunction:: emepy.tools._get_eps
+
+.. autofunction:: emepy.tools.compute_other_fields_2D
