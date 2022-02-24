@@ -1,11 +1,12 @@
 # EMEPy Examples
 
 ## Structures
-- [waveguide](https://github.com/BYUCamachoLab/emepy/tree/master/examples/structures/waveguide.ipynb)
-- [taper](https://github.com/BYUCamachoLab/emepy/tree/master/examples/structures/taper.ipynb)
-- [bragg grating](https://github.com/BYUCamachoLab/emepy/tree/master/examples/structures/bragg_grating.ipynb)
-- [directional coupler](https://github.com/BYUCamachoLab/emepy/tree/master/examples/structures/directional_coupler.ipynb)
-- [mmi](https://github.com/BYUCamachoLab/emepy/tree/master/examples/structures/mmi.ipynb)
+- [waveguide](https://github.com/BYUCamachoLab/emepy/tree/master/examples/geometry_notebooks/waveguide.ipynb)
+- [taper](https://github.com/BYUCamachoLab/emepy/tree/master/examples/geometry_notebooks/taper.ipynb)
+- [bragg grating](https://github.com/BYUCamachoLab/emepy/tree/master/examples/geometry_notebooks/bragg_grating.ipynb)
+- [directional coupler](https://github.com/BYUCamachoLab/emepy/tree/master/examples/geometry_notebooks/directional_coupler.ipynb)
+- [mmi](https://github.com/BYUCamachoLab/emepy/tree/master/examples/geometry_notebooks/mmi.ipynb)
+- [adiabatic taper](https://github.com/BYUCamachoLab/emepy/tree/master/examples/geometry_notebooks/adiabatic_taper.ipynb)
 
 ## Tutorials
 - [eigenmode solver](https://github.com/BYUCamachoLab/emepy/tree/master/examples/tutorials/eigenmode_solver.ipynb)

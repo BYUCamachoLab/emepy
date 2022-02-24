@@ -4,7 +4,7 @@ emepy
 Eigenmode Expansion Python
 """
 
-__version__ = "0.2.4"
+__version__ = "1.0.0"
 __author__ = "Ian Hammond"
 __credits__ = "BYU CamachoLab"
 

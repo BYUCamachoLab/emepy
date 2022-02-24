@@ -22,18 +22,13 @@ copyright = "2020, Ian Hammond"
 author = "Ian Hammond"
 
 # The full version, including alpha/beta/rc tags
-release = "0.2.4"
+release = "1.0.0"
 
-extensions = [
-    "recommonmark",
-    "sphinx_rtd_theme",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.autodoc",
-]
+extensions = ["recommonmark", "sphinx_rtd_theme", "sphinx.ext.napoleon", "sphinx.ext.autodoc"]
 
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+# templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
