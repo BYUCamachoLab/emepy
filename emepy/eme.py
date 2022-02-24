@@ -120,7 +120,8 @@ class EME(object):
         else:
             for i in range(len(self.layers)):
                 self.layers[i].clear()
-            self._update_state(2)
+            self.activated_layers = []
+            self._update_state(0)
 
         self.monitors = []
         self.custom_monitors = []
@@ -534,7 +535,6 @@ class EME(object):
         monitor = Monitor(
             axes,
             dimensions,
-            lengths,
             components,
             z_range,
             grid_x,
