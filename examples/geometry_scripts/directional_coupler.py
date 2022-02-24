@@ -23,7 +23,7 @@ width = 0.4e-6  # Width of left waveguide
 gap = 0.2e-6  # Gap between waveguides
 thickness = 0.22e-6  # Thickness of left waveguide
 num_modes = 2  # Number of modes
-mesh = 100  # Number of mesh points
+mesh = 400  # Number of mesh points
 core_index = Si(wavelength * 1e6)  # Silicon core
 cladding_index = SiO2(wavelength * 1e6)  # Oxide cladding
 x = np.linspace(-2e-6, 2e-6, mesh)
@@ -33,7 +33,7 @@ n = np.ones(mesh) * cladding_index
 # ### Define structure and verify shape
 
 # Create simulation
-eme = EME(quiet=True,parallel=True,num_periods=3)
+eme = EME(quiet=False, parallel=False, num_periods=1)
 
 # Create left waveguide
 single_left_edge = -gap / 2 - width
@@ -74,46 +74,40 @@ two_channel = MSEMpy(
     n=n,
 )
 
-for i in range(3):
-    eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
-# eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
-# eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
-# eme.add_layer(Layer(single_channel, num_modes, wavelength, 0.5e-6))
-# eme.add_layer(Layer(two_channel, num_modes, wavelength, 25e-6))
+single = Layer(single_channel, num_modes, wavelength, 0.5e-6)
+double = Layer(two_channel, num_modes, wavelength, 25e-6)
 
-# draw
-# if eme.am_master():
-    # plt.figure()
-    # eme.draw()
-    # plt.show()
+eme.add_layer(single)
+eme.add_layer(double)
+
+# Add a monitor
+
+source = em.Source(z=0.01e-6, mode_coeffs=[1], k=1)
+monitor = eme.add_monitor(axes="xz", sources=[source], mesh_z=200)
 
 
-# ### Add a monitor
-
-source = em.Source(z=0.7e-6,mode_coeffs=[1],k=1)
-monitor = eme.add_monitor(axes="xz",sources=[source])
-
-
-# # ### Propagate
-t = time.time()
+# Propagate
 eme.solve_modes()
-# if eme.am_master():
-#     print("time to solve for 30 modes: {}".format(time.time()-t))
-eme.propagate(left_coeffs=[],right_coeffs=[])  # propagate at given wavelength
+eme.propagate(left_coeffs=[], right_coeffs=[])  # propagate at given wavelength
 
-# # print(np.matmul(eme.s_parameters()[0],np.array([1,0])))
-# # print(eme.s_parameters()[0])
+# plt.figure()
+# double.get_activated_layer()[0][0].modes[0].plot()
+# plt.show()
 
-# # ### Visualize Monitors
+# plt.figure()
+# double.get_activated_layer()[0][0].modes[1].plot()
+# plt.show()
+
+# Visualize Monitors
 
 if eme.am_master():
-    # plt.figure()
-    # monitor.visualize(component="n")
-    # plt.colorbar()
-    # plt.show()
+    plt.figure()
+    monitor.visualize(component="n")
+    plt.colorbar()
+    plt.show()
 
     plt.figure()
     monitor.visualize(component="Hy")
     plt.colorbar()
-    plt.savefig("hx")
+    plt.show()
 
