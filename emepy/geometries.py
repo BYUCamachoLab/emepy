@@ -1,5 +1,6 @@
 import numpy as np
-from emepy import *
+from emepy.fd import MSEMpy
+from emepy.models import Layer
 
 
 class Geometry(object):
@@ -118,9 +119,7 @@ class WaveguideChannels(Geometry):
                 center = starting_center + out * (gap + width)
                 left_edge = center - 0.5 * width
                 right_edge = center + 0.5 * width
-                n_output = np.where(
-                    (left_edge <= x) * (x <= right_edge), core_index, n_output
-                )
+                n_output = np.where((left_edge <= x) * (x <= right_edge), core_index, n_output)
 
         # Create modesolver
         output_channel = MSEMpy(
@@ -213,8 +212,8 @@ class DirectionalCoupler(Geometry):
         wavelength: float = 1.55e-6,
         width: float = 0.5e-6,
         thickness: float = 0.22e-6,
-        length : float=25e-6,
-        gap: float=0.2e-6,
+        length: float = 25e-6,
+        gap: float = 0.2e-6,
         num_modes: int = 1,
         cladding_width: float = 2.5e-6,
         cladding_thickness: float = 2.5e-6,

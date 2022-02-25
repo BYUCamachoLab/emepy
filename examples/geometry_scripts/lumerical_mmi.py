@@ -38,7 +38,7 @@ num_modes_output = 20
 x = np.linspace(-4e-6, 4e-6, mesh)
 y = x.copy()
 PML = True
-masks=[]
+masks = []
 
 # Create simulation
 eme = LumEME()
@@ -62,7 +62,7 @@ for inp in range(num_inputs):
         core_index=core_index,
         cladding_index=cladding_index,
         profile=n_input,
-        nx=x
+        nx=x,
     )(x, y)
 
     polygons.append(create_polygon(x, y, eps, detranslate=False))
@@ -106,10 +106,10 @@ for i in range(input_taper_num_steps):
             core_index=core_index,
             cladding_index=cladding_index,
             profile=n_input,
-            nx=x
+            nx=x,
         )(x, y)
 
-        polygons.append(create_polygon(x, y, eps,detranslate=False))
+        polygons.append(create_polygon(x, y, eps, detranslate=False))
 
     input_taper_channel = MSLumerical(
         wavelength,
@@ -136,17 +136,17 @@ n_middle = np.where((left_edge <= x) * (x <= right_edge), core_index, n_middle)
 
 
 eps = get_epsfunc(
-            width=None,
-            thickness=thickness,
-            cladding_width=8e-6,
-            cladding_thickness=8e-6,
-            core_index=core_index,
-            cladding_index=cladding_index,
-            profile=n_middle,
-            nx=x
-        )(x, y)
+    width=None,
+    thickness=thickness,
+    cladding_width=8e-6,
+    cladding_thickness=8e-6,
+    core_index=core_index,
+    cladding_index=cladding_index,
+    profile=n_middle,
+    nx=x,
+)(x, y)
 
-polygons = [create_polygon(x, y, eps,detranslate=False)]
+polygons = [create_polygon(x, y, eps, detranslate=False)]
 
 
 middle = MSLumerical(
@@ -178,7 +178,7 @@ for i in range(output_taper_num_steps)[::-1]:
         left_edge = center - 0.5 * width
         right_edge = center + 0.5 * width
         n_output = np.where((left_edge <= x) * (x <= right_edge), core_index, n_output)
-        
+
         eps = get_epsfunc(
             width=None,
             thickness=thickness,
@@ -187,10 +187,10 @@ for i in range(output_taper_num_steps)[::-1]:
             core_index=core_index,
             cladding_index=cladding_index,
             profile=n_output,
-            nx=x
+            nx=x,
         )(x, y)
 
-        polygons.append(create_polygon(x, y, eps,detranslate=False))
+        polygons.append(create_polygon(x, y, eps, detranslate=False))
 
     output_taper_channel = MSLumerical(
         wavelength,
@@ -206,7 +206,6 @@ for i in range(output_taper_num_steps)[::-1]:
         polygons=polygons[:],
         PML=PML,
     )
-
 
     eme.add_layer(
         Layer(output_taper_channel, num_modes_output, wavelength, output_taper_length / output_taper_num_steps)
@@ -232,10 +231,10 @@ for out in range(num_outputs):
         core_index=core_index,
         cladding_index=cladding_index,
         profile=n_output,
-        nx=x
+        nx=x,
     )(x, y)
 
-    polygons.append(create_polygon(x, y, eps,detranslate=False))
+    polygons.append(create_polygon(x, y, eps, detranslate=False))
 
 output_channel = MSLumerical(
     wavelength,
@@ -263,9 +262,9 @@ monitor = eme.add_monitor(axes="xyz", mesh_z=200)
 # # eme.draw()
 # # plt.show()
 
-input_array = np.zeros(num_modes_input+num_modes_output)
+input_array = np.zeros(num_modes_input + num_modes_output)
 input_array[0] = 1
-eme.propagate(input_array=input_array)#
+eme.propagate(input_array=input_array)  #
 
 plt.figure()
 monitor.visualize(axes="xz", component="n")
@@ -288,11 +287,11 @@ in_mask = get_epsfunc(
     core_index=1,
     cladding_index=0,
     profile=masks[0],
-    nx=x
+    nx=x,
 )(x, y)
 
 x_, y_, inp = monitor.get_array(axes="xy", location=0.5e-6, component="E")
-power_in = np.sum(in_mask * inp[num_pml_layers:-num_pml_layers+1,num_pml_layers:-num_pml_layers+1])
+power_in = np.sum(in_mask * inp[num_pml_layers : -num_pml_layers + 1, num_pml_layers : -num_pml_layers + 1])
 
 x_, y_, outp = monitor.get_array(axes="xy", location=0.5e-6, component="E")
 for i in range(num_outputs)[::-1]:
@@ -303,8 +302,10 @@ for i in range(num_outputs)[::-1]:
         cladding_thickness=8e-6,
         core_index=1,
         cladding_index=0,
-        profile=masks[1+i],
-        nx=x
+        profile=masks[1 + i],
+        nx=x,
     )(x, y)
-    power_out = np.sum(out_mask * outp[num_pml_layers:-num_pml_layers+1,num_pml_layers:-num_pml_layers+1]) / power_in
+    power_out = (
+        np.sum(out_mask * outp[num_pml_layers : -num_pml_layers + 1, num_pml_layers : -num_pml_layers + 1]) / power_in
+    )
     print("Power {}: {}".format(i, power_out))

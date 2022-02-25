@@ -5,10 +5,11 @@ from simphony.models import Subcircuit
 from emepy.monitors import Monitor
 from copy import deepcopy
 
+
 class Source(object):
     """This class defines mode sources that can be created for monitors"""
 
-    def __init__(self, z:float=None, mode_coeffs:list=[], k=1) -> None:
+    def __init__(self, z: float = None, mode_coeffs: list = [], k=1) -> None:
         """Constructor for Source. Note: if the modes corresponding to the coefficients defined are not found in the system, the coefficients will be reduced to 0. For now, the wavelength will always be the same as defined in EME.
 
         Parameters
@@ -28,9 +29,9 @@ class Source(object):
     def get_label(self) -> str:
         """Returns a string that represents the source"""
         k = "+" if self.k else "-"
-        return "{}{}".format(k,self.z)
+        return "{}{}".format(k, self.z)
 
-    def match_label(self, label:str) -> bool:
+    def match_label(self, label: str) -> bool:
         """Sees if the provided label matches the current Source object's and returns True if so
         
         Parameters
