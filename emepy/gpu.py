@@ -1,10 +1,10 @@
 from emepy.fd import MSEMpy
 import importlib
 import EMpy_gpu
-if not (importlib.util.find_spec("pycuda") is None):
+
+if importlib.util.find_spec("pycuda") is not None:
     import pycuda.driver as cuda
     import pycuda.autoinit
-
 
 
 class MSEMpyGPU(MSEMpy):
@@ -18,4 +18,3 @@ class MSEMpyGPU(MSEMpy):
         )
         return self
 
-    

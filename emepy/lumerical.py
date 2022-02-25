@@ -6,7 +6,7 @@ from emepy.eme import EME
 from emepy.fd import ModeSolver, ModeSolver1D
 import importlib
 
-if not (importlib.util.find_spec("lumapi") is None):
+if (importlib.util.find_spec("lumapi") is not None):
     import lumapi as lm
 import numpy as np
 import os

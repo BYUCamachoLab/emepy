@@ -6,9 +6,10 @@ from matplotlib import pyplot as plt
 
 # Design parameters
 taper_length = 7e-6  # The length of the taper
-taper_density = 5 # Number of taper segments
-alpha = 3 # Strength of function (either tanh or bezier) -> 0 = linear
-type_tanh = True # "bezier"
+taper_density = 5  # Number of taper segments
+alpha = 3  # Strength of function (either tanh or bezier) -> 0 = linear
+type_tanh = True  # "bezier"
+
 
 def taper_func(start, end, num_points):
 
@@ -19,7 +20,7 @@ def taper_func(start, end, num_points):
     if type_tanh:
         xt = x - np.min(x)
         xta = xt / np.max(xt)
-        tanh = np.tanh(alpha*(xta-0.5))+1
+        tanh = np.tanh(alpha * (xta - 0.5)) + 1
         tanh -= np.min(tanh)
         tanh *= np.max(xt) / np.max(tanh)
         tanh += np.min(x)
@@ -28,6 +29,7 @@ def taper_func(start, end, num_points):
     else:
         return None
 
+
 # Geometric parameters
 width1 = 0.5e-6  # Width of left waveguide
 thickness1 = 0.22e-6  # Thickness of left waveguide
@@ -35,9 +37,9 @@ width2 = 7e-6  # Width of right waveguide
 thickness2 = 0.22e-6  # Thickness of right waveguide
 wavelength = 1.55e-6  # Wavelength of light (m)
 length = 3e-6  # Length of the waveguides
-num_modes_first_half = 10 # Number of modes to solve for
-num_modes_second_half = 20 # Number of modes to solve for
-mesh=128 # Number of mesh points in each xy dimension
+num_modes_first_half = 10  # Number of modes to solve for
+num_modes_second_half = 20  # Number of modes to solve for
+mesh = 128  # Number of mesh points in each xy dimension
 
 eme = LumEME()  # Choose either a normal eme or a periodic eme (PeriodicEME())
 
@@ -50,7 +52,7 @@ mode1 = MSLumerical1D(
     cladding_width=10e-6,
     cladding_thickness=10e-6,
     mesh=mesh,
-    mode=eme.mode
+    mode=eme.mode,
 )
 straight1 = Layer(mode1, 3, wavelength, length)
 eme.add_layer(straight1)
@@ -63,18 +65,36 @@ taper_length_per = taper_length / taper_density
 # add the taper layers
 for i in range(taper_density):
     num_modes = num_modes_first_half if i < taper_density / 2.0 else num_modes_second_half
-    solver = MSLumerical1D(wavelength, widths[i], thicknesses[i], num_modes=num_modes, mesh=mesh,cladding_width=10e-6,cladding_thickness=10e-6,mode=eme.mode)
+    solver = MSLumerical1D(
+        wavelength,
+        widths[i],
+        thicknesses[i],
+        num_modes=num_modes,
+        mesh=mesh,
+        cladding_width=10e-6,
+        cladding_thickness=10e-6,
+        mode=eme.mode,
+    )
     taper_layer = Layer(solver, num_modes, wavelength, taper_length_per)
     eme.add_layer(taper_layer)
 
 # last layer is a straight waveguide of smaller geometry
-mode2 = MSLumerical1D(wavelength, width2, thickness2, num_modes=num_modes_second_half, mesh=mesh,cladding_width=10e-6,cladding_thickness=10e-6,mode=eme.mode)
+mode2 = MSLumerical1D(
+    wavelength,
+    width2,
+    thickness2,
+    num_modes=num_modes_second_half,
+    mesh=mesh,
+    cladding_width=10e-6,
+    cladding_thickness=10e-6,
+    mode=eme.mode,
+)
 straight2 = Layer(mode2, num_modes_second_half, wavelength, length)
 eme.add_layer(straight2)
 
 monitor = eme.add_monitor(axes="xz")
 
-# eme.draw() 
+# eme.draw()
 # plt.show()
 
 eme.propagate()  # Run the eme

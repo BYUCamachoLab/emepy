@@ -19,3 +19,6 @@ def test_solver():
     fd_solver.solve()
     fd_mode = fd_solver.get_mode()
     assert fd_mode
+
+
+test_solver()
