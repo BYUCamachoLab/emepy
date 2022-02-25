@@ -6,7 +6,7 @@ from emepy.eme import EME
 from emepy.fd import ModeSolver, ModeSolver1D
 import importlib
 
-if (importlib.util.find_spec("lumapi") is not None):
+if importlib.util.find_spec("lumapi") is not None:
     import lumapi as lm
 import numpy as np
 import os
@@ -267,19 +267,16 @@ class MSLumerical(ModeSolver):
         self.mode.deleteall()
 
         # Create cladding
-        cladding = self.setup_cladding()
+        self.cladding = self.setup_cladding()
 
         # add core x=prop y=width z=thickness
-        if not len(self.polygons):
-            core = self.setup_waveguide_core()
-        else:
-            core = self.setup_polygons_core()
+        self.core = self.setup_waveguide_core() if not len(self.polygons) else self.setup_polygons_core()
 
         # Solve using EME modesolver
         if self.eme_modes or self.PML:
 
             # set up EME for FDE extraction
-            eme = self.setup_eme()
+            self.eme = self.setup_eme()
 
             # run
             self.mode.run()
@@ -293,7 +290,7 @@ class MSLumerical(ModeSolver):
         else:
 
             # set up FDE
-            fde = self.setup_fde()
+            self.fde = self.setup_fde()
 
             # get fde results
             fields, neffs, gridx, gridy, n = self.get_fde_results()
@@ -336,7 +333,7 @@ class MSLumerical(ModeSolver):
 
 class MSLumerical1D(MSLumerical, ModeSolver1D):
     """
-    Exact same as MSLumerical except solves on a 1D grid. 
+    Exact same as MSLumerical except solves on a 1D grid.
     Create geometries in 2D as before, but only the middle y value will be used.
     This declaration will only overload the methods that require changing code for
     """

@@ -164,7 +164,7 @@ class Duplicator(Model):
             if "dup" in name:
                 pins.append(Pin(self, name))
         for name in self.right_pins:
-            if not "dup" in name:
+            if "dup" not in name:
                 pins.append(Pin(self, name))
         self.pins = pins
         super().__init__(**kwargs, pins=pins)
@@ -675,7 +675,7 @@ class SourceDuplicator(Model):
             if "dup" in name:
                 pins.append(Pin(self, name))
         for name in self.right_pins:
-            if not "dup" in name:
+            if "dup" not in name:
                 pins.append(Pin(self, name))
         self.pins = pins
         super().__init__(**kwargs, pins=pins)
@@ -859,7 +859,7 @@ class ModelTools(object):
         return [
             i
             for i in sources
-            if i.z is not  None and (((start <= i.z < end) and i.k) or ((start < i.z <= end) and not i.k))
+            if i.z is not None and (((start <= i.z < end) and i.k) or ((start < i.z <= end) and not i.k))
         ]
 
     @staticmethod
@@ -962,7 +962,7 @@ class ModelTools(object):
 
         # Find wanted indices
         for i in wanted[::-1]:
-            if not "_to_" in model.pins[i].name:
+            if "_to_" not in model.pins[i].name:
                 pass
             elif "left" in model.pins[i].name:
                 n = model.pins[i].name
@@ -980,7 +980,7 @@ class ModelTools(object):
 
         # Remove unwanted rows and columns
         for i in indices:
-            if not i in wanted:
+            if i not in wanted:
                 model.s_params = np.delete(model.s_params, i, 1)
                 model.s_params = np.delete(model.s_params, i, 2)
 

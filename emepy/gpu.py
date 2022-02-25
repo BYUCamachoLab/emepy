@@ -17,4 +17,3 @@ class MSEMpyGPU(MSEMpy):
             self.num_modes, self.accuracy
         )
         return self
-

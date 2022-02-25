@@ -242,7 +242,8 @@ class Mode1D(EigenMode):
         try:
             t = self.change_fields(deepcopy(temp), deepcopy(temp), lambda a, b: operation(b))
             Hx, Hy, Hz, Ex, Ey, Ez = [t.Hx, t.Hy, t.Hz, t.Ex, t.Ey, t.Ez]
-        except:
+        except Exception as e:
+            print(e)
             raise Exception(
                 "Invalid operation provided. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real') or provide a function"
             )
@@ -418,7 +419,8 @@ class Mode(EigenMode):
         try:
             t = self.change_fields(deepcopy(temp), deepcopy(temp), lambda a, b: operation(b))
             Hx, Hy, Hz, Ex, Ey, Ez = [t.Hx, t.Hy, t.Hz, t.Ex, t.Ey, t.Ez]
-        except:
+        except Exception as e:
+            print(e)
             raise Exception(
                 "Invalid operation provided. Please choose from ('Imaginary', 'Abs', 'Abs^2', 'Real') or provide a function"
             )

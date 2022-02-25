@@ -115,7 +115,7 @@ class WaveguideChannels(Geometry):
         starting_center = -0.5 * (num_channels - 1) * (gap + width)
         n_output = np.ones(mesh) * cladding_index
         for out in range(num_channels):
-            if not out in exclude_indices:
+            if out not in exclude_indices:
                 center = starting_center + out * (gap + width)
                 left_edge = center - 0.5 * width
                 right_edge = center + 0.5 * width

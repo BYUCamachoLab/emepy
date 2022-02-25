@@ -33,7 +33,7 @@ class Source(object):
 
     def match_label(self, label: str) -> bool:
         """Sees if the provided label matches the current Source object's and returns True if so
-        
+
         Parameters
         ----------
         label : str
@@ -49,4 +49,3 @@ class Source(object):
 
     def __str__(self):
         return self.get_label()
-
