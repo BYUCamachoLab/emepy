@@ -721,7 +721,7 @@ class EME(object):
                 n = pin.name
 
                 # Left global input
-                if "left" in n and not "dup" in n:
+                if "left" in n and "dup" not in n:
                     ind = int(n[4:])
                     if ind < len(left_coeffs):
                         mapping[n] = left_coeffs[ind]
@@ -729,7 +729,7 @@ class EME(object):
                         mapping[n] = 0.0
 
                 # Right global input
-                if "right" in n and not "dup" in n:
+                if "right" in n and "dup" not in n:
                     ind = int(n[5:])
                     if ind < len(right_coeffs):
                         mapping[n] = right_coeffs[ind]
@@ -737,11 +737,11 @@ class EME(object):
                         mapping[n] = 0.0
 
                 # Left monitor
-                if "left" in n and "dup" in n and not "to" in n:
+                if "left" in n and "dup" in n and "to" not in n:
                     mapping[n] = 0
 
                 # Right monitor
-                if "right" in n and "dup" in n and not "to" in n:
+                if "right" in n and "dup" in n and "to" not in n:
                     mapping[n] = 0
 
                 # Custom left source inputs
@@ -769,6 +769,7 @@ class EME(object):
                             mapping[n] = 0.0
 
         except Exception as e:
+            print(e)
             raise Exception("Improper format of sources")
 
         return mapping

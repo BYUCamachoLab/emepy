@@ -17,11 +17,7 @@ def main():
     plt.figure()
     plt.subplot(1, 2, 1)
     plt.plot(taper_ann_dict["density"], np.abs(taper_ann_dict["time"]), label="ANN")
-    plt.plot(
-        taper_lumerical_dict["density"],
-        np.abs(taper_lumerical_dict["time"]),
-        label="Lumerical FD",
-    )
+    plt.plot(taper_lumerical_dict["density"], np.abs(taper_lumerical_dict["time"]), label="Lumerical FD")
     # plt.plot(taper_empy_dict["density"],np.log10(taper_empy_dict["time"]), label="Electromagnetic Python")
     plt.xlabel("Taper Density")
     plt.ylabel("Time (s)")
@@ -29,11 +25,7 @@ def main():
     plt.grid()
 
     plt.subplot(1, 2, 2)
-    plt.plot(
-        taper_ann_dict["density"],
-        np.abs(np.array(taper_ann_dict["s_params"])[:, 0, 0, 1]) ** 2,
-        label="ANN",
-    )
+    plt.plot(taper_ann_dict["density"], np.abs(np.array(taper_ann_dict["s_params"])[:, 0, 0, 1]) ** 2, label="ANN")
     plt.plot(
         taper_lumerical_dict["density"],
         np.abs(np.array(taper_lumerical_dict["s_params"])[:, 0, 0, 1]) ** 2,

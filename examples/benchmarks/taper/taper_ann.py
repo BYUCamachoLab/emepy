@@ -34,12 +34,7 @@ def taper_ann(print_s=True, start=0, finish=10):
         eme.reset()
 
         # first layer is a straight waveguide
-        mode1 = ModeSolver(
-            ann,
-            wavelength,
-            width1,
-            thickness1,
-        )
+        mode1 = ModeSolver(ann, wavelength, width1, thickness1)
         straight1 = Layer(mode1, num_modes, wavelength, wg_length)
         eme.add_layer(straight1)
 
@@ -69,9 +64,7 @@ def taper_ann(print_s=True, start=0, finish=10):
         taper_ann_dict["s_params"].append(eme.s_parameters())
 
         if print_s:
-            print(
-                taper_density, ": ", np.abs(eme.s_parameters())
-            )  # Extract s_parameters
+            print(taper_density, ": ", np.abs(eme.s_parameters()))  # Extract s_parameters
 
     return taper_ann_dict
 

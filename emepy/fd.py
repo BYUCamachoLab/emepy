@@ -136,9 +136,7 @@ class MSEMpy(ModeSolver):
             layer_yn = int(np.abs(0.5 * self.wl / dy[0]))
             self.nlayers = [layer_yp, layer_yn, layer_xp, layer_xn]
             factor = 1 + 2j
-            self.x, self.y, _, _, _, _ = stretchmesh(
-                self.x, self.y, self.nlayers, factor
-            )
+            self.x, self.y, _, _, _, _ = stretchmesh(self.x, self.y, self.nlayers, factor)
         if epsfunc is None:
             self.epsfunc = get_epsfunc(
                 self.width,
@@ -158,9 +156,9 @@ class MSEMpy(ModeSolver):
 
     def solve(self) -> ModeSolver:
         """Solves for the eigenmodes"""
-        self.solver = EMpy_gpu.modesolvers.FD.VFDModeSolver(
-            self.wl, self.x, self.y, self.epsfunc, self.boundary
-        ).solve(self.num_modes, self.accuracy)
+        self.solver = EMpy_gpu.modesolvers.FD.VFDModeSolver(self.wl, self.x, self.y, self.epsfunc, self.boundary).solve(
+            self.num_modes, self.accuracy
+        )
         return self
 
     def clear(self) -> ModeSolver:
@@ -193,54 +191,36 @@ class MSEMpy(ModeSolver):
 
         if not self.PML:
             self.nlayers = [1, 0, 1, 0]
-        Ex = interp(
-            x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ex"), True
-        )[self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]]
-        Ey = interp(
-            x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ey"), True
-        )[self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]]
-        Ez = interp(
-            x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ez"), True
-        )[self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]]
-        Hx = interp(
-            x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hx"), False
-        )[self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]]
-        Hy = interp(
-            x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hy"), False
-        )[self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]]
-        Hz = interp(
-            x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hz"), False
-        )[self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]]
+        Ex = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ex"), True)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Ey = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ey"), True)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Ez = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Ez"), True)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Hx = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hx"), False)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Hy = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hy"), False)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
+        Hz = interp(x0_new, y0_new, x0, y0, self.solver.modes[mode_num].get_field("Hz"), False)[
+            self.nlayers[1] : -self.nlayers[0], self.nlayers[3] : -self.nlayers[2]
+        ]
         self.x = x0_new[self.nlayers[1] : -self.nlayers[0]]
         self.y = y0_new[self.nlayers[3] : -self.nlayers[2]]
 
         neff = self.solver.modes[mode_num].neff
         n = np.sqrt(self.epsfunc(self.x, self.y))
 
-        return Mode(
-            x=self.x,
-            y=self.y,
-            wl=self.wl,
-            neff=neff,
-            Hx=Hx,
-            Hy=Hy,
-            Hz=Hz,
-            Ex=Ex,
-            Ey=Ey,
-            Ez=Ez,
-            n=n,
-        )
+        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=n)
 
     def plot_material(self) -> None:
         """Plots the index of refraction profile"""
         plt.imshow(
-            np.sqrt(np.real(self.n)).T,
-            extent=[
-                self.x[0] * 1e6,
-                self.x[-1] * 1e6,
-                self.y[0] * 1e6,
-                self.y[-1] * 1e6,
-            ],
+            np.sqrt(np.real(self.n)).T, extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6]
         )
         plt.colorbar()
         plt.title("Index of Refraction")
@@ -328,9 +308,7 @@ class MSEMpy1D(ModeSolver):
             layer_xn = int(np.abs(0.5 * self.wl / dx[0]))
             self.nlayers = [layer_xp, layer_xn, 0, 0]
             factor = 1 + 2j
-            self.x, _, _, _, _, _ = stretchmesh(
-                self.x, np.zeros(1), self.nlayers, factor
-            )
+            self.x, _, _, _, _, _ = stretchmesh(self.x, np.zeros(1), self.nlayers, factor)
         if epsfunc is None:
             self.epsfunc = get_epsfunc(
                 self.width,
@@ -382,41 +360,18 @@ class MSEMpy1D(ModeSolver):
 
         if not self.PML:
             self.nlayers = [1, 0, 1, 0]
-        Ex = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ex"), True)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Ey = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ey"), True)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Ez = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ez"), True)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Hx = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hx"), False)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Hy = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hy"), False)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
-        Hz = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hz"), False)[
-            self.nlayers[1] : -self.nlayers[0]
-        ]
+        Ex = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ex"), True)[self.nlayers[1] : -self.nlayers[0]]
+        Ey = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ey"), True)[self.nlayers[1] : -self.nlayers[0]]
+        Ez = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Ez"), True)[self.nlayers[1] : -self.nlayers[0]]
+        Hx = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hx"), False)[self.nlayers[1] : -self.nlayers[0]]
+        Hy = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hy"), False)[self.nlayers[1] : -self.nlayers[0]]
+        Hz = interp1d(x0_new, x0.self.solver.modes[mode_num].get_field("Hz"), False)[self.nlayers[1] : -self.nlayers[0]]
         self.x = x0_new[self.nlayers[1] : -self.nlayers[0]]
 
         neff = self.solver.modes[mode_num].neff
         n = np.sqrt(self.epsfunc(self.x, np.zeros(0)))
 
-        return Mode1D(
-            x=self.x,
-            wl=self.wl,
-            neff=neff,
-            Hx=Hx,
-            Hy=Hy,
-            Hz=Hz,
-            Ex=Ex,
-            Ey=Ey,
-            Ez=Ez,
-            n=n,
-        )
+        return Mode1D(x=self.x, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=n)
 
     def plot_material(self) -> None:
         """Plots the index of refraction profile"""
@@ -430,12 +385,7 @@ class MSPickle(object):
     """Pickle Modesolver. See Modesolver. Pickle should serialize a list of Mode objects that can be opened here."""
 
     def __init__(
-        self,
-        filename: str,
-        index: int = None,
-        width: float = None,
-        thickness: float = None,
-        **kwargs
+        self, filename: str, index: int = None, width: float = None, thickness: float = None, **kwargs
     ) -> None:
         """MSPickle class constructor
 

@@ -412,11 +412,12 @@ class Monitor(object):
         if axes in ["xz", "zx", "yz", "zy"]:
             if ax:
                 if show_geometry:
-                    n_im = ax.imshow(
+                    ax.imshow(
                         np.real(n),
                         extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
                         cmap=cmap_lookup["n"],
                     )
+                vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
                 if show_sources:
                     srcs = np.real(self.get_source_visual(field.shape))
                     field = np.where(srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field)
@@ -431,7 +432,7 @@ class Monitor(object):
                 ax.set_title(component)
             else:
                 if show_geometry:
-                    n_im = plt.imshow(
+                    plt.imshow(
                         np.real(n),
                         extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
                         cmap=cmap_lookup["n"],

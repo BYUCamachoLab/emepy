@@ -23,7 +23,7 @@ def get_epsfunc(
     ny: int = None,
 ) -> Callable[["np.ndarray", "np.ndarray"], "np.ndarray"]:
     """Returns the epsfunc for given parameters for a rectangular waveguide
-    
+
     Parameters
     ----------
     width: float
@@ -33,7 +33,7 @@ def get_epsfunc(
     cladding_width: float
         the width of the surrounding cladding (note this is total width and should be > core width)
     cladding_thickness: float
-        the thicknes of the surrounding cladding (note this is total thickness and should be > core thickness)
+        the thickness of the surrounding cladding (note this is total thickness and should be > core thickness)
     core_index: float
         refractive index of the core
     cladding_index: float
@@ -125,16 +125,16 @@ def get_epsfunc(
     if (width is not None) and (thickness is not None):
         return epsfunc_2D_1
 
-    elif (width is None) and  (thickness is not None) and (profile is not None):
+    elif (width is None) and (thickness is not None) and (profile is not None):
         return epsfunc_2D_2
 
-    elif (width is None) and (thickness is None) and  (profile is not None):
+    elif (width is None) and (thickness is None) and (profile is not None):
         return epsfunc_2D_3
 
-    elif (thickness is None) and  (width is not None):
+    elif (thickness is None) and (width is not None):
         return epsfunc_1D_1
 
-    elif (thickness is None) and (width is None) and  (profile is not None):
+    elif (thickness is None) and (width is None) and (profile is not None):
         return epsfunc_1D_2
 
     raise Exception(
@@ -160,24 +160,24 @@ def get_epsfunc_epsfunc(
 
 
 def create_polygon(x: "np.ndarray", y: "np.ndarray", n: "np.ndarray", detranslate: bool = True) -> list:
-    """Given a grid and a refractive index profile, will return the verticies of the polygon for importing into libraries such as Lumerical
+    """Given a grid and a refractive index profile, will return the vertices of the polygon for importing into libraries such as Lumerical
 
     Parameters
     ----------
     x : "np.ndarray"
         the x grid
     y : "np.ndarray"
-        the y grid    
+        the y grid
     n :"np.ndarray"
         the refractive index profile
     detranslate : bool
-        if True, will detranslate the verticies
+        if True, will detranslate the vertices
 
     Returns
     -------
     list[tuples]
-        the resulting verticies
-    
+        the resulting vertices
+
     """
 
     x0, y0 = [x.copy(), y.copy()]
@@ -213,7 +213,7 @@ def interp(
     x: "np.ndarray", y: "np.ndarray", x0: "np.ndarray", y0: "np.ndarray", f: "np.ndarray", centered: bool
 ) -> "np.ndarray":
     """Interpolate a 2D complex array.
-    
+
     Parameters
     ----------
     x:"np.ndarray"
@@ -225,10 +225,10 @@ def interp(
     y0:"np.ndarray"
         the original y grid
     f:"np.ndarray"
-        the field to interpolate 
+        the field to interpolate
     centered:bool
         whether or not it needs to stil be shifted
-    
+
     Returns
     -------
     np.ndarray
@@ -255,7 +255,7 @@ def interp(
 
 def interp1d(x: "np.ndarray", x0: "np.ndarray", f: "np.ndarray", centered: bool) -> "np.ndarray":
     """Interpolate a 1D complex array.
-    
+
     Parameters
     ----------
     x:"np.ndarray"
@@ -263,10 +263,10 @@ def interp1d(x: "np.ndarray", x0: "np.ndarray", f: "np.ndarray", centered: bool)
     x0:"np.ndarray"
         the original grid
     f:"np.ndarray"
-        the field to interpolate 
+        the field to interpolate
     centered:bool
         whether or not it needs to stil be shifted
-    
+
     Returns
     -------
     np.ndarray

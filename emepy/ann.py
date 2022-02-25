@@ -12,7 +12,8 @@ import sklearn
 
 from emepy.mode import Mode, EigenMode
 from emepy.fd import ModeSolver
-from emepy.tools import *
+from emepy.tools import from_chunks, get_epsfunc
+from emepy.materials import Si, SiO2
 
 FIELD_WIDTH = 128
 FIELD_SIZE = FIELD_WIDTH ** 2
@@ -370,7 +371,7 @@ class MSNeuralNetwork(ModeSolver):
 
     def get_mode(self, mode_num: int = 0) -> EigenMode:
         """Returns the solved eigenmode
-        
+
         Parameters
         ----------
         mode_num : int

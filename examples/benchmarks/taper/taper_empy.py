@@ -11,9 +11,7 @@ def taper_empy(print_s=True, start=0, finish=10):
     taper_empy_dict = {"density": [], "time": [], "s_params": []}
 
     # Cross sectional parameters (computational complexity determined here)
-    ModeSolver = (
-        MSEMpy  # Choose a modesolver object that will calculate the 2D field profile
-    )
+    ModeSolver = MSEMpy  # Choose a modesolver object that will calculate the 2D field profile
     num_modes = 1
     mesh = 128
 
@@ -66,9 +64,7 @@ def taper_empy(print_s=True, start=0, finish=10):
         taper_empy_dict["s_params"].append(eme.s_parameters())
 
         if print_s:
-            print(
-                taper_density, ": ", np.abs(eme.s_parameters())
-            )  # Extract s_parameters
+            print(taper_density, ": ", np.abs(eme.s_parameters()))  # Extract s_parameters
 
     return taper_empy_dict
 
