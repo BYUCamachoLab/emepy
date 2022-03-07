@@ -1,6 +1,8 @@
 import numpy as np
 from emepy.fd import MSEMpy, ModeSolver
 from emepy.models import Layer
+from shapely.geometry import Polygon, Point
+import geopandas as gdp
 
 
 class Geometry(object):
@@ -41,8 +43,7 @@ class EMpyGeometryParameters(Params):
         PML: bool = False,
         **kwargs,
     ):
-        """Creates an instance of EMpyGeometryParameters which is used for abstract geometries that use EMpy as the solver
-        """
+        """Creates an instance of EMpyGeometryParameters which is used for abstract geometries that use EMpy as the solver"""
 
         self.wavelength = wavelength
         self.cladding_width = cladding_width
@@ -59,8 +60,7 @@ class EMpyGeometryParameters(Params):
             setattr(key, val)
 
     def get_solver_rect(self, width: float = 0.5e-6, thickness: float = 0.22e-6, num_modes: int = 1) -> "MSEMpy":
-        """Returns an EMPy solver that represents a simple rectangle
-        """
+        """Returns an EMPy solver that represents a simple rectangle"""
 
         return MSEMpy(
             wavelength=self.wavelength,
@@ -80,8 +80,7 @@ class EMpyGeometryParameters(Params):
         )
 
     def get_solver_index(self, thickness: float = None, num_modes: int = None, n: "np.ndarray" = None) -> "MSEMpy":
-        """Returns an EMPy solver that represents the provided index profile
-        """
+        """Returns an EMPy solver that represents the provided index profile"""
 
         return MSEMpy(
             wavelength=self.wavelength,
@@ -100,6 +99,156 @@ class EMpyGeometryParameters(Params):
             n=n,
             PML=self.PML,
         )
+
+
+class DynamicPolygon(Geometry):
+    """Creates a polygon in EMEPy given a list of solid vertices and changeable vertices and can be changed for shape optimization"""
+
+    def get_design(self) -> list:
+        """Returns the design region as a list of parameters"""
+        return self.design
+
+
+class DynamicRect2D(DynamicPolygon):
+    def __init__(
+        self,
+        params: Params,
+        width: float,
+        length: float,
+        num_params: int = 10,
+        symmetry: bool = False,
+        subpixel: bool = True,
+        mesh_z: int = 10,
+    ) -> None:
+        """Creates an instance of DynamicPolygon2D
+
+        Parameters
+        ----------
+
+        """
+        self.params = params
+        self.symmetry = symmetry
+        self.subpixel = subpixel
+        self.width, self.length = (width, length)
+        self.grid_x = (
+            params.x
+            if params.x is not None
+            else np.linspace(-params.cladding_width / 2, params.cladding_width / 2, params.mesh)
+        )
+        self.grid_z = np.linspace(0, length, mesh_z)
+
+        # Set left side static vertices
+        x = [-width / 2, width / 2]
+        z = [0, 0]
+        self.static_vertices_left = list(zip(x, z))
+
+        # Set top dynamic vertices
+        x = np.array([width / 2] * num_params)
+        z = np.linspace(0, length, num_params + 2)[1:-1].tolist()
+        dynamic_vertices_top = list(zip(x, z))
+
+        # Set right side static vertices
+        x = [width / 2, -width / 2]
+        z = [length, length]
+        self.static_vertices_right = list(zip(x, z))
+
+        # Set bottom dynamic vertices
+        x = [-width / 2] * num_params
+        z = np.linspace(0, length, num_params + 2)[1:-1][::-1].tolist()
+        dynamic_vertices_bottom = list(zip(x, z))
+
+        # Establish design
+        design = dynamic_vertices_top[:] if symmetry else dynamic_vertices_top + dynamic_vertices_bottom
+        design = [i for j in design for i in j]
+
+        # Set design
+        self.set_design(design)
+
+    def set_design(self, design: list):
+        """Sets the design region parameters"""
+        self.design = design
+        self.set_layers()
+
+    def get_n(self):
+        """Will form the refractive index map given the current parameters"""
+        # Create vertices
+        vertices = []
+
+        # Add static left vertices
+        vertices += self.static_vertices_left
+
+        # Add top design
+        top = self.design if self.symmetry else self.design[: len(self.design) // 2]
+        # print([(x, z) for x, z in zip(top[:-1:2], top[1::2])])
+        vertices += [(x, z) for x, z in zip(top[:-1:2], top[1::2])]
+
+        # Add static right vertices
+        vertices += self.static_vertices_right
+
+        # Add bottom design
+        bottom = self.design if self.symmetry else self.design[len(self.design) // 2 :]
+        if self.symmetry:
+            vertices += [(-x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))[::-1]]
+        else:
+            vertices += [(x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))]
+
+        # Form polygon
+        polygon = Polygon(vertices)
+
+        # Form grid
+        x, z = (self.grid_x, self.grid_z)
+        xx, zz = np.meshgrid(x, z)
+        n = np.zeros(xx.shape)
+
+        def on_edge(polygon, xp, zp):
+            return (
+                polygon.contains(Point(xp, zp + 1e-20))
+                or polygon.contains(Point(xp, zp - 1e-20))
+                or polygon.contains(Point(xp + 1e-20, zp))
+                or polygon.contains(Point(xp - 1e-20, zp))
+                or polygon.contains(Point(xp + 1e-20, zp + 1e-20))
+                or polygon.contains(Point(xp - 1e-20, zp - 1e-20))
+                or polygon.contains(Point(xp + 1e-20, zp - 1e-20))
+                or polygon.contains(Point(xp - 1e-20, zp + 1e-20))
+            )
+
+        # Apply subpixel
+        diff_x = np.diff(x)
+        diff_z = np.diff(z)
+        for i, xp in enumerate(x):
+            for j, zp in enumerate(z):
+
+                # Default corner cases
+                dz = diff_z[j] if j < len(z) - 1 else self.length - zp
+                dx = diff_x[i] if i < len(z) - 1 else self.params - zp
+                lower_left_corner = polygon.contains(Point(xp, zp)) or on_edge(polygon, xp, zp)
+                lower_right_corner = polygon.contains(Point(xp, zp + dz)) or on_edge(polygon, xp, zp + dz)
+                upper_left_corner = polygon.contains(Point(xp + dx, zp)) or on_edge(polygon, xp + dx, zp)
+                upper_right_corner = polygon.contains(Point(xp + dx, zp + dz)) or on_edge(polygon, xp + dx, zp + dz)
+
+                # Case 1: All corners in
+                if lower_left_corner and lower_right_corner and upper_left_corner and upper_right_corner:
+                    n[j, i] = 1
+
+        # from matplotlib import pyplot as plt
+
+        # plt.figure()
+        # plt.imshow(n.T, cmap="Greys", extent=[z[0], z[-1], x[0], x[-1]])
+        # # plt.plot(polygon.exterior.xy[1], polygon.exterior.xy[0])
+        # plt.xlabel("z")
+        # plt.ylabel("x")
+        # plt.show()
+        # quit()
+
+    def set_layers(self):
+        """Creates the layers needed for the geometry"""
+
+        n = self.get_n()
+
+        # Create layers
+
+
+# DynamicRect2D(EMpyGeometryParameters(mesh=600), 0.5e-6, 5e-6)
 
 
 class Waveguide(Geometry):
