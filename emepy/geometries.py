@@ -290,7 +290,7 @@ class DynamicRect2D(DynamicPolygon):
         # Create layers
 
 
-DynamicRect2D(EMpyGeometryParameters(mesh=600), 0.5e-6, 5e-6)
+# DynamicRect2D(EMpyGeometryParameters(mesh=600), 0.5e-6, 5e-6)
 
 
 class Waveguide(Geometry):

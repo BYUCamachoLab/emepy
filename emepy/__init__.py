@@ -14,7 +14,8 @@ from emepy.mode import *
 from emepy.fd import *
 from emepy.models import *
 from emepy.source import *
-from emepy.geometries import *
+
+# from emepy.geometries import *
 from emepy.gpu import *
 from emepy.ann import *
 from emepy.monitors import *
