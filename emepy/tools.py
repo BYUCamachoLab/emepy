@@ -8,6 +8,95 @@ import collections
 from matplotlib import pyplot as plt
 from emepy.materials import *
 from typing import Callable
+from shapely.geometry import Polygon, Point
+
+
+def polygon_to_n_2D(
+    polygon: "Polygon",
+    x: list,
+    y: list,
+    subpixel=True,
+    core_index=3.4,
+    cladding_index=1.4,
+) -> "np.ndarray":
+    # Create grid
+    xx, yy = np.meshgrid(x, y)
+    n = np.zeros(xx.shape)[:-1, :-1]
+
+    # Apply subpixel
+    xlower, xupper = (x[:-1], x[1:])
+    zlower, zupper = (y[:-1], y[1:])
+    for i, xp in enumerate(zip(xlower, xupper)):
+        for j, zp in enumerate(zip(zlower, zupper)):
+
+            # Upper and lower points
+            xl, xu = xp
+            zl, zu = zp
+            total_area = (xu - xl) * (zu - zl)
+
+            # Create polygon of the pixel
+            pixel_poly = Polygon([(xl, zl), (xl, zu), (xu, zu), (xu, zl)])
+
+            # Get overlapping area
+            overlapping_area = 0
+            if pixel_poly.intersects(polygon):
+                overlapping_area = pixel_poly.intersection(polygon).area
+
+            # Calculate effective index
+            if subpixel:
+                n[i, j] = (
+                    overlapping_area / total_area * core_index + (1 - overlapping_area / total_area) * cladding_index
+                )
+            elif overlapping_area:
+                n[i, j] = core_index
+            else:
+                n[i, j] = cladding_index
+
+    return n
+
+
+def vertices_to_n(vertices: list, x: list, y: list, subpixel=True, core_index=3.4, cladding_index=1.4) -> "np.ndarray":
+    """
+    Takes vertices of a polygon and maps it to a grid using or not using subpixel smoothing
+    """
+
+    polygon = Polygon(vertices)
+    return polygon_to_n_2D(polygon, x, y, subpixel, core_index, cladding_index)
+
+
+def rectangle_to_n(
+    center: tuple,
+    width: float,
+    thickness: float,
+    x: list,
+    y: list,
+    subpixel=True,
+    core_index=3.4,
+    cladding_index=1.4,
+) -> "np.ndarray":
+
+    xc, yc = center
+    vertices = [
+        (xc - width / 2, yc - thickness / 2),
+        (xc - width / 2, yc + thickness / 2),
+        (xc + width / 2, yc + thickness / 2),
+        (xc + width / 2, yc - thickness / 2),
+    ]
+    return vertices_to_n(vertices, x, y, subpixel, core_index, cladding_index)
+
+
+def circle_to_n(
+    center: tuple,
+    radius: float,
+    x: list,
+    y: list,
+    subpixel=True,
+    core_index=3.4,
+    cladding_index=1.4,
+) -> "np.ndarray":
+
+    polygon = Point(*center).buffer(radius)
+    return polygon_to_n_2D(polygon, x, y, subpixel, core_index, cladding_index)
 
 
 def get_epsfunc(
@@ -74,14 +163,14 @@ def get_epsfunc(
             n = np.where(
                 (np.abs(np.real(xx.T) - cladding_width * 0.5) <= width * 0.5)
                 * (np.abs(np.real(yy.T) - cladding_thickness * 0.5) <= thickness * 0.5),
-                core_index ** 2 + 0j,
-                cladding_index ** 2 + 0j,
+                core_index**2 + 0j,
+                cladding_index**2 + 0j,
             )
         else:
             n = np.where(
                 (np.abs(np.real(xx.T)) <= width * 0.5) * (np.abs(np.real(yy.T)) <= thickness * 0.5),
-                core_index ** 2 + 0j,
-                cladding_index ** 2 + 0j,
+                core_index**2 + 0j,
+                cladding_index**2 + 0j,
             )
         return n
 
@@ -110,9 +199,11 @@ def get_epsfunc(
     # Case 4: width only
     def epsfunc_1D_1(x_, y_):
 
-        n = np.where((np.abs(np.real(x_)) <= width * 0.5), core_index ** 2 + 0j, cladding_index ** 2 + 0j).reshape(
-            len(x_), 1
-        )
+        n = np.where(
+            (np.abs(np.real(x_)) <= width * 0.5),
+            core_index**2 + 0j,
+            cladding_index**2 + 0j,
+        ).reshape(len(x_), 1)
 
         return n
 
@@ -210,7 +301,12 @@ def create_polygon(x: "np.ndarray", y: "np.ndarray", n: "np.ndarray", detranslat
 
 
 def interp(
-    x: "np.ndarray", y: "np.ndarray", x0: "np.ndarray", y0: "np.ndarray", f: "np.ndarray", centered: bool
+    x: "np.ndarray",
+    y: "np.ndarray",
+    x0: "np.ndarray",
+    y0: "np.ndarray",
+    f: "np.ndarray",
+    centered: bool,
 ) -> "np.ndarray":
     """Interpolate a 2D complex array.
 
@@ -328,7 +424,9 @@ def from_chunks(location: str, name: str) -> None:
 
 
 def _get_eps(
-    xc: "np.ndarray", yc: "np.ndarray", epsfunc: Callable[["np.ndarray", "np.ndarray"], "np.ndarray"]
+    xc: "np.ndarray",
+    yc: "np.ndarray",
+    epsfunc: Callable[["np.ndarray", "np.ndarray"], "np.ndarray"],
 ) -> tuple:
     """Used by compute_other_fields and adapted from the EMpy library"""
     tmp = epsfunc(xc, yc)
@@ -368,7 +466,7 @@ def compute_other_fields_2D(
     boundary: str,
     epsfunc: Callable[["np.ndarray", "np.ndarray"], "np.ndarray"],
 ) -> list:
-    """ Given the Hx and Hy fields, will calculate the rest
+    """Given the Hx and Hy fields, will calculate the rest
 
     Parameters
     ----------
@@ -565,14 +663,14 @@ def compute_other_fields_2D(
             * ezz1
             * ezz2
             / eyy1
-            * (2 * eyy1 / ezz1 / n ** 2 + eyx1 / ezz1 / n / w)
+            * (2 * eyy1 / ezz1 / n**2 + eyx1 / ezz1 / n / w)
             + 0.5
             * (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
             * n
             * ezz4
             * ezz3
             / eyy4
-            * (2 * eyy4 / ezz4 / n ** 2 - eyx4 / ezz4 / n / e)
+            * (2 * eyy4 / ezz4 / n**2 - eyx4 / ezz4 / n / e)
         )
         / ezz4
         / ezz3
@@ -592,14 +690,14 @@ def compute_other_fields_2D(
             * (
                 0.5
                 * ezz4
-                * ((1 - exx1 / ezz1) / n / w - exy1 / ezz1 * (2.0 / n ** 2 - 2 / n ** 2 * s / (n + s)))
+                * ((1 - exx1 / ezz1) / n / w - exy1 / ezz1 * (2.0 / n**2 - 2 / n**2 * s / (n + s)))
                 / exx1
                 * ezz1
                 * w
                 + (ezz4 - ezz1) * s / n / (n + s)
                 + 0.5
                 * ezz1
-                * (-(1 - exx4 / ezz4) / n / e - exy4 / ezz4 * (2.0 / n ** 2 - 2 / n ** 2 * s / (n + s)))
+                * (-(1 - exx4 / ezz4) / n / e - exy4 / ezz4 * (2.0 / n**2 - 2 / n**2 * s / (n + s)))
                 / exx4
                 * ezz4
                 * e
@@ -634,14 +732,14 @@ def compute_other_fields_2D(
             * ezz2
             * ezz1
             / eyy2
-            * (2 * eyy2 / ezz2 / s ** 2 - eyx2 / ezz2 / s / w)
+            * (2 * eyy2 / ezz2 / s**2 - eyx2 / ezz2 / s / w)
             + 0.5
             * (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
             * s
             * ezz3
             * ezz4
             / eyy3
-            * (2 * eyy3 / ezz3 / s ** 2 + eyx3 / ezz3 / s / e)
+            * (2 * eyy3 / ezz3 / s**2 + eyx3 / ezz3 / s / e)
         )
         / ezz4
         / ezz3
@@ -667,14 +765,14 @@ def compute_other_fields_2D(
             * (
                 0.5
                 * ezz3
-                * (-(1 - exx2 / ezz2) / s / w - exy2 / ezz2 * (2.0 / s ** 2 - 2 / s ** 2 * n / (n + s)))
+                * (-(1 - exx2 / ezz2) / s / w - exy2 / ezz2 * (2.0 / s**2 - 2 / s**2 * n / (n + s)))
                 / exx2
                 * ezz2
                 * w
                 - (ezz3 - ezz2) * n / s / (n + s)
                 + 0.5
                 * ezz2
-                * ((1 - exx3 / ezz3) / s / e - exy3 / ezz3 * (2.0 / s ** 2 - 2 / s ** 2 * n / (n + s)))
+                * ((1 - exx3 / ezz3) / s / e - exy3 / ezz3 * (2.0 / s**2 - 2 / s**2 * n / (n + s)))
                 / exx3
                 * ezz3
                 * e
@@ -698,8 +796,8 @@ def compute_other_fields_2D(
     bzxe = (
         (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
         * (
-            0.5 * n * ezz4 * ezz3 / eyy4 * (2.0 / e ** 2 - eyx4 / ezz4 / n / e)
-            + 0.5 * s * ezz3 * ezz4 / eyy3 * (2.0 / e ** 2 + eyx3 / ezz3 / s / e)
+            0.5 * n * ezz4 * ezz3 / eyy4 * (2.0 / e**2 - eyx4 / ezz4 / n / e)
+            + 0.5 * s * ezz3 * ezz4 / eyy3 * (2.0 / e**2 + eyx3 / ezz3 / s / e)
         )
         / ezz4
         / ezz3
@@ -736,8 +834,8 @@ def compute_other_fields_2D(
     bzxw = (
         (-n * ezz4 * ezz3 / eyy4 - s * ezz3 * ezz4 / eyy3)
         * (
-            0.5 * n * ezz1 * ezz2 / eyy1 * (2.0 / w ** 2 + eyx1 / ezz1 / n / w)
-            + 0.5 * s * ezz2 * ezz1 / eyy2 * (2.0 / w ** 2 - eyx2 / ezz2 / s / w)
+            0.5 * n * ezz1 * ezz2 / eyy1 * (2.0 / w**2 + eyx1 / ezz1 / n / w)
+            + 0.5 * s * ezz2 * ezz1 / eyy2 * (2.0 / w**2 - eyx2 / ezz2 / s / w)
         )
         / ezz4
         / ezz3
@@ -780,13 +878,13 @@ def compute_other_fields_2D(
                 * ezz1
                 * ezz2
                 / eyy1
-                * (-2.0 / w ** 2 - 2 * eyy1 / ezz1 / n ** 2 + k ** 2 * eyy1 - eyx1 / ezz1 / n / w)
+                * (-2.0 / w**2 - 2 * eyy1 / ezz1 / n**2 + k**2 * eyy1 - eyx1 / ezz1 / n / w)
                 + 0.5
                 * s
                 * ezz2
                 * ezz1
                 / eyy2
-                * (-2.0 / w ** 2 - 2 * eyy2 / ezz2 / s ** 2 + k ** 2 * eyy2 + eyx2 / ezz2 / s / w)
+                * (-2.0 / w**2 - 2 * eyy2 / ezz2 / s**2 + k**2 * eyy2 + eyx2 / ezz2 / s / w)
             )
             + (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
             * (
@@ -795,13 +893,13 @@ def compute_other_fields_2D(
                 * ezz4
                 * ezz3
                 / eyy4
-                * (-2.0 / e ** 2 - 2 * eyy4 / ezz4 / n ** 2 + k ** 2 * eyy4 + eyx4 / ezz4 / n / e)
+                * (-2.0 / e**2 - 2 * eyy4 / ezz4 / n**2 + k**2 * eyy4 + eyx4 / ezz4 / n / e)
                 + 0.5
                 * s
                 * ezz3
                 * ezz4
                 / eyy3
-                * (-2.0 / e ** 2 - 2 * eyy3 / ezz3 / s ** 2 + k ** 2 * eyy3 - eyx3 / ezz3 / s / e)
+                * (-2.0 / e**2 - 2 * eyy3 / ezz3 / s**2 + k**2 * eyy3 - eyx3 / ezz3 / s / e)
             )
         )
         / ezz4
@@ -823,9 +921,9 @@ def compute_other_fields_2D(
                 0.5
                 * ezz4
                 * (
-                    -(k ** 2) * exy1
+                    -(k**2) * exy1
                     - (1 - exx1 / ezz1) / n / w
-                    - exy1 / ezz1 * (-2.0 / n ** 2 - 2 / n ** 2 * (n - s) / s)
+                    - exy1 / ezz1 * (-2.0 / n**2 - 2 / n**2 * (n - s) / s)
                 )
                 / exx1
                 * ezz1
@@ -834,9 +932,9 @@ def compute_other_fields_2D(
                 + 0.5
                 * ezz1
                 * (
-                    -(k ** 2) * exy4
+                    -(k**2) * exy4
                     + (1 - exx4 / ezz4) / n / e
-                    - exy4 / ezz4 * (-2.0 / n ** 2 - 2 / n ** 2 * (n - s) / s)
+                    - exy4 / ezz4 * (-2.0 / n**2 - 2 / n**2 * (n - s) / s)
                 )
                 / exx4
                 * ezz4
@@ -847,9 +945,9 @@ def compute_other_fields_2D(
                 0.5
                 * ezz3
                 * (
-                    -(k ** 2) * exy2
+                    -(k**2) * exy2
                     + (1 - exx2 / ezz2) / s / w
-                    - exy2 / ezz2 * (-2.0 / s ** 2 + 2 / s ** 2 * (n - s) / n)
+                    - exy2 / ezz2 * (-2.0 / s**2 + 2 / s**2 * (n - s) / n)
                 )
                 / exx2
                 * ezz2
@@ -858,9 +956,9 @@ def compute_other_fields_2D(
                 + 0.5
                 * ezz2
                 * (
-                    -(k ** 2) * exy3
+                    -(k**2) * exy3
                     - (1 - exx3 / ezz3) / s / e
-                    - exy3 / ezz3 * (-2.0 / s ** 2 + 2 / s ** 2 * (n - s) / n)
+                    - exy3 / ezz3 * (-2.0 / s**2 + 2 / s**2 * (n - s) / n)
                 )
                 / exx3
                 * ezz3
@@ -1014,8 +1112,8 @@ def compute_other_fields_2D(
         * e
         + (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
         * (
-            0.5 * ezz4 * (2.0 / n ** 2 + exy1 / ezz1 / n / w) / exx1 * ezz1 * w
-            + 0.5 * ezz1 * (2.0 / n ** 2 - exy4 / ezz4 / n / e) / exx4 * ezz4 * e
+            0.5 * ezz4 * (2.0 / n**2 + exy1 / ezz1 / n / w) / exx1 * ezz1 * w
+            + 0.5 * ezz1 * (2.0 / n**2 - exy4 / ezz4 / n / e) / exx4 * ezz4 * e
         )
         / ezz3
         / ezz2
@@ -1052,8 +1150,8 @@ def compute_other_fields_2D(
         * e
         - (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
         * (
-            0.5 * ezz3 * (2.0 / s ** 2 - exy2 / ezz2 / s / w) / exx2 * ezz2 * w
-            + 0.5 * ezz2 * (2.0 / s ** 2 + exy3 / ezz3 / s / e) / exx3 * ezz3 * e
+            0.5 * ezz3 * (2.0 / s**2 - exy2 / ezz2 / s / w) / exx2 * ezz2 * w
+            + 0.5 * ezz2 * (2.0 / s**2 + exy3 / ezz3 / s / e) / exx3 * ezz3 * e
         )
         / ezz3
         / ezz2
@@ -1085,13 +1183,13 @@ def compute_other_fields_2D(
                 * ezz4
                 * ezz3
                 / eyy4
-                * (-(1 - eyy4 / ezz4) / n / e - eyx4 / ezz4 * (2.0 / e ** 2 - 2 / e ** 2 * w / (e + w)))
+                * (-(1 - eyy4 / ezz4) / n / e - eyx4 / ezz4 * (2.0 / e**2 - 2 / e**2 * w / (e + w)))
                 + 0.5
                 * s
                 * ezz3
                 * ezz4
                 / eyy3
-                * ((1 - eyy3 / ezz3) / s / e - eyx3 / ezz3 * (2.0 / e ** 2 - 2 / e ** 2 * w / (e + w)))
+                * ((1 - eyy3 / ezz3) / s / e - eyx3 / ezz3 * (2.0 / e**2 - 2 / e**2 * w / (e + w)))
                 + (ezz4 - ezz3) * w / e / (e + w)
             )
         )
@@ -1112,14 +1210,14 @@ def compute_other_fields_2D(
             0.5
             * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
             * ezz1
-            * (2 * exx4 / ezz4 / e ** 2 - exy4 / ezz4 / n / e)
+            * (2 * exx4 / ezz4 / e**2 - exy4 / ezz4 / n / e)
             / exx4
             * ezz4
             * e
             - 0.5
             * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
             * ezz2
-            * (2 * exx3 / ezz3 / e ** 2 + exy3 / ezz3 / s / e)
+            * (2 * exx3 / ezz3 / e**2 + exy3 / ezz3 / s / e)
             / exx3
             * ezz3
             * e
@@ -1148,14 +1246,14 @@ def compute_other_fields_2D(
                 * ezz1
                 * ezz2
                 / eyy1
-                * ((1 - eyy1 / ezz1) / n / w - eyx1 / ezz1 * (2.0 / w ** 2 - 2 / w ** 2 * e / (e + w)))
+                * ((1 - eyy1 / ezz1) / n / w - eyx1 / ezz1 * (2.0 / w**2 - 2 / w**2 * e / (e + w)))
                 - (ezz1 - ezz2) * e / w / (e + w)
                 + 0.5
                 * s
                 * ezz2
                 * ezz1
                 / eyy2
-                * (-(1 - eyy2 / ezz2) / s / w - eyx2 / ezz2 * (2.0 / w ** 2 - 2 / w ** 2 * e / (e + w)))
+                * (-(1 - eyy2 / ezz2) / s / w - eyx2 / ezz2 * (2.0 / w**2 - 2 / w**2 * e / (e + w)))
             )
             + (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
             * (
@@ -1181,14 +1279,14 @@ def compute_other_fields_2D(
             0.5
             * (ezz3 / exx2 * ezz2 * w + ezz2 / exx3 * ezz3 * e)
             * ezz4
-            * (2 * exx1 / ezz1 / w ** 2 + exy1 / ezz1 / n / w)
+            * (2 * exx1 / ezz1 / w**2 + exy1 / ezz1 / n / w)
             / exx1
             * ezz1
             * w
             - 0.5
             * (ezz4 / exx1 * ezz1 * w + ezz1 / exx4 * ezz4 * e)
             * ezz3
-            * (2 * exx2 / ezz2 / w ** 2 - exy2 / ezz2 / s / w)
+            * (2 * exx2 / ezz2 / w**2 - exy2 / ezz2 / s / w)
             / exx2
             * ezz2
             * w
@@ -1218,9 +1316,9 @@ def compute_other_fields_2D(
                 * ezz2
                 / eyy1
                 * (
-                    -(k ** 2) * eyx1
+                    -(k**2) * eyx1
                     - (1 - eyy1 / ezz1) / n / w
-                    - eyx1 / ezz1 * (-2.0 / w ** 2 + 2 / w ** 2 * (e - w) / e)
+                    - eyx1 / ezz1 * (-2.0 / w**2 + 2 / w**2 * (e - w) / e)
                 )
                 + (ezz1 - ezz2) * (e - w) / e / w
                 + 0.5
@@ -1229,9 +1327,9 @@ def compute_other_fields_2D(
                 * ezz1
                 / eyy2
                 * (
-                    -(k ** 2) * eyx2
+                    -(k**2) * eyx2
                     + (1 - eyy2 / ezz2) / s / w
-                    - eyx2 / ezz2 * (-2.0 / w ** 2 + 2 / w ** 2 * (e - w) / e)
+                    - eyx2 / ezz2 * (-2.0 / w**2 + 2 / w**2 * (e - w) / e)
                 )
             )
             + (n * ezz1 * ezz2 / eyy1 + s * ezz2 * ezz1 / eyy2)
@@ -1242,9 +1340,9 @@ def compute_other_fields_2D(
                 * ezz3
                 / eyy4
                 * (
-                    -(k ** 2) * eyx4
+                    -(k**2) * eyx4
                     + (1 - eyy4 / ezz4) / n / e
-                    - eyx4 / ezz4 * (-2.0 / e ** 2 - 2 / e ** 2 * (e - w) / w)
+                    - eyx4 / ezz4 * (-2.0 / e**2 - 2 / e**2 * (e - w) / w)
                 )
                 + 0.5
                 * s
@@ -1252,9 +1350,9 @@ def compute_other_fields_2D(
                 * ezz4
                 / eyy3
                 * (
-                    -(k ** 2) * eyx3
+                    -(k**2) * eyx3
                     - (1 - eyy3 / ezz3) / s / e
-                    - eyx3 / ezz3 * (-2.0 / e ** 2 - 2 / e ** 2 * (e - w) / w)
+                    - eyx3 / ezz3 * (-2.0 / e**2 - 2 / e**2 * (e - w) / w)
                 )
                 + (ezz4 - ezz3) * (e - w) / e / w
             )
@@ -1277,13 +1375,13 @@ def compute_other_fields_2D(
             * (
                 0.5
                 * ezz4
-                * (-2.0 / n ** 2 - 2 * exx1 / ezz1 / w ** 2 + k ** 2 * exx1 - exy1 / ezz1 / n / w)
+                * (-2.0 / n**2 - 2 * exx1 / ezz1 / w**2 + k**2 * exx1 - exy1 / ezz1 / n / w)
                 / exx1
                 * ezz1
                 * w
                 + 0.5
                 * ezz1
-                * (-2.0 / n ** 2 - 2 * exx4 / ezz4 / e ** 2 + k ** 2 * exx4 + exy4 / ezz4 / n / e)
+                * (-2.0 / n**2 - 2 * exx4 / ezz4 / e**2 + k**2 * exx4 + exy4 / ezz4 / n / e)
                 / exx4
                 * ezz4
                 * e
@@ -1292,13 +1390,13 @@ def compute_other_fields_2D(
             * (
                 0.5
                 * ezz3
-                * (-2.0 / s ** 2 - 2 * exx2 / ezz2 / w ** 2 + k ** 2 * exx2 + exy2 / ezz2 / s / w)
+                * (-2.0 / s**2 - 2 * exx2 / ezz2 / w**2 + k**2 * exx2 + exy2 / ezz2 / s / w)
                 / exx2
                 * ezz2
                 * w
                 + 0.5
                 * ezz2
-                * (-2.0 / s ** 2 - 2 * exx3 / ezz3 / e ** 2 + k ** 2 * exx3 - exy3 / ezz3 / s / e)
+                * (-2.0 / s**2 - 2 * exx3 / ezz3 / e**2 + k**2 * exx3 - exy3 / ezz3 / s / e)
                 / exx3
                 * ezz3
                 * e
@@ -1416,13 +1514,29 @@ def compute_other_fields_2D(
     Izx = np.r_[iall, i_w, i_e, i_s, i_n, i_ne, i_se, i_sw, i_nw]
     Jzx = np.r_[iall, i_e, i_w, i_n, i_s, i_sw, i_nw, i_ne, i_se]
     Vzx = np.r_[
-        bzxp[iall], bzxe[i_w], bzxw[i_e], bzxn[i_s], bzxs[i_n], bzxsw[i_ne], bzxnw[i_se], bzxne[i_sw], bzxse[i_nw]
+        bzxp[iall],
+        bzxe[i_w],
+        bzxw[i_e],
+        bzxn[i_s],
+        bzxs[i_n],
+        bzxsw[i_ne],
+        bzxnw[i_se],
+        bzxne[i_sw],
+        bzxse[i_nw],
     ]
 
     Izy = np.r_[iall, i_w, i_e, i_s, i_n, i_ne, i_se, i_sw, i_nw]
     Jzy = np.r_[iall, i_e, i_w, i_n, i_s, i_sw, i_nw, i_ne, i_se] + nx * ny
     Vzy = np.r_[
-        bzyp[iall], bzye[i_w], bzyw[i_e], bzyn[i_s], bzys[i_n], bzysw[i_ne], bzynw[i_se], bzyne[i_sw], bzyse[i_nw]
+        bzyp[iall],
+        bzye[i_w],
+        bzyw[i_e],
+        bzyn[i_s],
+        bzys[i_n],
+        bzysw[i_ne],
+        bzynw[i_se],
+        bzyne[i_sw],
+        bzyse[i_nw],
     ]
 
     I = np.r_[Izx, Izy]
