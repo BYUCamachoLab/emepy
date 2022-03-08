@@ -179,7 +179,6 @@ class DynamicRect2D(DynamicPolygon):
 
         # Add top design
         top = self.design if self.symmetry else self.design[: len(self.design) // 2]
-        # print([(x, z) for x, z in zip(top[:-1:2], top[1::2])])
         vertices += [(x, z) for x, z in zip(top[:-1:2], top[1::2])]
 
         # Add static right vertices
@@ -198,7 +197,7 @@ class DynamicRect2D(DynamicPolygon):
         # Form grid
         x, z = (self.grid_x, self.grid_z)
         xx, zz = np.meshgrid(x, z)
-        n = np.zeros(xx.shape)
+        n = np.zeros(xx.shape)[:-1, :-1]
 
         def on_edge(polygon, xp, zp):
             return (
@@ -212,23 +211,66 @@ class DynamicRect2D(DynamicPolygon):
                 or polygon.contains(Point(xp - 1e-20, zp + 1e-20))
             )
 
+        def get_vertices(vertices, xl, xu, zl, zu):
+            return
+
+        def area_matters(xl, xu, xp1, xp2):
+
+            # Both pixels are on or below bottom
+            if xp1 < xl + 1e-20 and xp2 < xl + 1e-20:
+                return False
+
+            # Both pixels are on or above top
+            if xp1 > xu - 1e-20 and xp2 > xu - 1e-20:
+                return False
+
+            return True
+
         # Apply subpixel
-        diff_x = np.diff(x)
-        diff_z = np.diff(z)
-        for i, xp in enumerate(x):
-            for j, zp in enumerate(z):
+        xlower, xupper = (x[:-1], x[1:])
+        zlower, zupper = (z[:-1], z[1:])
+        for i, xp in enumerate(zip(xlower, xupper)):
+            for j, zp in enumerate(zip(zlower, zupper)):
+
+                # Upper and lower points
+                xl, xu = xp
+                zl, zu = zp
 
                 # Default corner cases
-                dz = diff_z[j] if j < len(z) - 1 else self.length - zp
-                dx = diff_x[i] if i < len(z) - 1 else self.params - zp
-                lower_left_corner = polygon.contains(Point(xp, zp)) or on_edge(polygon, xp, zp)
-                lower_right_corner = polygon.contains(Point(xp, zp + dz)) or on_edge(polygon, xp, zp + dz)
-                upper_left_corner = polygon.contains(Point(xp + dx, zp)) or on_edge(polygon, xp + dx, zp)
-                upper_right_corner = polygon.contains(Point(xp + dx, zp + dz)) or on_edge(polygon, xp + dx, zp + dz)
+                lower_left_corner = polygon.contains(Point(xl, zl)) or on_edge(polygon, xl, zl)
+                lower_right_corner = polygon.contains(Point(xl, zu)) or on_edge(polygon, xl, zu)
+                upper_left_corner = polygon.contains(Point(xu, zl)) or on_edge(polygon, xu, zl)
+                upper_right_corner = polygon.contains(Point(xu, zu)) or on_edge(polygon, xu, zu)
 
-                # Case 1: All corners in
-                if lower_left_corner and lower_right_corner and upper_left_corner and upper_right_corner:
+                # Get vertices of interest
+                vertices = get_vertices(vertices, xl, xu, zl, zu)
+
+                # Case 0: Nothing in
+                if not (lower_left_corner or lower_right_corner or upper_left_corner or upper_right_corner):
+                    n[j, i] = 0
+
+                # Case 1: All corners in ... need to reevaluate because can have all corners in but not be all area
+                elif lower_left_corner and lower_right_corner and upper_left_corner and upper_right_corner:
                     n[j, i] = 1
+
+                # Case 2: Subpixel smoothing
+                else:
+                    # Initialize area
+                    area = 0.0
+                    # Loop through all pairs of vertices and
+                    for v1, v2 in zip(vertices[:-1], vertices[1:]):
+                        # Check if area is out of pixel
+                        if not area_matters(xl, xu, v1[0], v2[0]):
+                            continue
+
+                        # Compute areas
+                        x1, z1 = v1
+                        x2, z2 = v2
+                        dx, dz = (x2 - x1, z2 - z1)
+                        sub_area = abs(0.5 * (x1 + x2 - 2 * xl) * dz)
+                        pixel_area = (xu - xl) * dz
+
+                        # Add proper area
 
         # from matplotlib import pyplot as plt
 
@@ -248,7 +290,7 @@ class DynamicRect2D(DynamicPolygon):
         # Create layers
 
 
-# DynamicRect2D(EMpyGeometryParameters(mesh=600), 0.5e-6, 5e-6)
+DynamicRect2D(EMpyGeometryParameters(mesh=600), 0.5e-6, 5e-6)
 
 
 class Waveguide(Geometry):
