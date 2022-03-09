@@ -4,6 +4,7 @@ from emepy.fd import MSEMpy, ModeSolver
 from emepy.models import Layer
 from shapely.geometry import Polygon, Point
 from emepy.tools import vertices_to_n, circle_to_n
+from copy import deepcopy
 
 
 class Geometry(object):
@@ -60,11 +61,17 @@ class EMpyGeometryParameters(Params):
         for key, val in kwargs.items():
             setattr(key, val)
 
-    def get_solver_rect(self, width: float = 0.5e-6, thickness: float = 0.22e-6, num_modes: int = 1) -> "MSEMpy":
+    def get_solver_rect(
+        self,
+        width: float = 0.5e-6,
+        thickness: float = 0.22e-6,
+        num_modes: int = 1,
+        center: bool = (0, 0),
+    ) -> "MSEMpy":
         """Returns an EMPy solver that represents a simple rectangle"""
 
         return MSEMpy(
-            wavelength=self.wavelength,
+            wl=self.wavelength,
             width=width,
             thickness=thickness,
             num_modes=num_modes,
@@ -78,6 +85,7 @@ class EMpyGeometryParameters(Params):
             accuracy=self.accuracy,
             boundary=self.boundary,
             PML=self.PML,
+            center=center,
         )
 
     def get_solver_index(self, thickness: float = None, num_modes: int = None, n: "np.ndarray" = None) -> "MSEMpy":
@@ -109,6 +117,13 @@ class DynamicPolygon(Geometry):
         """Returns the design region as a list of parameters. Each parameter represents a spacial location in a single direction for a single vertex of the polygon. Note in 2D this would look like [x0,z0,x1,z1,...xn,zn] and in 3D [x0,y0,z0,x1,y1,z1,...xn,yn,zn]"""
         return self.design
 
+    def set_design(self) -> list:
+        """Sets the design region"""
+        pass
+
+    def __len__(self):
+        return len(self.get_design())
+
 
 class DynamicRect2D(DynamicPolygon):
     def __init__(
@@ -124,7 +139,7 @@ class DynamicRect2D(DynamicPolygon):
     ) -> None:
         """Creates an instance of DynamicPolygon2D"""
         self.num_modes = num_modes
-        self.params = params
+        self.params = deepcopy(params)
         self.symmetry = symmetry
         self.subpixel = subpixel
         self.width, self.length = (width, length)
@@ -196,7 +211,12 @@ class DynamicRect2D(DynamicPolygon):
 
         # Form polygon
         polygon = vertices_to_n(
-            vertices, grid_x, grid_z, self.subpixel, self.params.core_index, self.params.cladding_index
+            vertices,
+            grid_x,
+            grid_z,
+            self.subpixel,
+            self.params.core_index,
+            self.params.cladding_index,
         )
 
         # Return polygon
@@ -207,13 +227,14 @@ class DynamicRect2D(DynamicPolygon):
 
         # Get n
         n = self.get_n(self.grid_x, self.grid_z)
+        from matplotlib import pyplot as plt
 
         # Iterate through n and create layers
         self.layers = []
-        grid_z = 0.5 * (self.grid_z[1:] + self.grid_z[:-1])
-        for i, z in enumerate(grid_z):
+        diff_z = np.diff(self.grid_z)
+        for i, dz in enumerate(diff_z):
             mode_solver = self.params.get_solver_index(0.22e-6, self.num_modes, n[:, i])
-            layer = Layer(mode_solver, self.num_modes, self.params.wavelength, self.length)
+            layer = Layer(mode_solver, self.num_modes, self.params.wavelength, dz)
             self.layers.append(layer)
 
 
@@ -227,6 +248,7 @@ class Waveguide(Geometry):
         thickness: float = 0.22e-6,
         length: float = 1e-6,
         num_modes: int = 1,
+        center: tuple = (0, 0),
     ) -> None:
         """Creates an instance of block which can be called to access the required layers for solving
 
@@ -244,7 +266,7 @@ class Waveguide(Geometry):
             number of modes to solve for (default:1)
         """
 
-        mode_solver = params.get_solver_rect(width, thickness, num_modes)
+        mode_solver = params.get_solver_rect(width, thickness, num_modes, center=center)
         layers = [Layer(mode_solver, num_modes, params.wavelength, length)]
         super().__init__(layers)
 

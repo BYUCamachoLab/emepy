@@ -61,6 +61,7 @@ class MSEMpy(ModeSolver):
         n: "np.ndarray" = None,
         PML: bool = False,
         subpixel: bool = True,
+        center: tuple = (0,0),
         **kwargs
     ) -> None:
         """MSEMpy class constructor
@@ -154,7 +155,7 @@ class MSEMpy(ModeSolver):
             )
         elif epsfunc is None and subpixel and (self.width is not None):
             n = rectangle_to_n(
-                (0, 0), self.width, self.thickness, self.x, self.y, subpixel, self.core_index, self.cladding_index
+                center, self.width, self.thickness, self.x, self.y, subpixel, self.core_index, self.cladding_index
             )
             self.x = ((self.x)[1:] + (self.x)[:-1]) / 2
             self.y = ((self.y)[1:] + (self.y)[:-1]) / 2
