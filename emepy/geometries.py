@@ -84,7 +84,7 @@ class EMpyGeometryParameters(Params):
         """Returns an EMPy solver that represents the provided index profile"""
 
         return MSEMpy(
-            wavelength=self.wavelength,
+            wl=self.wavelength,
             width=None,
             thickness=thickness,
             num_modes=num_modes,
@@ -106,7 +106,7 @@ class DynamicPolygon(Geometry):
     """Creates a polygon in EMEPy given a list of solid vertices and changeable vertices and can be changed for shape optimization"""
 
     def get_design(self) -> list:
-        """Returns the design region as a list of parameters"""
+        """Returns the design region as a list of parameters. Each parameter represents a spacial location in a single direction for a single vertex of the polygon. Note in 2D this would look like [x0,z0,x1,z1,...xn,zn] and in 3D [x0,y0,z0,x1,y1,z1,...xn,yn,zn]"""
         return self.design
 
 
@@ -116,12 +116,14 @@ class DynamicRect2D(DynamicPolygon):
         params: Params = EMpyGeometryParameters(),
         width: float = 0.5e-6,
         length: float = 1e-6,
+        num_modes: int = 1,
         num_params: int = 10,
         symmetry: bool = False,
         subpixel: bool = True,
         mesh_z: int = 10,
     ) -> None:
         """Creates an instance of DynamicPolygon2D"""
+        self.num_modes = num_modes
         self.params = params
         self.symmetry = symmetry
         self.subpixel = subpixel
@@ -139,8 +141,8 @@ class DynamicRect2D(DynamicPolygon):
         self.static_vertices_left = list(zip(x, z))
 
         # Set top dynamic vertices
+        x = [width / 2] * num_params
         z = np.linspace(0, length, num_params + 2)[1:-1].tolist()
-        x = np.array([width / 2] * num_params) + np.sin(np.array(z) / length * np.pi) * width / 2
         dynamic_vertices_top = list(zip(x, z))
 
         # Set right side static vertices
@@ -157,15 +159,20 @@ class DynamicRect2D(DynamicPolygon):
         design = dynamic_vertices_top[:] if symmetry else dynamic_vertices_top + dynamic_vertices_bottom
         design = [i for j in design for i in j]
 
+        # Fix params
+        self.params.x = 0.5 * (self.params.x[1:] + self.params.x[:-1]) if self.params.x is not None else self.params.x
+        self.params.y = 0.5 * (self.params.y[1:] + self.params.y[:-1]) if self.params.y is not None else self.params.y
+        self.params.mesh -= 1
+
         # Set design
         self.set_design(design)
 
     def set_design(self, design: list):
         """Sets the design region parameters"""
         self.design = design
-        n = self.set_layers()
+        self.set_layers()
 
-    def get_n(self):
+    def get_n(self, grid_x, grid_z):
         """Will form the refractive index map given the current parameters"""
         # Create vertices
         vertices = []
@@ -188,19 +195,26 @@ class DynamicRect2D(DynamicPolygon):
             vertices += [(x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))]
 
         # Form polygon
-        return vertices_to_n(
-            vertices, self.grid_x, self.grid_z, self.subpixel, self.params.core_index, self.params.cladding_index
+        polygon = vertices_to_n(
+            vertices, grid_x, grid_z, self.subpixel, self.params.core_index, self.params.cladding_index
         )
+
+        # Return polygon
+        return polygon
 
     def set_layers(self):
         """Creates the layers needed for the geometry"""
 
         # Get n
-        n = self.get_n()
+        n = self.get_n(self.grid_x, self.grid_z)
 
         # Iterate through n and create layers
-
-
+        self.layers = []
+        grid_z = 0.5 * (self.grid_z[1:] + self.grid_z[:-1])
+        for i, z in enumerate(grid_z):
+            mode_solver = self.params.get_solver_index(0.22e-6, self.num_modes, n[:, i])
+            layer = Layer(mode_solver, self.num_modes, self.params.wavelength, self.length)
+            self.layers.append(layer)
 
 
 class Waveguide(Geometry):
