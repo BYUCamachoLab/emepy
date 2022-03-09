@@ -25,7 +25,7 @@ def get_install_requires():
 
 setup(
     name="emepy",
-    version="1.0.0",
+    version="1.1.0",
     url="https://github.com/BYUCamachoLab/emepy",
     license="MIT",
     author="Ian Hammond",

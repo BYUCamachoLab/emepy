@@ -37,20 +37,18 @@ EMEpy can be found on pip.
 
    pip install emepy
 
-For the latest version, the source code can be found on `GitHub <https://github.com/BYUCamachoLab/emepy>`_. Clone the directory onto your local desktop.
+For the latest version, the source code can be found on `GitHub <https://github.com/BYUCamachoLab/emepy>`_. Clone the directory onto your local desktop with:
+
+.. code-block:: python
+
+   git clone --depth 1 git@github.com:BYUCamachoLab/emepy.git
+
+Then install from within the repo:
 
 .. code-block:: python
 
    pip install -e .
 
-Note
-----
+To install the neural network models:
 
-Note if an error occurs in EMpy's backend (Electromagnetic Python) Do one of the following, the first solution simpy completes the second solution for you, however the second solution is fastest and easiest:
-
-  1) Reinstall electromagnetic python (EMpy) from GitHub source and add to path using ``pip install -e .`` in the EMpy directory
-  2) Enter EMpy/modesolvers/FD.py and change line 1369 from ``nlayers *= numpy.ones(4)`` to ``nlayers *= numpy.ones(4, dtype=int)``
-
-
-Acknowledgements
-----------------
+  `Read these instructions <https://github.com/BYUCamachoLab/emepy/blob/main/emepy/models/README.md>`_ 
