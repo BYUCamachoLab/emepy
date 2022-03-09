@@ -23,7 +23,7 @@ Or collect the most recent publication to pip
 Read the docs [here](https://emepy.readthedocs.io/en/latest/).
 
 ## BibTeX citation
-
+```
 @article{emepy,
     author = {Ian M. Hammond and Alec M. Hammond and Ryan M. Camacho},
     journal = {Opt. Lett.},
@@ -36,3 +36,4 @@ Read the docs [here](https://emepy.readthedocs.io/en/latest/).
     year = {2022},
     doi = {10.1364/OL.443664},
 }
+```
