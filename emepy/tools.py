@@ -3,6 +3,7 @@ import scipy
 import os
 from scipy.interpolate import griddata
 from scipy.sparse import coo_matrix
+from scipy.signal import resample
 import EMpy_gpu
 import collections
 from matplotlib import pyplot as plt
@@ -130,11 +131,13 @@ def get_epsfunc(
     compute: bool = False
         if true, will not place rectangle at center. This should only be necessary for compute_other_fields
     profile: "np.ndarray" = None
-        the refractive index profile
+        the refractive index profile (note if providing a width, this should be left None)
     nx: int = None
         number of points in the x direction
     ny: int = None
         number of points in the y direction
+    subpixel: bool = True
+        if true, will use subpixel smoothing, assuming asking for a waveguide cross section and not providing an index map (recommended)
 
     Returns
     -------
