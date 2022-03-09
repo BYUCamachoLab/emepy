@@ -10,6 +10,10 @@
 
 ## Installation
 
+Clone the repo with only the latest commit to ignore large model files from prior commits
+
+    git clone --depth 1 git@github.com:BYUCamachoLab/emepy.git
+
 Install the development version of emepy using pip:
 
     pip install -e .
