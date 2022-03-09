@@ -11,7 +11,14 @@ if importlib.util.find_spec("mpi4py") is not None:
     from mpi4py import MPI
 
 from emepy.fd import MSEMpy
-from emepy.models import Duplicator, Model, ModelTools, Layer, InterfaceSingleMode, InterfaceMultiMode
+from emepy.models import (
+    Duplicator,
+    Model,
+    ModelTools,
+    Layer,
+    InterfaceSingleMode,
+    InterfaceMultiMode,
+)
 
 _prop_all = ModelTools._prop_all
 purge_spurious = ModelTools.purge_spurious
@@ -88,7 +95,18 @@ class EME(object):
 
         self.layers.append(layer)
 
-    def reset(self, full_reset: bool = True, parallel: bool = False, configure_parallel: bool = True) -> None:
+    def add_layers(self, *layers) -> None:
+        """Calls add layers for the layers provided"""
+
+        for layer in layers:
+            self.add_layer(layer)
+
+    def reset(
+        self,
+        full_reset: bool = True,
+        parallel: bool = False,
+        configure_parallel: bool = True,
+    ) -> None:
         """Clears out the layers and s params so the user can reuse the object in memory on a new geometry
 
         Parameters
@@ -139,19 +157,33 @@ class EME(object):
         tasks = []
         sources = self.get_sources()
         for layer in tqdm(self.layers, disable=self.quiet):
-            tasks.append((layer.activate_layer, [sources, length, self._get_total_length()], {}))
+            tasks.append(
+                (layer.activate_layer, [sources, length, self._get_total_length()], {})
+            )
             length += layer.length
 
         # Organized solved layers
-        self.activated_layers = dict(zip(range(self.num_periods), [[] for _ in range(self.num_periods)]))
+        self.activated_layers = dict(
+            zip(range(self.num_periods), [[] for _ in range(self.num_periods)])
+        )
         results = self._run_parallel_functions(*tasks)
         if results is not None:
             for solved in results:
                 for per, layers in solved.items():
-                    if not sum([i is not None for so in results for p, s in so.items() for i in s if p == per]):
+                    if not sum(
+                        [
+                            i is not None
+                            for so in results
+                            for p, s in so.items()
+                            for i in s
+                            if p == per
+                        ]
+                    ):
                         self.activated_layers[per] = None
                     else:
-                        self.activated_layers[per] += layers if layers[0] is not None else solved[0]
+                        self.activated_layers[per] += (
+                            layers if layers[0] is not None else solved[0]
+                        )
 
         self._update_state(2)
 
@@ -165,8 +197,12 @@ class EME(object):
             raise Exception("In the wrong place")
 
         # Create return dict
-        final_activated_layers = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
-        periodic_interfaces = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
+        final_activated_layers = dict(
+            zip(range(self.num_periods), [None for _ in range(self.num_periods)])
+        )
+        periodic_interfaces = dict(
+            zip(range(self.num_periods), [None for _ in range(self.num_periods)])
+        )
 
         # Loop through all periods in case of custom sources
         for per, activated_layers in self.activated_layers.items():
@@ -180,27 +216,35 @@ class EME(object):
             if not per and activated_layers is None:
                 raise Exception("No activated layers in system")
             elif len(activated_layers) == 1:
-                periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
+                periodic_interfaces[per] = InterfaceMultiMode(
+                    activated_layers[-1], activated_layers[0]
+                )
                 final_activated_layers[per] = activated_layers[0]
                 continue
 
             # Configure interface
             num_modes = max([len(l.modes) for l in activated_layers])
-            interface_type = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
+            interface_type = (
+                InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
+            )
 
             # Define tasks
             def task(l, r):
                 return l, _prop_all(l, interface_type(l, r))
 
             # Setup parallel layer prop tasks
-            for left, right in tqdm(zip(activated_layers[:-1], activated_layers[1:]), disable=self.quiet):
+            for left, right in tqdm(
+                zip(activated_layers[:-1], activated_layers[1:]), disable=self.quiet
+            ):
                 tasks.append((task, [left, right], {}))
 
             # Propagate
             results = self._run_parallel_functions(*tasks)
 
             # Calculate period interface in case multiple periods
-            periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
+            periodic_interfaces[per] = InterfaceMultiMode(
+                activated_layers[-1], activated_layers[0]
+            )
 
             # Only keep what we need
             for i, result in enumerate(results):
@@ -273,10 +317,16 @@ class EME(object):
             cur_len = 0
             full_z_list = []
             tasks = []
-            for per, activated_layers in tqdm(self.activated_layers.items(), disable=self.quiet):
+            for per, activated_layers in tqdm(
+                self.activated_layers.items(), disable=self.quiet
+            ):
 
                 # Forward through the device
-                activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
+                activated_layers = (
+                    activated_layers
+                    if activated_layers is not None
+                    else self.activated_layers[0]
+                )
                 for i, layer in enumerate(activated_layers):
                     z_list = m.get_z_list(cur_len, cur_len + layer.length)
                     just_z_list = [i[1] for i in z_list]
@@ -318,7 +368,11 @@ class EME(object):
         for per in range(self.num_periods):
             start = self._get_total_length() * per
             end = self._get_total_length() * (per + 1)
-            src = get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], start, end)
+            src = get_sources(
+                [j for i in (self.monitors + self.custom_monitors) for j in i.sources],
+                start,
+                end,
+            )
             src.sort(key=lambda s: s.z)
             srcs[per] = src
 
@@ -373,12 +427,21 @@ class EME(object):
         """
 
         # Establish mesh # Current workaround...not final
-        components = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"] if components is None else components
-        if exempt and (self.layers[0].mode_solver.PML and isinstance(self.layers[0].mode_solver, MSEMpy)):
+        components = (
+            ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"]
+            if components is None
+            else components
+        )
+        if exempt and (
+            self.layers[0].mode_solver.PML
+            and isinstance(self.layers[0].mode_solver, MSEMpy)
+        ):
             x = (
                 len(
                     self.layers[0].mode_solver.x[
-                        self.layers[0].mode_solver.nlayers[1] : -self.layers[0].mode_solver.nlayers[0]
+                        self.layers[0]
+                        .mode_solver.nlayers[1] : -self.layers[0]
+                        .mode_solver.nlayers[0]
                     ]
                 )
                 + 1
@@ -386,7 +449,9 @@ class EME(object):
             y = (
                 len(
                     self.layers[0].mode_solver.y[
-                        self.layers[0].mode_solver.nlayers[3] : -self.layers[0].mode_solver.nlayers[2]
+                        self.layers[0]
+                        .mode_solver.nlayers[3] : -self.layers[0]
+                        .mode_solver.nlayers[2]
                     ]
                 )
                 + 1
@@ -417,7 +482,9 @@ class EME(object):
 
             # Ensure z range is in proper format
             try:
-                start, end = [lengths[0][0], lengths[0][-1]] if z_range is None else z_range
+                start, end = (
+                    [lengths[0][0], lengths[0][-1]] if z_range is None else z_range
+                )
             except Exception as e:
                 raise Exception(
                     "z_range should be a tuple or list of the form (start, end) "
@@ -476,7 +543,17 @@ class EME(object):
             )
 
         # Create monitor
-        monitor = Monitor(axes, dimensions, components, z_range, grid_x, grid_y, grid_z, location, sources=sources)
+        monitor = Monitor(
+            axes,
+            dimensions,
+            components,
+            z_range,
+            grid_x,
+            grid_y,
+            grid_z,
+            location,
+            sources=sources,
+        )
 
         # Place monitor where it belongs
         if len(lengths[0]) == self.mesh_z:
@@ -486,7 +563,9 @@ class EME(object):
 
         return monitor
 
-    def draw(self, z_range: tuple = None, mesh_z: int = 200) -> "matplotlib.image.AxesImage":
+    def draw(
+        self, z_range: tuple = None, mesh_z: int = 200
+    ) -> "matplotlib.image.AxesImage":
         """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. This will change in the future.
 
         Parameters
@@ -504,13 +583,17 @@ class EME(object):
 
         temp_storage = [self.monitors, self.custom_monitors]
         self.monitors, self.custom_monitors = [[], []]
-        monitor = self.add_monitor(axes="xz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z)
+        monitor = self.add_monitor(
+            axes="xz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z
+        )
         self._propagate_n_only()
         im = monitor.visualize(component="n")
         self.monitors, self.custom_monitors = temp_storage
         return im
 
-    def propagate(self, left_coeffs: list = None, right_coeffs: list = []) -> "simphony.models.Model":
+    def propagate(
+        self, left_coeffs: list = None, right_coeffs: list = []
+    ) -> "simphony.models.Model":
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters. The defulat
 
         Parameters
@@ -535,7 +618,10 @@ class EME(object):
         # Fix defaults
         if left_coeffs is None:
             left_coeffs = (
-                [1] if not len(right_coeffs) and not len([i for i in self.get_sources().values() if len(i)]) else []
+                [1]
+                if not len(right_coeffs)
+                and not len([i for i in self.get_sources().values() if len(i)])
+                else []
             )
 
         # Solve for the modes
@@ -683,7 +769,9 @@ class EME(object):
         if self.am_master() and not self.quiet:
             print("current state: {}".format(self.states[self.state]))
 
-    def _build_input_array(self, left_coeffs: list, right_coeffs: list, model: Model) -> dict:
+    def _build_input_array(
+        self, left_coeffs: list, right_coeffs: list, model: Model
+    ) -> dict:
         """Builds the properly formatted input array to be used to calculate field profiles from s matrices and mode coefficients
 
         Parameters
@@ -775,7 +863,14 @@ class EME(object):
         return mapping
 
     def _layer_field_propagate(
-        self, i: int, l: Model, per: int, left_coeffs: list, right_coeffs: list, cur_len: float, z_list: list
+        self,
+        i: int,
+        l: Model,
+        per: int,
+        left_coeffs: list,
+        right_coeffs: list,
+        cur_len: float,
+        z_list: list,
     ) -> list:
         """Propagates the fields through the current layer only. Implements the "field spider/peaker" technique of extracting fields at an arbitrary location without approximating the reflections and actually finding the fully cascaded values.
 
@@ -806,7 +901,9 @@ class EME(object):
         # Create output
         result_list = []
         activated_layers = (
-            self.activated_layers[per] if self.activated_layers[per] is not None else self.activated_layers[0]
+            self.activated_layers[per]
+            if self.activated_layers[per] is not None
+            else self.activated_layers[0]
         )
 
         # Period length
@@ -816,9 +913,13 @@ class EME(object):
         # get SP0
         SP0 = []
         for p in range(per):
-            network = self.networks[p] if self.networks[p] is not None else self.networks[0]
+            network = (
+                self.networks[p] if self.networks[p] is not None else self.networks[0]
+            )
             interface = (
-                self.periodic_interfaces[p] if self.periodic_interfaces[p] is not None else self.periodic_interfaces[0]
+                self.periodic_interfaces[p]
+                if self.periodic_interfaces[p] is not None
+                else self.periodic_interfaces[0]
             )
             SP0.append(perf(network, p * per_length, (p + 1) * per_length))
             SP0.append(interface)
@@ -827,9 +928,13 @@ class EME(object):
         SP1 = []
         for p in range(self.num_periods - (per) - 1):
             p = per + p + 1
-            network = self.networks[p] if self.networks[p] is not None else self.networks[0]
+            network = (
+                self.networks[p] if self.networks[p] is not None else self.networks[0]
+            )
             interface = (
-                self.periodic_interfaces[p] if self.periodic_interfaces[p] is not None else self.periodic_interfaces[0]
+                self.periodic_interfaces[p]
+                if self.periodic_interfaces[p] is not None
+                else self.periodic_interfaces[0]
             )
             SP1.append(interface)
             SP1.append(perf(network, p * per_length, (p + 1) * per_length))
@@ -855,12 +960,20 @@ class EME(object):
         # create all prop layers
         prop = (
             [*SP0, *S0, checked_l, dup, *S1, *SP1]
-            if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins])
+            if sum(
+                ["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]
+            )
             else [*SP0, *S0, dup, checked_l, *S1, *SP1]
         )
 
         # Compute field propagation
-        S = _prop_all(*[t for t in prop if (t is not None) and not (isinstance(t, list) and not len(t))])
+        S = _prop_all(
+            *[
+                t
+                for t in prop
+                if (t is not None) and not (isinstance(t, list) and not len(t))
+            ]
+        )
 
         # Get input array
         input_map = self._build_input_array(left_coeffs, right_coeffs, S)
@@ -882,7 +995,9 @@ class EME(object):
 
         # Reverse phase if looking from right end
         diffs = [z_list[0] - cur_len] + np.diff(z_list).tolist()
-        eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
+        eig = (
+            (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
+        )
         if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]):
             coeff_left *= np.exp(1j * eig * l.length)
             coeff_right *= np.exp(-1j * eig * l.length)
@@ -900,7 +1015,14 @@ class EME(object):
             # Create field
             fields_ = modes * coeff[:, np.newaxis, np.newaxis, np.newaxis]
             results = {}
-            (results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results["Hz"]) = fields_.sum(0)
+            (
+                results["Ex"],
+                results["Ey"],
+                results["Ez"],
+                results["Hx"],
+                results["Hy"],
+                results["Hz"],
+            ) = fields_.sum(0)
             results["n"] = l.modes[0].n
             result_list.append(results)
 
@@ -939,9 +1061,13 @@ class EME(object):
             if m.axes in ["xy", "yx"]:
                 m[key, :, :] = field[:, :]
             elif m.axes in ["xz", "zx"]:
-                m[key, :, i] = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
+                m[key, :, i] = (
+                    field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
+                )
             elif m.axes in ["yz", "zy"]:
-                m[key, :, i] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
+                m[key, :, i] = (
+                    field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
+                )
             elif m.axes in ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]:
                 m[key, :, :, i] = field[:, :]
 

@@ -8,6 +8,11 @@ examples/benchmarks/taper/*.png
 examples/benchmarks/bragg/*.eps
 examples/benchmarks/bragg/*.png
 
+# Models
+emepy/models/Hx_chunks
+emepy/models/Hy_chunks
+emepy/models/neff_pickle
+
 # vscode
 **.vscode
 

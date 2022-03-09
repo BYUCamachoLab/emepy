@@ -22,7 +22,7 @@ def polygon_to_n_2D(
 ) -> "np.ndarray":
     # Create grid
     xx, yy = np.meshgrid(x, y)
-    n = np.zeros(xx.shape)[:-1, :-1]
+    n = np.zeros(xx.shape)[:-1, :-1].T
 
     # Apply subpixel
     xlower, xupper = (x[:-1], x[1:])
