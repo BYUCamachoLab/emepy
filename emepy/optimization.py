@@ -56,18 +56,10 @@ class Optimization(object):
                 length = len(geometry)
                 if length:
                     geometry.set_design(remaining_design[:length])
-                    remaining_design = (
-                        remaining_design[length:]
-                        if length < len(remaining_design)
-                        else []
-                    )
+                    remaining_design = remaining_design[length:] if length < len(remaining_design) else []
 
     def set_design_readable(
-        self,
-        design_x: list = [],
-        design_y: list = [],
-        design_z: list = [],
-        dimensions: int = 2,
+        self, design_x: list = [], design_y: list = [], design_z: list = [], dimensions: int = 2
     ) -> None:
         """Sets the design region provided for the entire system of design regions using readable coordinates"""
         design = []
@@ -99,9 +91,7 @@ class Optimization(object):
             if isinstance(geometry, DynamicPolygon):
                 return geometry.get_n(grid_x, grid_z)
 
-    def gradient(
-        self, grid_x: "np.ndarray", grid_z: "np.ndarray", dp=1e-14
-    ) -> "np.ndarray":
+    def gradient(self, grid_x: "np.ndarray", grid_z: "np.ndarray", dp=1e-14) -> "np.ndarray":
         """Computes the gradient A_u using a finite difference"""
 
         # Get initial design
@@ -151,7 +141,7 @@ class Optimization(object):
                 z_start += geometry.length
 
         # Create source and monitor
-        source = Source(z=0.25e-6, mode_coeffs=[1], k=1)  ### Hard coded
+        source = Source(z=0.25e-6, mode_coeffs=[1], k=1)  # Hard coded
         monitor = self.eme.add_monitor(mesh_z=self.mesh_z, sources=[source])
 
         # Run eme
@@ -182,11 +172,10 @@ class Optimization(object):
 
         # Create source and monitor
         scale = 2 * np.pi * self.eme.wavelength * overlap
-        source = Source(z=2.75e-6, mode_coeffs=[scale], k=-1)  ### Hard coded
+        source = Source(z=2.75e-6, mode_coeffs=[scale], k=-1)  # Hard coded
         return [source]
-        
 
-    def adjoint_run(self, sources:list):
+    def adjoint_run(self, sources: list):
         """Performs the adjoint run for use in the adjoint formulation"""
         # Clear the eme and ensure design is inside
         self.start()
@@ -201,9 +190,7 @@ class Optimization(object):
                 z_start += geometry.length
 
         # Set monitor
-        monitor = self.eme.add_monitor(
-            mesh_z=self.mesh_z, z_range=(z_start, z_end), sources=sources
-        )
+        monitor = self.eme.add_monitor(mesh_z=self.mesh_z, z_range=(z_start, z_end), sources=sources)
 
         # Run eme
         self.eme.propagate()
