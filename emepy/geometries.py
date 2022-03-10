@@ -62,11 +62,7 @@ class EMpyGeometryParameters(Params):
             setattr(key, val)
 
     def get_solver_rect(
-        self,
-        width: float = 0.5e-6,
-        thickness: float = 0.22e-6,
-        num_modes: int = 1,
-        center: bool = (0, 0),
+        self, width: float = 0.5e-6, thickness: float = 0.22e-6, num_modes: int = 1, center: bool = (0, 0)
     ) -> "MSEMpy":
         """Returns an EMPy solver that represents a simple rectangle"""
 
@@ -88,9 +84,7 @@ class EMpyGeometryParameters(Params):
             center=center,
         )
 
-    def get_solver_index(
-        self, thickness: float = None, num_modes: int = None, n: "np.ndarray" = None
-    ) -> "MSEMpy":
+    def get_solver_index(self, thickness: float = None, num_modes: int = None, n: "np.ndarray" = None) -> "MSEMpy":
         """Returns an EMPy solver that represents the provided index profile"""
 
         return MSEMpy(
@@ -142,8 +136,12 @@ class DynamicRect2D(DynamicPolygon):
         symmetry: bool = False,
         subpixel: bool = True,
         mesh_z: int = 10,
+        input_width: float = None,
+        output_width: float = None,
     ) -> None:
         """Creates an instance of DynamicPolygon2D"""
+        input_width = input_width if input_width is not None else width
+        output_width = output_width if output_width is not None else width
         self.num_modes = num_modes
         self.params = deepcopy(params)
         self.symmetry = symmetry
@@ -152,14 +150,12 @@ class DynamicRect2D(DynamicPolygon):
         self.grid_x = (
             params.x
             if params.x is not None
-            else np.linspace(
-                -params.cladding_width / 2, params.cladding_width / 2, params.mesh
-            )
+            else np.linspace(-params.cladding_width / 2, params.cladding_width / 2, params.mesh)
         )
         self.grid_z = np.linspace(0, length, mesh_z)
 
         # Set left side static vertices
-        x = [-width / 2, width / 2]
+        x = [-input_width / 2, input_width / 2]
         z = [0, 0]
         self.static_vertices_left = list(zip(x, z))
 
@@ -169,7 +165,7 @@ class DynamicRect2D(DynamicPolygon):
         dynamic_vertices_top = list(zip(x, z))
 
         # Set right side static vertices
-        x = [width / 2, -width / 2]
+        x = [output_width / 2, -output_width / 2]
         z = [length, length]
         self.static_vertices_right = list(zip(x, z))
 
@@ -179,24 +175,12 @@ class DynamicRect2D(DynamicPolygon):
         dynamic_vertices_bottom = list(zip(x, z))
 
         # Establish design
-        design = (
-            dynamic_vertices_top[:]
-            if symmetry
-            else dynamic_vertices_top + dynamic_vertices_bottom
-        )
+        design = dynamic_vertices_top[:] if symmetry else dynamic_vertices_top + dynamic_vertices_bottom
         design = [i for j in design for i in j]
 
         # Fix params
-        self.params.x = (
-            0.5 * (self.params.x[1:] + self.params.x[:-1])
-            if self.params.x is not None
-            else self.params.x
-        )
-        self.params.y = (
-            0.5 * (self.params.y[1:] + self.params.y[:-1])
-            if self.params.y is not None
-            else self.params.y
-        )
+        self.params.x = 0.5 * (self.params.x[1:] + self.params.x[:-1]) if self.params.x is not None else self.params.x
+        self.params.y = 0.5 * (self.params.y[1:] + self.params.y[:-1]) if self.params.y is not None else self.params.y
         self.params.mesh -= 1
 
         # Set design
@@ -225,20 +209,13 @@ class DynamicRect2D(DynamicPolygon):
         # Add bottom design
         bottom = self.design if self.symmetry else self.design[len(self.design) // 2 :]
         if self.symmetry:
-            vertices += [
-                (-x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))[::-1]
-            ]
+            vertices += [(-x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))[::-1]]
         else:
             vertices += [(x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))]
 
         # Form polygon
         polygon = vertices_to_n(
-            vertices,
-            grid_x,
-            grid_z,
-            self.subpixel,
-            self.params.core_index,
-            self.params.cladding_index,
+            vertices, grid_x, grid_z, self.subpixel, self.params.core_index, self.params.cladding_index
         )
 
         # Return polygon
@@ -258,7 +235,6 @@ class DynamicRect2D(DynamicPolygon):
             mode_solver = self.params.get_solver_index(0.22e-6, self.num_modes, n[:, i])
             layer = Layer(mode_solver, self.num_modes, self.params.wavelength, dz)
             self.layers.append(layer)
-
 
 
 class Waveguide(Geometry):
@@ -289,6 +265,8 @@ class Waveguide(Geometry):
             number of modes to solve for (default:1)
         """
 
+        self.length = length
+        self.width = width
         mode_solver = params.get_solver_rect(width, thickness, num_modes, center=center)
         layers = [Layer(mode_solver, num_modes, params.wavelength, length)]
         super().__init__(layers)
@@ -315,11 +293,7 @@ class WaveguideChannels(Geometry):
                 center = starting_center + out * (gap + width)
                 left_edge = center - 0.5 * width
                 right_edge = center + 0.5 * width
-                n_output = np.where(
-                    (left_edge <= params.x) * (params.x <= right_edge),
-                    params.core_index,
-                    n_output,
-                )
+                n_output = np.where((left_edge <= params.x) * (params.x <= right_edge), params.core_index, n_output)
 
         # Create modesolver
         output_channel = params.get_solver_index(thickness, num_modes, n_output)
@@ -344,12 +318,8 @@ class BraggGrating(Geometry):
     ) -> None:
 
         # Create waveguides
-        waveguide_left = Waveguide(
-            params_left, width_left, thickness_left, length_left, num_modes
-        )
-        waveguide_right = Waveguide(
-            params_right, width_right, thickness_right, length_right, num_modes
-        )
+        waveguide_left = Waveguide(params_left, width_left, thickness_left, length_left, num_modes)
+        waveguide_right = Waveguide(params_right, width_right, thickness_right, length_right, num_modes)
 
         # Create layers
         self.layers = [*waveguide_left, *waveguide_right]
@@ -368,14 +338,10 @@ class DirectionalCoupler(Geometry):
     ) -> None:
 
         # Create input waveguide channel
-        input = WaveguideChannels(
-            params, width, thickness, length, num_modes, gap, 2, exclude_indices=[1]
-        )
+        input = WaveguideChannels(params, width, thickness, length, num_modes, gap, 2, exclude_indices=[1])
 
         # Create main directional coupler
-        coupler = WaveguideChannels(
-            params, width, thickness, length, num_modes, gap, 2, exclude_indices=[]
-        )
+        coupler = WaveguideChannels(params, width, thickness, length, num_modes, gap, 2, exclude_indices=[])
 
         # Create layers
         self.layers = [*input, *coupler]

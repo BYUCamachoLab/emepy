@@ -4,6 +4,7 @@ from emepy.geometries import Geometry, DynamicPolygon
 from emepy.source import Source
 from emepy.monitors import Monitor
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 class Optimization(object):
@@ -98,7 +99,7 @@ class Optimization(object):
         design = self.get_design()
 
         # Final jacobian setup
-        jacobian = np.zeros(grid_x.shape, grid_z.shape, len(design))
+        jacobian = np.zeros((grid_x.shape[0] - 1, grid_z.shape[0] - 1, len(design)))
 
         # Get initial A
         A_ii = self.get_n(grid_x, grid_z)
@@ -132,13 +133,13 @@ class Optimization(object):
         self.start()
 
         # Find where monitor should be in range of only the design region
-        z_start, z_end = (0, 0)
-        for geometry in self.geometries:
-            if isinstance(geometry, DynamicPolygon):
-                z_end += geometry.length
-                break
-            else:
-                z_start += geometry.length
+        z_start, z_end = (0.5e-6, 2.5e-6)
+        # for geometry in self.geometries:
+        #     if isinstance(geometry, DynamicPolygon):
+        #         z_end += geometry.length
+        #         break
+        #     else:
+        #         z_start += geometry.length
 
         # Create source and monitor
         source = Source(z=0.25e-6, mode_coeffs=[1], k=1)  # Hard coded
@@ -148,7 +149,8 @@ class Optimization(object):
         self.eme.propagate()
 
         # Get results
-        grid_x, grid_z, field = monitor.get_array("Ex", z_range=(z_start, z_end))
+        grid_x, grid_z, field = monitor.get_array("Hy", z_range=(z_start, z_end))
+        field = 0.25 * (field[1:, 1:] + field[1:, :-1] + field[:-1, 1:] + field[:-1, :-1])
         return grid_x, grid_z, field, monitor
 
     def objective_gradient(self, monitor: "Monitor"):
@@ -157,10 +159,28 @@ class Optimization(object):
         #### HARD CODED FOR NOW
 
         # Compute power in end
-        _, _, power = monitor.get_array(z_range=(2.74e-6, 2.76e-6))
-        power = np.sum(power[:, 0])
+        x, _, Ex = monitor.get_array(component="Ex", z_range=(2.746e-6, 2.754e-6))
+        Ex = Ex[:, 0]
+        Ey = monitor.get_array(component="Ey", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
+        Hx = monitor.get_array(component="Hx", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
+        Hy = monitor.get_array(component="Hy", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
+        exp_Ex = self.eme.activated_layers[0][-1].modes[0].Ex
+        exp_Ey = self.eme.activated_layers[0][-1].modes[0].Ey
+        exp_Hx = self.eme.activated_layers[0][-1].modes[0].Hx
+        exp_Hy = self.eme.activated_layers[0][-1].modes[0].Hy
+        exp_Ex = exp_Ex[:, exp_Ex.shape[1] // 2]
+        exp_Ey = exp_Ey[:, exp_Ey.shape[1] // 2]
+        exp_Hx = exp_Hx[:, exp_Hx.shape[1] // 2]
+        exp_Hy = exp_Hy[:, exp_Hy.shape[1] // 2]
 
         # Compute power in source
+        def overlap(Ex, Ey, Hx, Hy, grid):
+            return np.trapz(Ex * np.conj(Hy) - Ey * np.conj(Hx), grid)
+
+        norm = overlap(Ex, Ey, Hx, Hy, x)
+        exp_norm = overlap(exp_Ex, exp_Ey, exp_Hx, exp_Hy, x)
+        power = overlap(Ex, Ey, exp_Hx, exp_Hy, x) / np.sqrt(norm) / np.sqrt(exp_norm)
+        power = np.abs(power)
 
         # Compute autogradient
         f_x = 0.0
@@ -181,28 +201,30 @@ class Optimization(object):
         self.start()
 
         # Find where monitor should be in range of only the design region
-        z_start, z_end = (0, 0)
-        for geometry in self.geometries:
-            if isinstance(geometry, DynamicPolygon):
-                z_end += geometry.length
-                break
-            else:
-                z_start += geometry.length
+        z_start, z_end = (0.5e-6, 2.5e-6)
+        # for geometry in self.geometries:
+        #     if isinstance(geometry, DynamicPolygon):
+        #         z_end += geometry.length
+        #         break
+        #     else:
+        #         z_start += geometry.length
 
         # Set monitor
-        monitor = self.eme.add_monitor(mesh_z=self.mesh_z, z_range=(z_start, z_end), sources=sources)
+        monitor = self.eme.add_monitor(mesh_z=self.mesh_z, sources=sources)
 
         # Run eme
         self.eme.propagate()
 
         # Get results
-        grid_x, grid_z, field = monitor.get_array("Ex")
-        return grid_x, grid_z, field
+        grid_x, grid_z, field = monitor.get_array("Ex", z_range=(z_start, z_end))
+        field = 0.25 * (field[1:, 1:] + field[1:, :-1] + field[:-1, 1:] + field[:-1, :-1])
+        return grid_x, grid_z, field, monitor
 
     def optimize(self, design: list) -> "np.ndarray":
         """Runs a single step of shape optimization"""
 
         # Update the design region
+        design = design if not isinstance(design, np.ndarray) else design.tolist()
         self.set_design(design)
 
         # Compute the forward run
@@ -215,13 +237,19 @@ class Optimization(object):
         sources = self.set_adjoint_sources(overlap)
 
         # Compute the adjoint run
-        lamdagger, grid_x, grid_z = self.adjoint_run(sources)
+        grid_x, grid_z, lamdagger, monitor = self.adjoint_run(sources)
 
         # Compute the gradient of the constraint A_u
         A_u = self.gradient(grid_x, grid_z)
+
+        print(lamdagger.shape, A_u.shape, X.shape)  # Next steps are figure out how these shapes work together
 
         # Calculate the full gradient of the objective function f_u
         f_u = np.transpose(np.conj(lamdagger)) @ A_u @ X
 
         # Return the gradient
-        return f_u
+        return overlap, f_u
+
+    def draw(self) -> None:
+        self.start()
+        self.eme.draw()
