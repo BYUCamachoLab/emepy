@@ -4,6 +4,7 @@ from emepy.fd import MSEMpy, ModeSolver
 from emepy.models import Layer
 from shapely.geometry import Polygon, Point
 from emepy.tools import vertices_to_n, circle_to_n
+from copy import deepcopy
 
 
 class Geometry(object):
@@ -60,11 +61,17 @@ class EMpyGeometryParameters(Params):
         for key, val in kwargs.items():
             setattr(key, val)
 
-    def get_solver_rect(self, width: float = 0.5e-6, thickness: float = 0.22e-6, num_modes: int = 1) -> "MSEMpy":
+    def get_solver_rect(
+        self,
+        width: float = 0.5e-6,
+        thickness: float = 0.22e-6,
+        num_modes: int = 1,
+        center: bool = (0, 0),
+    ) -> "MSEMpy":
         """Returns an EMPy solver that represents a simple rectangle"""
 
         return MSEMpy(
-            wavelength=self.wavelength,
+            wl=self.wavelength,
             width=width,
             thickness=thickness,
             num_modes=num_modes,
@@ -78,9 +85,12 @@ class EMpyGeometryParameters(Params):
             accuracy=self.accuracy,
             boundary=self.boundary,
             PML=self.PML,
+            center=center,
         )
 
-    def get_solver_index(self, thickness: float = None, num_modes: int = None, n: "np.ndarray" = None) -> "MSEMpy":
+    def get_solver_index(
+        self, thickness: float = None, num_modes: int = None, n: "np.ndarray" = None
+    ) -> "MSEMpy":
         """Returns an EMPy solver that represents the provided index profile"""
 
         return MSEMpy(
@@ -109,6 +119,17 @@ class DynamicPolygon(Geometry):
         """Returns the design region as a list of parameters. Each parameter represents a spacial location in a single direction for a single vertex of the polygon. Note in 2D this would look like [x0,z0,x1,z1,...xn,zn] and in 3D [x0,y0,z0,x1,y1,z1,...xn,yn,zn]"""
         return self.design
 
+    def set_design(self) -> list:
+        """Sets the design region"""
+        return
+
+    def get_n(self, grid_x, grid_z) -> "np.ndarray":
+        """Returns the index profile for the grid provided"""
+        return
+
+    def __len__(self):
+        return len(self.get_design())
+
 
 class DynamicRect2D(DynamicPolygon):
     def __init__(
@@ -124,14 +145,16 @@ class DynamicRect2D(DynamicPolygon):
     ) -> None:
         """Creates an instance of DynamicPolygon2D"""
         self.num_modes = num_modes
-        self.params = params
+        self.params = deepcopy(params)
         self.symmetry = symmetry
         self.subpixel = subpixel
         self.width, self.length = (width, length)
         self.grid_x = (
             params.x
             if params.x is not None
-            else np.linspace(-params.cladding_width / 2, params.cladding_width / 2, params.mesh)
+            else np.linspace(
+                -params.cladding_width / 2, params.cladding_width / 2, params.mesh
+            )
         )
         self.grid_z = np.linspace(0, length, mesh_z)
 
@@ -156,12 +179,24 @@ class DynamicRect2D(DynamicPolygon):
         dynamic_vertices_bottom = list(zip(x, z))
 
         # Establish design
-        design = dynamic_vertices_top[:] if symmetry else dynamic_vertices_top + dynamic_vertices_bottom
+        design = (
+            dynamic_vertices_top[:]
+            if symmetry
+            else dynamic_vertices_top + dynamic_vertices_bottom
+        )
         design = [i for j in design for i in j]
 
         # Fix params
-        self.params.x = 0.5 * (self.params.x[1:] + self.params.x[:-1]) if self.params.x is not None else self.params.x
-        self.params.y = 0.5 * (self.params.y[1:] + self.params.y[:-1]) if self.params.y is not None else self.params.y
+        self.params.x = (
+            0.5 * (self.params.x[1:] + self.params.x[:-1])
+            if self.params.x is not None
+            else self.params.x
+        )
+        self.params.y = (
+            0.5 * (self.params.y[1:] + self.params.y[:-1])
+            if self.params.y is not None
+            else self.params.y
+        )
         self.params.mesh -= 1
 
         # Set design
@@ -190,13 +225,20 @@ class DynamicRect2D(DynamicPolygon):
         # Add bottom design
         bottom = self.design if self.symmetry else self.design[len(self.design) // 2 :]
         if self.symmetry:
-            vertices += [(-x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))[::-1]]
+            vertices += [
+                (-x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))[::-1]
+            ]
         else:
             vertices += [(x, z) for x, z in list(zip(bottom[:-1:2], bottom[1::2]))]
 
         # Form polygon
         polygon = vertices_to_n(
-            vertices, grid_x, grid_z, self.subpixel, self.params.core_index, self.params.cladding_index
+            vertices,
+            grid_x,
+            grid_z,
+            self.subpixel,
+            self.params.core_index,
+            self.params.cladding_index,
         )
 
         # Return polygon
@@ -207,14 +249,16 @@ class DynamicRect2D(DynamicPolygon):
 
         # Get n
         n = self.get_n(self.grid_x, self.grid_z)
+        from matplotlib import pyplot as plt
 
         # Iterate through n and create layers
         self.layers = []
-        grid_z = 0.5 * (self.grid_z[1:] + self.grid_z[:-1])
-        for i, z in enumerate(grid_z):
+        diff_z = np.diff(self.grid_z)
+        for i, dz in enumerate(diff_z):
             mode_solver = self.params.get_solver_index(0.22e-6, self.num_modes, n[:, i])
-            layer = Layer(mode_solver, self.num_modes, self.params.wavelength, self.length)
+            layer = Layer(mode_solver, self.num_modes, self.params.wavelength, dz)
             self.layers.append(layer)
+
 
 
 class Waveguide(Geometry):
@@ -227,6 +271,7 @@ class Waveguide(Geometry):
         thickness: float = 0.22e-6,
         length: float = 1e-6,
         num_modes: int = 1,
+        center: tuple = (0, 0),
     ) -> None:
         """Creates an instance of block which can be called to access the required layers for solving
 
@@ -244,7 +289,7 @@ class Waveguide(Geometry):
             number of modes to solve for (default:1)
         """
 
-        mode_solver = params.get_solver_rect(width, thickness, num_modes)
+        mode_solver = params.get_solver_rect(width, thickness, num_modes, center=center)
         layers = [Layer(mode_solver, num_modes, params.wavelength, length)]
         super().__init__(layers)
 
@@ -299,8 +344,12 @@ class BraggGrating(Geometry):
     ) -> None:
 
         # Create waveguides
-        waveguide_left = Waveguide(params_left, width_left, thickness_left, length_left, num_modes)
-        waveguide_right = Waveguide(params_right, width_right, thickness_right, length_right, num_modes)
+        waveguide_left = Waveguide(
+            params_left, width_left, thickness_left, length_left, num_modes
+        )
+        waveguide_right = Waveguide(
+            params_right, width_right, thickness_right, length_right, num_modes
+        )
 
         # Create layers
         self.layers = [*waveguide_left, *waveguide_right]
@@ -319,10 +368,14 @@ class DirectionalCoupler(Geometry):
     ) -> None:
 
         # Create input waveguide channel
-        input = WaveguideChannels(params, width, thickness, length, num_modes, gap, 2, exclude_indices=[1])
+        input = WaveguideChannels(
+            params, width, thickness, length, num_modes, gap, 2, exclude_indices=[1]
+        )
 
         # Create main directional coupler
-        coupler = WaveguideChannels(params, width, thickness, length, num_modes, gap, 2, exclude_indices=[])
+        coupler = WaveguideChannels(
+            params, width, thickness, length, num_modes, gap, 2, exclude_indices=[]
+        )
 
         # Create layers
         self.layers = [*input, *coupler]
