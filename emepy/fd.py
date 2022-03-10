@@ -61,7 +61,7 @@ class MSEMpy(ModeSolver):
         n: "np.ndarray" = None,
         PML: bool = False,
         subpixel: bool = True,
-        center: tuple = (0,0),
+        center: tuple = (0, 0),
         **kwargs
     ) -> None:
         """MSEMpy class constructor
@@ -236,30 +236,13 @@ class MSEMpy(ModeSolver):
         neff = self.solver.modes[mode_num].neff
         n = np.sqrt(self.epsfunc(self.x, self.y))
 
-        return Mode(
-            x=self.x,
-            y=self.y,
-            wl=self.wl,
-            neff=neff,
-            Hx=Hx,
-            Hy=Hy,
-            Hz=Hz,
-            Ex=Ex,
-            Ey=Ey,
-            Ez=Ez,
-            n=n,
-        )
+        return Mode(x=self.x, y=self.y, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=n)
 
     def plot_material(self) -> None:
         """Plots the index of refraction profile"""
         plt.imshow(
             np.sqrt(np.real(self.n)).T,
-            extent=[
-                self.x[0] * 1e6,
-                self.x[-1] * 1e6,
-                self.y[0] * 1e6,
-                self.y[-1] * 1e6,
-            ],
+            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
             cmap="Greys",
         )
         plt.colorbar()
@@ -411,18 +394,7 @@ class MSEMpy1D(ModeSolver):
         neff = self.solver.modes[mode_num].neff
         n = np.sqrt(self.epsfunc(self.x, np.zeros(0)))
 
-        return Mode1D(
-            x=self.x,
-            wl=self.wl,
-            neff=neff,
-            Hx=Hx,
-            Hy=Hy,
-            Hz=Hz,
-            Ex=Ex,
-            Ey=Ey,
-            Ez=Ez,
-            n=n,
-        )
+        return Mode1D(x=self.x, wl=self.wl, neff=neff, Hx=Hx, Hy=Hy, Hz=Hz, Ex=Ex, Ey=Ey, Ez=Ez, n=n)
 
     def plot_material(self) -> None:
         """Plots the index of refraction profile"""

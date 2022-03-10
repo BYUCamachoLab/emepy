@@ -3,6 +3,7 @@ from emepy.eme import EME
 from emepy.geometries import Geometry, DynamicPolygon
 from emepy.source import Source
 from emepy.monitors import Monitor
+import emepy
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -92,14 +93,14 @@ class Optimization(object):
             if isinstance(geometry, DynamicPolygon):
                 return geometry.get_n(grid_x, grid_z)
 
-    def gradient(self, grid_x: "np.ndarray", grid_z: "np.ndarray", dp=1e-14) -> "np.ndarray":
+    def gradient(self, grid_x: "np.ndarray", grid_z: "np.ndarray", dp=1e-15) -> "np.ndarray":
         """Computes the gradient A_u using a finite difference"""
 
         # Get initial design
         design = self.get_design()
 
         # Final jacobian setup
-        jacobian = np.zeros((grid_x.shape[0] - 1, grid_z.shape[0] - 1, len(design)))
+        jacobian = np.zeros((3, 3, grid_x.shape[0] - 1, grid_z.shape[0] - 1, len(design)), dtype=complex)
 
         # Get initial A
         A_ii = self.get_n(grid_x, grid_z)
@@ -122,7 +123,9 @@ class Optimization(object):
             gradient = (A_new - A_ii) / dp
 
             # Assign gradient
-            jacobian[:, :, i] = gradient
+            jacobian[0, 0, :, :, i] = gradient
+            jacobian[1, 1, :, :, i] = gradient
+            jacobian[2, 2, :, :, i] = gradient
 
         return jacobian
 
@@ -143,44 +146,68 @@ class Optimization(object):
 
         # Create source and monitor
         source = Source(z=0.25e-6, mode_coeffs=[1], k=1)  # Hard coded
-        monitor = self.eme.add_monitor(mesh_z=self.mesh_z, sources=[source])
+        forward_monitor = self.eme.add_monitor(mesh_z=self.mesh_z, sources=[source])
+
+        a_source = Source(z=2.75e-6, mode_coeffs=[1], k=-1)  # Hard coded
+        adjoint_monitor = self.eme.add_monitor(mesh_z=self.mesh_z, sources=[a_source])
 
         # Run eme
         self.eme.propagate()
 
-        # Get results
-        grid_x, grid_z, field = monitor.get_array("Hy", z_range=(z_start, z_end))
-        field = 0.25 * (field[1:, 1:] + field[1:, :-1] + field[:-1, 1:] + field[:-1, :-1])
-        return grid_x, grid_z, field, monitor
+        # Get near results
+        grid_x, grid_z, field_x = forward_monitor.get_array("Ex", z_range=(z_start, z_end))
+        field_x = 0.25 * (field_x[1:, 1:] + field_x[1:, :-1] + field_x[:-1, 1:] + field_x[:-1, :-1])
+        field_y = forward_monitor.get_array("Ey", z_range=(z_start, z_end))[2]
+        field_y = 0.25 * (field_y[1:, 1:] + field_y[1:, :-1] + field_y[:-1, 1:] + field_y[:-1, :-1])
+        field_z = forward_monitor.get_array("Ez", z_range=(z_start, z_end))[2]
+        field_z = 0.25 * (field_z[1:, 1:] + field_z[1:, :-1] + field_z[:-1, 1:] + field_z[:-1, :-1])
+        field = np.array([field_x, field_y, field_z])
+        results = (grid_x, grid_z, field, forward_monitor)
+
+        # Save adjoint results
+        a_grid_x, a_grid_z, a_field_x = adjoint_monitor.get_array("Ex", z_range=(z_start, z_end))
+        a_field_x = 0.25 * (a_field_x[1:, 1:] + a_field_x[1:, :-1] + a_field_x[:-1, 1:] + a_field_x[:-1, :-1])
+        a_field_y = adjoint_monitor.get_array("Ey", z_range=(z_start, z_end))[2]
+        a_field_y = 0.25 * (a_field_y[1:, 1:] + a_field_y[1:, :-1] + a_field_y[:-1, 1:] + a_field_y[:-1, :-1])
+        a_field_z = adjoint_monitor.get_array("Ez", z_range=(z_start, z_end))[2]
+        a_field_z = 0.25 * (a_field_z[1:, 1:] + a_field_z[1:, :-1] + a_field_z[:-1, 1:] + a_field_z[:-1, :-1])
+        a_field = np.array([a_field_x, a_field_y, a_field_z])
+        self.adjoint_results = (a_grid_x, a_grid_z, a_field, adjoint_monitor)
+
+        return results
 
     def objective_gradient(self, monitor: "Monitor"):
         """Computes the objective function gradient to the sources for the adjoint formulation"""
 
         #### HARD CODED FOR NOW
 
-        # Compute power in end
-        x, _, Ex = monitor.get_array(component="Ex", z_range=(2.746e-6, 2.754e-6))
-        Ex = Ex[:, 0]
-        Ey = monitor.get_array(component="Ey", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
-        Hx = monitor.get_array(component="Hx", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
-        Hy = monitor.get_array(component="Hy", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
-        exp_Ex = self.eme.activated_layers[0][-1].modes[0].Ex
-        exp_Ey = self.eme.activated_layers[0][-1].modes[0].Ey
-        exp_Hx = self.eme.activated_layers[0][-1].modes[0].Hx
-        exp_Hy = self.eme.activated_layers[0][-1].modes[0].Hy
-        exp_Ex = exp_Ex[:, exp_Ex.shape[1] // 2]
-        exp_Ey = exp_Ey[:, exp_Ey.shape[1] // 2]
-        exp_Hx = exp_Hx[:, exp_Hx.shape[1] // 2]
-        exp_Hy = exp_Hy[:, exp_Hy.shape[1] // 2]
+        # # Compute power in end
+        # x, _, Ex = monitor.get_array(component="Ex", z_range=(2.746e-6, 2.754e-6))
+        # Ex = Ex[:, 0]
+        # Ey = monitor.get_array(component="Ey", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
+        # Hx = monitor.get_array(component="Hx", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
+        # Hy = monitor.get_array(component="Hy", z_range=(2.746e-6, 2.754e-6))[2][:, 0]
+        # exp_Ex = self.eme.activated_layers[0][-1].modes[0].Ex
+        # exp_Ey = self.eme.activated_layers[0][-1].modes[0].Ey
+        # exp_Hx = self.eme.activated_layers[0][-1].modes[0].Hx
+        # exp_Hy = self.eme.activated_layers[0][-1].modes[0].Hy
+        # exp_Ex = exp_Ex[:, exp_Ex.shape[1] // 2]
+        # exp_Ey = exp_Ey[:, exp_Ey.shape[1] // 2]
+        # exp_Hx = exp_Hx[:, exp_Hx.shape[1] // 2]
+        # exp_Hy = exp_Hy[:, exp_Hy.shape[1] // 2]
 
-        # Compute power in source
-        def overlap(Ex, Ey, Hx, Hy, grid):
-            return np.trapz(Ex * np.conj(Hy) - Ey * np.conj(Hx), grid)
+        # # Compute power in source
+        # def overlap(Ex, Ey, Hx, Hy, grid):
+        #     return np.trapz(Ex * np.conj(Hy) - Ey * np.conj(Hx), grid)
 
-        norm = overlap(Ex, Ey, Hx, Hy, x)
-        exp_norm = overlap(exp_Ex, exp_Ey, exp_Hx, exp_Hy, x)
-        power = overlap(Ex, Ey, exp_Hx, exp_Hy, x) / np.sqrt(norm) / np.sqrt(exp_norm)
-        power = np.abs(power)
+        # norm = overlap(Ex, Ey, Hx, Hy, x)
+        # exp_norm = overlap(exp_Ex, exp_Ey, exp_Hx, exp_Hy, x)
+        # power = overlap(Ex, Ey, exp_Hx, exp_Hy, x) / np.sqrt(norm) / np.sqrt(exp_norm)
+        # power = np.abs(power)
+        network = self.eme.network
+        pins = dict(zip([pin.name for pin in network.pins], [0.0 for pin in network.pins]))
+        pins["left_dup0_+2.5e-07_to_n5e-07"] = 1
+        power = np.abs(emepy.ModelTools.compute(network, pins, 0)["right0"])
 
         # Compute autogradient
         f_x = 0.0
@@ -197,28 +224,37 @@ class Optimization(object):
 
     def adjoint_run(self, sources: list):
         """Performs the adjoint run for use in the adjoint formulation"""
-        # Clear the eme and ensure design is inside
-        self.start()
+        # # Clear the eme and ensure design is inside
+        # self.start()
 
-        # Find where monitor should be in range of only the design region
-        z_start, z_end = (0.5e-6, 2.5e-6)
-        # for geometry in self.geometries:
-        #     if isinstance(geometry, DynamicPolygon):
-        #         z_end += geometry.length
-        #         break
-        #     else:
-        #         z_start += geometry.length
+        # # Find where monitor should be in range of only the design region
+        # z_start, z_end = (0.5e-6, 2.5e-6)
+        # # for geometry in self.geometries:
+        # #     if isinstance(geometry, DynamicPolygon):
+        # #         z_end += geometry.length
+        # #         break
+        # #     else:
+        # #         z_start += geometry.length
 
-        # Set monitor
-        monitor = self.eme.add_monitor(mesh_z=self.mesh_z, sources=sources)
+        # # Set monitor
+        # monitor = self.eme.add_monitor(mesh_z=self.mesh_z, sources=sources)
 
-        # Run eme
-        self.eme.propagate()
+        # # Run eme
+        # self.eme.propagate()
 
-        # Get results
-        grid_x, grid_z, field = monitor.get_array("Ex", z_range=(z_start, z_end))
-        field = 0.25 * (field[1:, 1:] + field[1:, :-1] + field[:-1, 1:] + field[:-1, :-1])
-        return grid_x, grid_z, field, monitor
+        # # Get results
+        # grid_x, grid_z, field_x = monitor.get_array("Ex", z_range=(z_start, z_end))
+        # field_x = 0.25 * (field_x[1:, 1:] + field_x[1:, :-1] + field_x[:-1, 1:] + field_x[:-1, :-1])
+        # field_y = monitor.get_array("Ey", z_range=(z_start, z_end))[2]
+        # field_y = 0.25 * (field_y[1:, 1:] + field_y[1:, :-1] + field_y[:-1, 1:] + field_y[:-1, :-1])
+        # field_z = monitor.get_array("Ez", z_range=(z_start, z_end))[2]
+        # field_z = 0.25 * (field_z[1:, 1:] + field_z[1:, :-1] + field_z[:-1, 1:] + field_z[:-1, :-1])
+        # field = np.array([field_x, field_y, field_z])
+        # return grid_x, grid_z, field, monitor
+
+        a_grid_x, a_grid_z, a_field, adjoint_monitor = self.adjoint_results
+        a_field *= sources[0].mode_coeffs[0]
+        return a_grid_x, a_grid_z, a_field, adjoint_monitor
 
     def optimize(self, design: list) -> "np.ndarray":
         """Runs a single step of shape optimization"""
@@ -228,27 +264,55 @@ class Optimization(object):
         self.set_design(design)
 
         # Compute the forward run
-        grid_x, grid_z, X, monitor = self.forward_run()
+        grid_x, grid_z, X, monitor_forward = self.forward_run()
 
         # Compute the partial gradient of the objective function f_x
-        f_x, overlap = self.objective_gradient(monitor)
+        f_x, overlap = self.objective_gradient(monitor_forward)
 
         # Calculate the adjoint sources
         sources = self.set_adjoint_sources(overlap)
 
         # Compute the adjoint run
-        grid_x, grid_z, lamdagger, monitor = self.adjoint_run(sources)
+        grid_x, grid_z, lamdagger, monitor_adjoint = self.adjoint_run(sources)
 
         # Compute the gradient of the constraint A_u
-        A_u = self.gradient(grid_x, grid_z)
-
-        print(lamdagger.shape, A_u.shape, X.shape)  # Next steps are figure out how these shapes work together
+        A_u = self.gradient(
+            grid_x, grid_z
+        )  # A will need to be 3x3xthe rest to incorporate the right dimensions and cross dielectric etc.
 
         # Calculate the full gradient of the objective function f_u
-        f_u = np.transpose(np.conj(lamdagger)) @ A_u @ X
+        f_u = self.compute_final_gradient(lamdagger, A_u, X)
 
         # Return the gradient
-        return overlap, f_u
+        return overlap, f_u, monitor_forward
+
+    def compute_final_gradient(self, lamdagger: "np.ndarray", A_u: "np.ndarray", X: "np.ndarray"):
+        """Computes the final gradient using the adjoint formulation and loops to conserve memory"""
+
+        # Initialize final result
+        f_u = np.zeros(A_u.shape[-1], dtype=float)
+
+        # Reshape
+        lamdagger = np.transpose(np.conj(lamdagger))
+        A_u = A_u
+        X = X
+
+        # Loop through all params
+        for p in range(len(f_u)):
+            A_u_temp = A_u[..., p]
+
+            # Compute all 9 components of the matrix
+            A_u_x = np.zeros([3] + list(A_u.shape[2:-1]), dtype=complex)
+            for i, mi in enumerate(A_u_temp):
+                for j, mij in enumerate(mi):
+                    A_u_x[i] += mij * X[j]
+                    # print(np.sum(mi))
+
+            # Compute lambda * A_u_x
+            for i in range(3):
+                f_u[p] += np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
+
+        return f_u
 
     def draw(self) -> None:
         self.start()
