@@ -20,6 +20,7 @@ class Monitor(object):
         grid_z: np.array = None,
         location: float = None,
         sources: list = [],
+        adjoint_n: bool = True,
     ) -> None:
         """Monitor class constructor0
 
@@ -43,6 +44,8 @@ class Monitor(object):
             the location in z if the monitor represents "xy" axes (default: None)
         sources : list[Source]
             sources to use for the monitor (default:[])
+        adjoint_n : bool
+            if true will use the "continuous" n used for adjoint
         """
 
         # Ensure z range is in proper format
@@ -75,6 +78,7 @@ class Monitor(object):
             )
 
         # Set parameters globally
+        self.adjoint_n = adjoint_n
         self.dimensions = dimensions
         self.field = np.zeros(dimensions).astype(complex)
         self.lengths = grid_z.tolist()
@@ -411,48 +415,40 @@ class Monitor(object):
 
         # Create plots
         if axes in ["xz", "zx", "yz", "zy"]:
-            if ax:
-                if show_geometry:
-                    ax.imshow(
-                        np.real(n),
-                        extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
-                        cmap=cmap_lookup["n"],
-                    )
-                vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
-                if show_sources:
-                    srcs = np.real(self.get_source_visual(field.shape))
-                    field = np.where(srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field)
-                im = ax.imshow(
-                    np.real(field),
-                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
-                    cmap=cmap_lookup[component],
-                    alpha=1 if not show_geometry else 0.85,
+            show = ax if ax else plt
+            if show_geometry:
+                show.imshow(
+                    np.real(n[::-1]),
+                    extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
+                    cmap=cmap_lookup["n"],
                 )
-                ax.set_xlabel(np.real(axes[1]))
-                ax.set_ylabel(np.real(axes[0]))
-                ax.set_title(component)
-            else:
-                if show_geometry:
-                    plt.imshow(
-                        np.real(n[::-1]),
-                        extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
-                        cmap=cmap_lookup["n"],
-                    )
-                vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
-                if show_sources:
-                    srcs = np.real(self.get_source_visual(field.shape))
-                    field = np.where(srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field)
-                im = plt.imshow(
-                    np.real(field[::-1]),
-                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
-                    cmap=cmap_lookup[component],
-                    alpha=1 if not show_geometry else 0.85,
-                    vmin=vmin,
-                    vmax=vmax,
+            vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
+            alpha = 1 if not show_geometry else 0.85
+            if show_sources and not component == "n":
+                srcs = np.real(self.get_source_visual(field.shape))
+                field = np.where(srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field)
+            elif show_sources and component == "n":
+                srcs = np.real(self.get_source_visual(field.shape))
+                im = show.imshow(
+                    np.real(srcs), extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])], cmap="Reds"
                 )
+                alpha = 0.9
+            im = show.imshow(
+                np.real(field[::-1]),
+                extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
+                cmap=cmap_lookup[component],
+                alpha=alpha,
+                vmin=vmin,
+                vmax=vmax,
+            )
+            if not ax:
                 plt.xlabel(np.real(axes[1]))
                 plt.ylabel(np.real(axes[0]))
                 plt.title(component)
+            else:
+                ax.set_xlabel(np.real(axes[1]))
+                ax.set_ylabel(np.real(axes[0]))
+                ax.set_title(component)
         else:
             if ax:
                 im = ax.imshow(
