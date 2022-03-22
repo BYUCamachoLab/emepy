@@ -130,7 +130,7 @@ class EigenMode(object):
 
         return self._inner_product(self, mode2)
 
-    def check_spurious(self, threshold_power: float = 0.05, threshold_neff: float = 0.9) -> bool:
+    def check_spurious(self, threshold_power: float = 0.5, threshold_neff: float = 0.9) -> bool:
         """Takes in a mode and determine whether the mode is likely spurious based on the ratio of confined to not confined power
 
         Parameters
@@ -146,7 +146,9 @@ class EigenMode(object):
             True if likely spurious
         """
 
-        power_bool = self.get_confined_power() < threshold_power
+        # geometry_ratio = np.sum(np.where(self.n > np.mean(self.n))) / np.sum(np.where(self.n > -1))
+        # power_bool = ((1-self.get_confined_power())*geometry_ratio) < 1-threshold_power
+        power_bool = self.get_confined_power() < threshold_power#(1+threshold_power)*geometry_ratio
         neff_bool = (np.real(self.neff) / np.abs(self.neff)) < threshold_neff
         return power_bool or neff_bool
 

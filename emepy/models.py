@@ -32,7 +32,14 @@ class Layer(object):
         self.length = length
         self.activated_layers = []
 
-    def activate_layer(self, sources: list = [], start: float = 0.0, period_length: float = 0.0) -> dict:
+    def begin_activate(self):
+        return ModelTools._solve_modes_wrapper, self.mode_solver
+
+    def finish_activate(self, sources: list = [], start: float = 0.0, period_length: float = 0.0, mode_solver=None):
+        self.mode_solver = mode_solver
+        return self.activate_layer(sources,start,period_length,False)
+
+    def activate_layer(self, sources: list = [], start: float = 0.0, period_length: float = 0.0, compute_modes=True) -> dict:
         """Solves for the modes in the layer and creates an ActivatedLayer object
 
         Parameters
@@ -54,7 +61,8 @@ class Layer(object):
         modes = []
 
         # Solve for modes
-        self.mode_solver.solve()
+        if compute_modes:
+            self.mode_solver.solve()
         for mode in range(self.num_modes):
             modes.append(self.mode_solver.get_mode(mode))
 
@@ -313,6 +321,7 @@ class ActivatedLayer(Model):
         for name in self.right_pins:
             pins.append(Pin(self, name))
 
+        self.pins = pins
         super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self) -> None:
@@ -1034,3 +1043,17 @@ class ModelTools(object):
         matrix = model.s_parameters(np.array([freq]))
         output = np.matmul(matrix, cfs)[0]
         return dict(zip(pin_names, output))
+
+    # Define tasks
+    @staticmethod
+    def layers_task(l, r, interface_type):
+        return l, ModelTools._prop_all(l, interface_type(l, r))
+
+    @staticmethod
+    def _prop_all_wrapper(arg_list, result_list):
+        return ModelTools._prop_all(*arg_list), result_list
+
+    @staticmethod
+    def _solve_modes_wrapper(mode_solver):
+        mode_solver.solve()
+        return mode_solver

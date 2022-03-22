@@ -1,4 +1,3 @@
-from sympy import jacobi_normalized
 from emepy.eme import EME
 from emepy.geometries import Geometry, DynamicPolygon
 from emepy.source import Source
@@ -80,7 +79,7 @@ class Optimization(object):
     def start(self) -> None:
         """Initializes the EME"""
         layers = [layer for geometry in self.geometries for layer in geometry]
-        self.eme.reset()
+        self.eme.reset(parallel=self.eme.parallel, configure_parallel=False)
         self.eme.add_layers(*layers)
 
     def update_eme(self) -> None:
@@ -116,7 +115,7 @@ class Optimization(object):
             A_new = self.get_n(grid_x, grid_z)
 
             # Revert step
-            design[i] = d + dp
+            design[i] = d
             self.set_design(design)
 
             # Compute gradient
