@@ -1,0 +1,87 @@
+Running in parallel on 20 cores
+current state: start
+  0%|          | 0/37 [00:00<?, ?it/s]100%|██████████| 37/37 [00:00<00:00, 6668.21it/s]
+current state: mode_solving
+1 1
+2 1
+3 1
+4 1
+5 1
+6 1
+7 1
+8 1
+9 1
+10 1
+11 1
+12 1
+13 1
+14 1
+15 1
+16 1
+17 1
+18 1
+0 1
+19 1
+0it [00:00, ?it/s]1it [00:10, 10.24s/it]2it [00:30, 15.99s/it]2it [00:30, 15.12s/it]
+current state: finished_modes
+current state: layer_propagating
+0 5
+15 5
+1 5
+19 5
+5 5
+6 5
+16 5
+17 5
+7 5
+18 5
+8 5
+9 5
+14 5
+10 5
+11 5
+12 5
+13 5
+2 5
+3 5
+4 5
+Traceback (most recent call last):
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/__main__.py", line 7, in <module>
+    main()
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/run.py", line 198, in main
+    run_command_line(args)
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/run.py", line 47, in run_command_line
+    run_path(sys.argv[0], run_name='__main__')
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 268, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 97, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "adiabatic.py", line 79, in <module>
+    eme.propagate()
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 599, in propagate
+    self.propagate_layers()
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 212, in propagate_layers
+    results = self._run_parallel_functions(*tasks)
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 696, in _run_parallel_functions
+    data = self.batch_scatter(data, root=0)
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 636, in batch_scatter
+    scattered.append(self.comm.scatter(to_scatter, root=root))
+  File "mpi4py/MPI/Comm.pyx", line 1587, in mpi4py.MPI.Comm.scatter
+  File "mpi4py/MPI/msgpickle.pxi", line 823, in mpi4py.MPI.PyMPI_scatter
+  File "mpi4py/MPI/msgpickle.pxi", line 167, in mpi4py.MPI.pickle_dumpv
+  File "mpi4py/MPI/msgbuffer.pxi", line 50, in mpi4py.MPI.downcast
+OverflowError: integer 2339594413 does not fit in 'int'
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD 
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------

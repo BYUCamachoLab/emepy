@@ -12,32 +12,32 @@ SiO2 = SiO2(1.55)
 
 # Create goemetry params
 rect_params = EMpyGeometryParameters(
-    wavelength=1.55e-6, cladding_width=4e-6, cladding_thickness=2.5e-6, core_index=Si, cladding_index=SiO2, mesh=80
+    wavelength=1.55e-6, cladding_width=4e-6, cladding_thickness=2.5e-6, core_index=Si, cladding_index=SiO2, mesh=120
 )
 
 # Create an input waveguide
-input_waveguide = Waveguide(rect_params, 1.0e-6, 0.22e-6, 0.5e-6, center=(0, 0), num_modes=4)
+input_waveguide = Waveguide(rect_params, 1.0e-6, 0.22e-6, 0.5e-6, center=(0, 0), num_modes=5)
 
 # Create an output waveguide
-output_waveguide = Waveguide(rect_params, width=1.7e-6, thickness=0.22e-6, length=0.5e-6, center=(0, 0), num_modes=4)
+output_waveguide = Waveguide(rect_params, width=1.7e-6, thickness=0.22e-6, length=0.5e-6, center=(0, 0), num_modes=5)
 
 # Create the design region geometry
 dynamic_rect = DynamicRect2D(
     params=rect_params,
     width=input_waveguide.width,
     length=2e-6,
-    num_modes=4,
-    num_params=10,
+    num_modes=5,
+    num_params=30,
     symmetry=True,
     subpixel=True,
-    mesh_z=5,
+    mesh_z=18,
     input_width=input_waveguide.width,
     output_width=output_waveguide.width,
 )
 
 # Create the EME and Optimization
-eme = EME(quiet=True)
-optimizer = Optimization(eme, [input_waveguide, dynamic_rect, output_waveguide], mesh_z=100)
+eme = EME(quiet=True, parallel=True)
+optimizer = Optimization(eme, [input_waveguide, dynamic_rect, output_waveguide], mesh_z=150)
 
 # Make the initial design a linear taper
 design_x, design_z = optimizer.get_design_readable()
@@ -79,9 +79,15 @@ def f(design, grad):
         grad[:] = np.squeeze(dJ_du)
     evaluation_history.append(np.real(f0))
 
-    # plt.figure()
-    # monitor.visualize(component="n")
-    # plt.show()
+    plt.figure()
+    monitor.visualize(component="n")
+    if eme.am_master():
+        plt.savefig("test_images/eme{}.jpg".format(len(evaluation_history)))
+
+    plt.figure()
+    monitor.visualize(component="Hy")
+    if eme.am_master():
+        plt.savefig("test_images/field{}.jpg".format(len(evaluation_history)))
 
     grid_z = np.linspace(dynamic_rect.grid_z[0], dynamic_rect.grid_z[-1], 300)
     n = dynamic_rect.get_n(dynamic_rect.grid_x, grid_z)
@@ -102,7 +108,7 @@ def f(design, grad):
 algorithm = nlopt.LD_MMA
 design = optimizer.get_design()
 n = len(design)
-maxeval = 1
+maxeval = 20
 
 solver = nlopt.opt(algorithm, n)
 solver.set_lower_bounds(0)

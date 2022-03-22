@@ -1,0 +1,44 @@
+Running in parallel on 20 cores
+current state: start
+  0%|          | 0/10 [00:00<?, ?it/s]100%|██████████| 10/10 [00:00<00:00, 6654.46it/s]
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:10, 10.54s/it]1it [00:10, 10.54s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  5.58it/s]1it [00:00,  5.58it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+Traceback (most recent call last):
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/__main__.py", line 7, in <module>
+    main()
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/run.py", line 198, in main
+    run_command_line(args)
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/run.py", line 47, in run_command_line
+    run_path(sys.argv[0], run_name='__main__')
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 268, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 97, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "adiabatic.py", line 79, in <module>
+    eme.propagate()
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 606, in propagate
+    self.field_propagate(left_coeffs, right_coeffs)
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 325, in field_propagate
+    results = self._run_parallel_functions(*tasks)
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 658, in _run_parallel_functions
+    data = self.batch_scatter(data, root=0)
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 612, in batch_scatter
+    return self.comm.scatter(data, root=root)
+  File "mpi4py/MPI/Comm.pyx", line 1587, in mpi4py.MPI.Comm.scatter
+  File "mpi4py/MPI/msgpickle.pxi", line 823, in mpi4py.MPI.PyMPI_scatter
+  File "mpi4py/MPI/msgpickle.pxi", line 167, in mpi4py.MPI.pickle_dumpv
+  File "mpi4py/MPI/msgbuffer.pxi", line 50, in mpi4py.MPI.downcast
+OverflowError: integer 2404824421 does not fit in 'int'

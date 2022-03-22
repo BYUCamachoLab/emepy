@@ -4,6 +4,7 @@ from tqdm import tqdm
 from emepy.monitors import Monitor
 import matplotlib
 import simphony
+import pickle
 
 import importlib
 
@@ -14,12 +15,14 @@ from emepy.fd import MSEMpy
 from emepy.models import Duplicator, Model, ModelTools, Layer, InterfaceSingleMode, InterfaceMultiMode
 
 _prop_all = ModelTools._prop_all
+_prop_all_wrapper = ModelTools._prop_all_wrapper
 purge_spurious = ModelTools.purge_spurious
 get_sources = ModelTools.get_sources
 get_source_system = ModelTools.get_source_system
 periodic_duplicate_format = ModelTools.periodic_duplicate_format
 make_copy_model = ModelTools.make_copy_model
 compute = ModelTools.compute
+layers_task = ModelTools.layers_task
 
 
 class EME(object):
@@ -141,20 +144,25 @@ class EME(object):
 
         # Solve modes
         self._update_state(1)
-        length = 0.0
         tasks = []
-        sources = self.get_sources()
-        for layer in tqdm(self.layers, disable=self.quiet):
-            tasks.append((layer.activate_layer, [sources, length, self._get_total_length()], {}))
-            length += layer.length
+        if self.am_master():
+            for layer in self.layers:
+                tasks.append((layer.begin_activate()[0], [layer.begin_activate()[1]], {}))
 
-        # Organized solved layers
-        self.activated_layers = dict(zip(range(self.num_periods), [[] for _ in range(self.num_periods)]))
+            # Organized solved layers
+            self.activated_layers = dict(zip(range(self.num_periods), [[] for _ in range(self.num_periods)]))
         results = self._run_parallel_functions(*tasks)
-        if results is not None:
-            for solved in results:
+        final_results = []
+        if self.am_master() and results is not None:
+            sources = self.get_sources()
+            length = 0.0
+            for mode_solver, layer in zip(results, self.layers):
+                solved = layer.finish_activate(sources=sources, start=length, period_length=self._get_total_length(), mode_solver=mode_solver)
+                length += layer.length
+                final_results.append(solved)
+            for solved in final_results:    
                 for per, layers in solved.items():
-                    if not sum([i is not None for so in results for p, s in so.items() for i in s if p == per]):
+                    if not sum([i is not None for so in final_results for p, s in so.items() for i in s if p == per]):
                         self.activated_layers[per] = None
                     else:
                         self.activated_layers[per] += layers if layers[0] is not None else solved[0]
@@ -170,60 +178,63 @@ class EME(object):
         else:
             raise Exception("In the wrong place")
 
-        # Create return dict
-        final_activated_layers = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
-        periodic_interfaces = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
+        # Only master needs to control the work
+        if self.am_master():
+            # Create return dict
+            final_activated_layers = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
+            periodic_interfaces = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
 
-        # Loop through all periods in case of custom sources
-        for per, activated_layers in self.activated_layers.items():
-            tasks = []
+            # Loop through all periods in case of custom sources
+            for per, activated_layers in self.activated_layers.items():
+                tasks = []
 
-            # Most cases
-            if per and activated_layers is None:
-                continue
+                # Most cases
+                if per and activated_layers is None:
+                    continue
 
-            # See if only one layer or no layer
-            if not per and activated_layers is None:
-                raise Exception("No activated layers in system")
-            elif len(activated_layers) == 1:
+                # See if only one layer or no layer
+                if not per and activated_layers is None:
+                    raise Exception("No activated layers in system")
+                elif len(activated_layers) == 1:
+                    periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
+                    final_activated_layers[per] = activated_layers[0]
+                    continue
+
+                # Configure interface
+                num_modes = max([len(l.modes) for l in activated_layers])
+                interface_type = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
+
+                # Setup parallel layer prop tasks
+                for left, right in zip(activated_layers[:-1], activated_layers[1:]):
+                    tasks.append((layers_task, [left, right, interface_type], {}))
+
+                # Propagate
+                results = self._run_parallel_functions(*tasks)
+
+                # Calculate period interface in case multiple periods
                 periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
-                final_activated_layers[per] = activated_layers[0]
-                continue
 
-            # Configure interface
-            num_modes = max([len(l.modes) for l in activated_layers])
-            interface_type = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
+                # Only keep what we need
+                for i, result in enumerate(results):
+                    layer, cascaded = result
+                    attributes = layer.__dict__
+                    activated_layers[i] = cascaded
+                    activated_layers[i].length = attributes["length"]
+                    activated_layers[i].wavelength = attributes["wavelength"]
+                    activated_layers[i].modes = attributes["modes"]
+                    activated_layers[i].num_modes = attributes["num_modes"]
 
-            # Define tasks
-            def task(l, r):
-                return l, _prop_all(l, interface_type(l, r))
+                # Add to cascaded list
+                final_activated_layers[per] = _prop_all(*activated_layers)
 
-            # Setup parallel layer prop tasks
-            for left, right in tqdm(zip(activated_layers[:-1], activated_layers[1:]), disable=self.quiet):
-                tasks.append((task, [left, right], {}))
+            # Update
+            self.networks = final_activated_layers
+            self.periodic_interfaces = periodic_interfaces
 
-            # Propagate
-            results = self._run_parallel_functions(*tasks)
+        # Ensure the workers meet up to work
+        else:
+            self._run_parallel_functions()
 
-            # Calculate period interface in case multiple periods
-            periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
-
-            # Only keep what we need
-            for i, result in enumerate(results):
-                layer, cascaded = result
-                attributes = layer.__dict__
-                activated_layers[i] = cascaded
-                activated_layers[i].length = attributes["length"]
-                activated_layers[i].wavelength = attributes["wavelength"]
-                activated_layers[i].modes = attributes["modes"]
-                activated_layers[i].num_modes = attributes["num_modes"]
-
-            # Add to cascaded list
-            final_activated_layers[per] = _prop_all(*activated_layers)
-
-        # Update
-        self.networks = final_activated_layers
-        self.periodic_interfaces = periodic_interfaces
 
         # Finish state
         self._update_state(4)
@@ -234,22 +245,26 @@ class EME(object):
         # Initialize building state
         self._update_state(5)
 
-        # Place all periods' proper networks into the final network
-        networks = []
-        for per, network in self.networks.items():
-            start = per * self._get_total_length()
-            end = (per + 1) * self._get_total_length()
-            n = network if network is not None else self.networks[0]
-            networks.append(periodic_duplicate_format(n, start, end))
-            if not per:
-                networks.append(
-                    self.periodic_interfaces[per]
-                    if self.periodic_interfaces[per] is not None
-                    else self.periodic_interfaces[0]
-                )
+        if self.am_master():
+            # Place all periods' proper networks into the final network
+            networks = []
+            for per, network in self.networks.items():
+                start = per * self._get_total_length()
+                end = (per + 1) * self._get_total_length()
+                n = network if network is not None else self.networks[0]
+                networks.append(periodic_duplicate_format(n, start, end))
+                if not per:
+                    networks.append(
+                        self.periodic_interfaces[per]
+                        if self.periodic_interfaces[per] is not None
+                        else self.periodic_interfaces[0]
+                    )
 
-        # Propagate final network with all periods
-        self.network = _prop_all(*networks)
+            # Propagate final network with all periods
+            self.network = _prop_all(*networks)
+
+        else:
+            self.network = None
 
         # Finish building state
         self._update_state(6)
@@ -270,47 +285,77 @@ class EME(object):
 
         # Update all monitors
         for m in self.custom_monitors + self.monitors:
-            # Reset monitor
-            m.reset_monitor()
-            m.left_source = len(left_coeffs) > 0
-            m.right_source = len(right_coeffs) > 0
+            if self.am_master():
+                # Reset monitor
+                m.reset_monitor()
+                m.left_source = len(left_coeffs) > 0
+                m.right_source = len(right_coeffs) > 0
 
-            # Get full s params for all periods
-            cur_len = 0
-            full_z_list = []
-            tasks = []
-            for per, activated_layers in tqdm(self.activated_layers.items(), disable=self.quiet):
+                # Get full s params for all periods
+                cur_len = 0
+                full_z_list = []
+                tasks = []
+                for per, activated_layers in self.activated_layers.items():
 
-                # Forward through the device
-                activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
-                for i, layer in enumerate(activated_layers):
+                    # Forward through the device
+                    activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
+                    for i, layer in enumerate(activated_layers):
+                        z_list = m.get_z_list(cur_len, cur_len + layer.length)
+                        just_z_list = [i[1] for i in z_list]
+                        prop, checked_l = self._layer_field_propagate_part1(
+                                i * 1,
+                                make_copy_model(layer),
+                                per * 1,
+                                left_coeffs[:],
+                                right_coeffs[:],
+                                cur_len * 1,
+                                just_z_list[:],
+                                m,
+                        )
+                        # Compute field propagation
+                        task = (
+                            _prop_all_wrapper,
+                            [[t for t in prop if (t is not None) and not (isinstance(t, list) and not len(t))],checked_l],
+                            {},
+                        )
+                        full_z_list.append(z_list)
+                        tasks.append(task)
+                        cur_len += layer.length
+
+                # Get restults
+                results = self._run_parallel_functions(*tasks)
+
+                # Assign results to monitor
+                cur_len = 0
+                for i, rr in enumerate(zip(full_z_list, results)):
+                    z_l, result = rr
+                    S, checked_l = result
+                    layer_index = i % len(self.activated_layers[0])
+                    activated_layers = self.activated_layers[i // len(self.activated_layers[0])]
+                    activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
+                    layer = make_copy_model(activated_layers[layer_index])
                     z_list = m.get_z_list(cur_len, cur_len + layer.length)
-                    just_z_list = [i[1] for i in z_list]
-                    task = (
-                        self._layer_field_propagate,
-                        [
-                            i * 1,
-                            make_copy_model(layer),
-                            per * 1,
-                            left_coeffs[:],
-                            right_coeffs[:],
-                            cur_len * 1,
-                            just_z_list[:],
-                            m,
-                        ],
-                        {},
-                    )
-                    full_z_list.append(z_list)
-                    tasks.append(task)
-                    cur_len += layer.length
+                    just_z_list = [j[1] for j in z_list]
+                    result_l2 = self._layer_field_propagate_part2(
+                                layer_index,
+                                layer,
+                                None,
+                                left_coeffs[:],
+                                right_coeffs[:],
+                                cur_len * 1,
+                                just_z_list[:],
+                                m,
+                                S, 
+                                checked_l
+                        )
+                    cur_len = cur_len + layer.length
 
-            # Get restults
-            results = self._run_parallel_functions(*tasks)
-
-            # Assign results to monitor
-            for z_l, result_l in zip(full_z_list, results):
-                for z, r in zip(z_l, result_l):
-                    self._set_monitor(m, z[0], r)
+                    for z, r in zip(z_l, result_l2):
+                        self._set_monitor(m, z[0], r)
+            
+            # Ensure the workers are there to work
+            else:
+                self._run_parallel_functions()
 
         # Finish state
         self._update_state(8)
@@ -563,6 +608,50 @@ class EME(object):
 
         return self.network
 
+    def batch_scatter(self, data, root=0, limit=2**30):
+        """Scatters data to all workers in a batched manner that will not exceed the MPI integer limit"""
+
+        # Initialize lists
+        scattered = []
+        serialized_data = [pickle.dumps(i,0) for i in data] if not data is None else []
+        length = sum([len(i) for i in serialized_data])
+        num_divisors = self.comm.scatter([length // limit + 1 for i in range(self.size)], root=root)
+
+        # Wait
+        self.comm.barrier()
+
+        # Loop through every divisor
+        for j in range(num_divisors):
+
+            # New divisor to scatter
+            to_scatter = []
+            for i, serial in enumerate(serialized_data): # One for every worker
+                start = j * len(serial) // num_divisors
+                end = (j+1) * len(serial) // num_divisors if not j == num_divisors - 1 else (j+2) * length // num_divisors
+                ser = serial[start:end]
+                to_scatter.append(ser)
+
+            # Distribute
+            scattered.append(self.comm.scatter(to_scatter, root=root))
+
+        # Wait 
+        self.comm.barrier()
+
+        # deserialize
+        scattered_fixed = scattered[0]
+        for scatter in scattered[1:]:
+            scattered_fixed += scatter
+        new_data = pickle.loads(scattered_fixed)
+
+        # Wait
+        self.comm.barrier()
+
+        return new_data
+
+    def batch_gather(self, data, root=0):
+        """Gathers data to all workers in a batched manner that will not exceed the MPI integer limit"""
+        return self.comm.gather(data, root=root)
+
     def _run_parallel_functions(self, *tasks) -> list:
         """Takes a series of "tasks" as arguments and returns a list of "results" after running in parallel.
 
@@ -584,7 +673,7 @@ class EME(object):
         # Complete all tasks and tag based on initial order for either parallel or not
         if not self.parallel:
             # Linearly execute tasks
-            for i, a in enumerate(tasks):
+            for i, a in tqdm(enumerate(tasks), disable=self.quiet):
                 func, arguments, kwarguments = a
                 finished_tasks.append(func(*arguments, **kwarguments))
         else:
@@ -597,25 +686,29 @@ class EME(object):
                     subdata = []
                     for i, a in enumerate(tasks):
                         if self._should_compute(i, j, self.size):
-                            subdata.append(i)
+                            subdata.append((i, a))
                     data.append(subdata)
             else:
                 data = None
 
             # Scatter data
-            data = self.comm.scatter(data, root=0)
+            data = self.batch_scatter(data, root=0)
             new_data = []
 
             # Compute data
-            for i, k in enumerate(data):
-                func, arguments, kwarguments = solve_data[k][1]
-                new_data.append((k, func(*arguments, **kwarguments)))
+            for i, k in tqdm(enumerate(data), disable=self.quiet):
+                index, task = k
+                func, arguments, kwarguments = task
+                new_data.append((index, func(*arguments, **kwarguments)))
 
             # Wait until everyone is finished
             self.comm.Barrier()
 
             # Gather data
-            finished_tasks_collective = self.comm.allgather(new_data)
+            # finished_tasks_collective = self.comm.allgather(new_data)
+            finished_tasks_collective = self.batch_gather(new_data, root=0)
+            finished_tasks_collective = finished_tasks_collective if self.am_master() else []
+            self.comm.Barrier()
             for row in finished_tasks_collective:
                 finished_tasks += row
 
@@ -781,7 +874,7 @@ class EME(object):
 
         return mapping
 
-    def _layer_field_propagate(
+    def _layer_field_propagate_part1(
         self,
         i: int,
         l: Model,
@@ -874,10 +967,24 @@ class EME(object):
             else [*SP0, *S0, dup, checked_l, *S1, *SP1]
         )
 
-        # Compute field propagation
-        S = _prop_all(*[t for t in prop if (t is not None) and not (isinstance(t, list) and not len(t))])
+        return prop, checked_l
+
+    def _layer_field_propagate_part2(
+        self,
+        i: int,
+        l: Model,
+        per: int,
+        left_coeffs: list,
+        right_coeffs: list,
+        cur_len: float,
+        z_list: list,
+        m: "Monitor",
+        S,
+        checked_l,
+    ) -> list:
 
         # Get input array
+        result_list = []
         input_map = self._build_input_array(left_coeffs, right_coeffs, S, m)
         coeffs_ = compute(S, input_map, 0)
         coeff_left = np.zeros(len(l.modes), dtype=complex)

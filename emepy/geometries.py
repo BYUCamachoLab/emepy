@@ -15,7 +15,7 @@ class Geometry(object):
         self.layers = layers
 
     def __iter__(self):
-        return iter(self.layers)
+        return deepcopy(iter(self.layers))
 
 
 class Params(object):

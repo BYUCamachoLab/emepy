@@ -11,7 +11,6 @@ from emepy.materials import *
 from typing import Callable
 from shapely.geometry import Polygon, Point
 
-
 def polygon_to_n_2D(
     polygon: "Polygon",
     x: list,
@@ -103,53 +102,90 @@ def circle_to_n(
     return polygon_to_n_2D(polygon, x, y, subpixel, core_index, cladding_index)
 
 
-def get_epsfunc(
-    width: float,
-    thickness: float,
-    cladding_width: float,
-    cladding_thickness: float,
-    core_index: float,
-    cladding_index: float,
-    compute: bool = False,
-    profile: "np.ndarray" = None,
-    nx: int = None,
-    ny: int = None,
-) -> Callable[["np.ndarray", "np.ndarray"], "np.ndarray"]:
-    """Returns the epsfunc for given parameters for a rectangular waveguide
+class get_epsfunc(object):
+    """Callable class for getting epsilon on a grid"""
 
-    Parameters
-    ----------
-    width: float
-        the width of the geometry
-    thickness: float
-        the thickess of the geometry
-    cladding_width: float
-        the width of the surrounding cladding (note this is total width and should be > core width)
-    cladding_thickness: float
-        the thickness of the surrounding cladding (note this is total thickness and should be > core thickness)
-    core_index: float
-        refractive index of the core
-    cladding_index: float
-        refractive index of the cladding
-    compute: bool = False
-        if true, will not place rectangle at center. This should only be necessary for compute_other_fields
-    profile: "np.ndarray" = None
-        the refractive index profile (note if providing a width, this should be left None)
-    nx: int = None
-        number of points in the x direction
-    ny: int = None
-        number of points in the y direction
-    subpixel: bool = True
-        if true, will use subpixel smoothing, assuming asking for a waveguide cross section and not providing an index map (recommended)
+    def __init__(
+        self,
+        width: float,
+        thickness: float,
+        cladding_width: float,
+        cladding_thickness: float,
+        core_index: float,
+        cladding_index: float,
+        compute: bool = False,
+        profile: "np.ndarray" = None,
+        nx: int = None,
+        ny: int = None,
+    ):
+        """Returns the epsfunc for given parameters for a rectangular waveguide
 
-    Returns
-    -------
-    function
-        an epsfunc function that takes an x,y grid arrays and returns the refractive index profile
-    """
+        Parameters
+        ----------
+        width: float
+            the width of the geometry
+        thickness: float
+            the thickess of the geometry
+        cladding_width: float
+            the width of the surrounding cladding (note this is total width and should be > core width)
+        cladding_thickness: float
+            the thickness of the surrounding cladding (note this is total thickness and should be > core thickness)
+        core_index: float
+            refractive index of the core
+        cladding_index: float
+            refractive index of the cladding
+        compute: bool = False
+            if true, will not place rectangle at center. This should only be necessary for compute_other_fields
+        profile: "np.ndarray" = None
+            the refractive index profile (note if providing a width, this should be left None)
+        nx: int = None
+            number of points in the x direction
+        ny: int = None
+            number of points in the y direction
+        subpixel: bool = True
+            if true, will use subpixel smoothing, assuming asking for a waveguide cross section and not providing an index map (recommended)
+
+        Returns
+        -------
+        function
+            an epsfunc function that takes an x,y grid arrays and returns the refractive index profile
+        """
+        self.width = width
+        self.thickness = thickness
+        self.cladding = cladding_width
+        self.cladding = cladding_thickness
+        self.core_index = core_index
+        self.cladding_index = cladding_index
+        self.compute = compute
+        self.profile = profile
+        self.nx = nx
+        self.ny = ny
+
+        if (width is not None) and (thickness is not None):
+            self.epsfunction = self.epsfunc_2D_1
+
+        elif (width is None) and (thickness is not None) and (profile is not None):
+            self.epsfunction = self.epsfunc_2D_2
+
+        elif (width is None) and (thickness is None) and (profile is not None):
+            self.epsfunction = self.epsfunc_2D_3
+
+        elif (thickness is None) and (width is not None):
+            self.epsfunction = self.epsfunc_1D_1
+
+        elif (thickness is None) and (width is None) and (profile is not None):
+            self.epsfunction = self.epsfunc_1D_2
+
+        else:
+            raise Exception(
+                "Need to provide width & thickness, or 1D profile and thickness, or 2D profile, or width for 1D, or 1D profile for 1D"
+            )
+
+    def __call__(self, x_, y_):
+        return self.epsfunction(x_,y_)
 
     # Case 1 : width and thickness are defined
-    def epsfunc_2D_1(x_, y_):
+    def epsfunc_2D_1(self, x_, y_):
         """Return a matrix describing a 2d material.
 
         Parameters
@@ -164,42 +200,42 @@ def get_epsfunc(
         numpy array
             2d-matrix
         """
-        xx, yy = np.meshgrid(x_, y_)
-        if compute:
+        xx, yy = np.meshgrid(self, x_, y_)
+        if self.compute:
             n = np.where(
-                (np.abs(np.real(xx.T) - cladding_width * 0.5) <= width * 0.5)
-                * (np.abs(np.real(yy.T) - cladding_thickness * 0.5) <= thickness * 0.5),
-                core_index**2 + 0j,
-                cladding_index**2 + 0j,
+                (np.abs(np.real(xx.T) - self.cladding_width * 0.5) <= self.width * 0.5)
+                * (np.abs(np.real(yy.T) - self.cladding_thickness * 0.5) <= self.thickness * 0.5),
+                self.core_index**2 + 0j,
+                self.cladding_index**2 + 0j,
             )
         else:
             n = np.where(
-                (np.abs(np.real(xx.T)) <= width * 0.5)
-                * (np.abs(np.real(yy.T)) <= thickness * 0.5),
-                core_index**2 + 0j,
-                cladding_index**2 + 0j,
+                (np.abs(np.real(xx.T)) <= self.width * 0.5)
+                * (np.abs(np.real(yy.T)) <= self.thickness * 0.5),
+                self.core_index**2 + 0j,
+                self.cladding_index**2 + 0j,
             )
         return n
 
     # Case 2 : thickness and 1D n is defined
-    def epsfunc_2D_2(x_, y_):
+    def epsfunc_2D_2(self, x_, y_):
 
-        n = profile
+        n = self.profile
         xx, yy = np.meshgrid(np.real(x_), np.real(y_))
-        n = np.interp(np.real(x_), np.real(nx), n).astype(complex)
+        n = np.interp(np.real(x_), np.real(self.nx), n).astype(complex)
         n = np.repeat(n, len(y_)).reshape((len(n), len(y_)))
         n = (
-            np.where((np.abs(np.real(yy.T)) <= thickness * 0.5), n, cladding_index + 0j)
+            np.where((np.abs(np.real(yy.T)) <= self.thickness * 0.5), n, self.cladding_index + 0j)
             ** 2
         )
         return n
 
     # Case 3 : 2D n is defined
-    def epsfunc_2D_3(x_, y_):
+    def epsfunc_2D_3(self, x_, y_):
 
-        xxn, yyn = np.meshgrid(np.real(nx), np.real(ny))
+        xxn, yyn = np.meshgrid(np.real(self.nx), np.real(self.ny))
         points = np.array((xxn.flatten(), yyn.flatten())).T
-        n = profile.flatten()
+        n = self.profile.flatten()
         xx, yy = np.meshgrid(np.real(x_), np.real(y_))
         n_real = griddata(points, np.real(n), (xx, yy))
         n_imag = griddata(points, np.imag(n), (xx, yy))
@@ -207,47 +243,29 @@ def get_epsfunc(
         return n
 
     # Case 4: width only
-    def epsfunc_1D_1(x_, y_):
+    def epsfunc_1D_1(self, x_, y_):
 
         n = np.where(
-            (np.abs(np.real(x_)) <= width * 0.5),
-            core_index**2 + 0j,
-            cladding_index**2 + 0j,
+            (np.abs(np.real(x_)) <= self.width * 0.5),
+            self.core_index**2 + 0j,
+            self.cladding_index**2 + 0j,
         ).reshape(len(x_), 1)
 
         return n
 
     # Case 5: 1D n only
-    def epsfunc_1D_2(x_, y_):
+    def epsfunc_1D_2(self, x_, y_):
 
         n = (
-            np.interp(np.real(x_), np.real(nx), profile)
+            np.interp(np.real(x_), np.real(self.nx), self.profile)
             .astype(complex)
             .reshape(len(x_), 1)
         )
         return n
 
-    if (width is not None) and (thickness is not None):
-        return epsfunc_2D_1
-
-    elif (width is None) and (thickness is not None) and (profile is not None):
-        return epsfunc_2D_2
-
-    elif (width is None) and (thickness is None) and (profile is not None):
-        return epsfunc_2D_3
-
-    elif (thickness is None) and (width is not None):
-        return epsfunc_1D_1
-
-    elif (thickness is None) and (width is None) and (profile is not None):
-        return epsfunc_1D_2
-
-    raise Exception(
-        "Need to provide width & thickness, or 1D profile and thickness, or 2D profile, or width for 1D, or 1D profile for 1D"
-    )
 
 
-def get_epsfunc_epsfunc(
+def get_isotropic_epsfunc(
     epsfunc_xx, epsfunc_yy, epsfunc_zz, epsfunc_xy=None, epsfunc_yx=None
 ) -> Callable[["np.ndarray", "np.ndarray"], "np.ndarray"]:
     """Returns an epsfunction for an isotropic medium"""
