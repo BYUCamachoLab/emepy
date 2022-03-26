@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 # Design parameters
 taper_length = 7e-6  # The length of the taper
-taper_density = 35 # Number of taper segments
+taper_density = 20 # Number of taper segments
 alpha = 3 # Strength of function (either tanh or bezier) -> 0 = linear
 type_tanh = True # "bezier"
 
@@ -32,9 +32,9 @@ width2 = 7e-6  # Width of right waveguide
 thickness2 = 0.22e-6  # Thickness of right waveguide
 wavelength = 1.55e-6  # Wavelength of light (m)
 length = 3e-6  # Length of the waveguides
-num_modes_first_half = 10 # Number of modes to solve for
-num_modes_second_half = 10 # Number of modes to solve for
-mesh=200 # Number of mesh points in each xy dimension
+num_modes_first_half = 3 # Number of modes to solve for
+num_modes_second_half = 3 # Number of modes to solve for
+mesh=275 # Number of mesh points in each xy dimension
 
 eme = EME(parallel=True)  # Choose either a normal eme or a periodic eme (PeriodicEME())
 

@@ -438,10 +438,10 @@ class Mode(EigenMode):
                 vmin=-v,
                 vmax=v,
                 extent=[
-                    temp.x[0] * 1e6,
-                    temp.x[-1] * 1e6,
-                    temp.y[0] * 1e6,
-                    temp.y[-1] * 1e6,
+                    temp.x[0],
+                    temp.x[-1],
+                    temp.y[0],
+                    temp.y[-1],
                 ],
                 interpolation="none",
             )
@@ -521,10 +521,10 @@ class Mode(EigenMode):
         plt.imshow(
             np.real(self.n).T,
             extent=[
-                self.x[0] * 1e6,
-                self.x[-1] * 1e6,
-                self.y[0] * 1e6,
-                self.y[-1] * 1e6,
+                self.x[0],
+                self.x[-1],
+                self.y[0],
+                self.y[-1],
             ],
             cmap="Greys",
             interpolation="none",

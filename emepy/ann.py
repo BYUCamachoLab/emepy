@@ -165,8 +165,8 @@ class ANN(object):
 
     def __init__(self,) -> None:
         """Constructor for Mode Object"""
-        self.x = np.linspace(0, 2.5e-6, FIELD_WIDTH)
-        self.y = np.linspace(0, 2.5e-6, FIELD_WIDTH)
+        self.x = np.linspace(0, 2.5, FIELD_WIDTH)
+        self.y = np.linspace(0, 2.5, FIELD_WIDTH)
 
         self.Hx_model = self.Hx_network()
         self.Hy_model = self.Hy_network()
@@ -246,7 +246,7 @@ class MSNeuralNetwork(ModeSolver):
         self.mesh = len(self.x) - 1
         self.PML = False
         self.n = get_epsfunc(
-            self.width, self.thickness, 2.5e-6, 2.5e-6, Si(self.wl * 1e6), SiO2(self.wl * 1e6), compute=True
+            self.width, self.thickness, 2.5, 2.5, Si(self.wl), SiO2(self.wl), compute=True
         )(self.x, self.y)
 
     def solve(self) -> None:
@@ -304,7 +304,7 @@ class MSNeuralNetwork(ModeSolver):
         """
 
         poly = PolynomialFeatures(degree=8)
-        X = poly.fit_transform([[width * 1e6, thickness * 1e6, wl * 1e6]])
+        X = poly.fit_transform([[width, thickness, wl]])
         neff = model.predict(X)
 
         return neff[0]
@@ -330,7 +330,7 @@ class MSNeuralNetwork(ModeSolver):
         """
 
         with torch.no_grad():
-            parameters = torch.Tensor([[[width * 1e6, thickness * 1e6, wl * 1e6]]])
+            parameters = torch.Tensor([[[width, thickness, wl]]])
             output, _ = model(parameters)
             output = output.numpy()
             output = output.reshape(128, 128)
@@ -358,7 +358,7 @@ class MSNeuralNetwork(ModeSolver):
         """
 
         with torch.no_grad():
-            parameters = torch.Tensor([[[width * 1e6, thickness * 1e6, wl * 1e6]]])
+            parameters = torch.Tensor([[[width, thickness, wl]]])
             output, _ = model(parameters)
             output = output.numpy()
             output = output.reshape(128, 128)
@@ -385,9 +385,9 @@ class MSNeuralNetwork(ModeSolver):
         Hx, Hy, neff = self.mode
 
         epsfunc_before = get_epsfunc(
-            self.width, self.thickness, 2.5e-6, 2.5e-6, Si(self.wl * 1e6), SiO2(self.wl * 1e6), compute=True
+            self.width, self.thickness, 2.5, 2.5, Si(self.wl), SiO2(self.wl), compute=True
         )
-        epsfunc_after = get_epsfunc(self.width, self.thickness, 2.5e-6, 2.5e-6, Si(self.wl * 1e6), SiO2(self.wl * 1e6))
+        epsfunc_after = get_epsfunc(self.width, self.thickness, 2.5, 2.5, Si(self.wl), SiO2(self.wl))
         m = Mode(
             self.x,
             self.y,

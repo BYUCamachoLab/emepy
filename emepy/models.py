@@ -68,6 +68,7 @@ class Layer(object):
 
         # Purge spurious mode
         modes = ModelTools.purge_spurious(modes)
+        print(len(modes))
 
         # Create activated layers
         self.activated_layers = dict(zip(sources.keys(), [[] for _ in range(len(sources.keys()))]))

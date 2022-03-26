@@ -110,9 +110,16 @@ design = optimizer.get_design()
 n = len(design)
 maxeval = 20
 
+# Create limits
+lower_limit, upper_limit = np.array(design),np.array(design)
+lower_limit[::2] *= 0.7
+lower_limit[1::2] *= 0.99
+upper_limit[::2] *= 1.3
+upper_limit[1::2] *= 1.01
+
 solver = nlopt.opt(algorithm, n)
-solver.set_lower_bounds(0)
-solver.set_upper_bounds(1e10)
+solver.set_lower_bounds(lower_limit)
+solver.set_upper_bounds(upper_limit)
 solver.set_max_objective(f)
 solver.set_maxeval(maxeval)
 x = solver.optimize(design)

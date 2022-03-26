@@ -1,0 +1,49 @@
+Running in parallel on 20 cores
+Now performing an optimization...
+Run 0 finished with value 0.8656092089660606
+Now performing an optimization...
+TopologyException: Input geom 1 is invalid: Self-intersection at -6.5328885463353974e-07 1.9999999999999999e-06
+Traceback (most recent call last):
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/__main__.py", line 7, in <module>
+    main()
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/run.py", line 198, in main
+    run_command_line(args)
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/run.py", line 47, in run_command_line
+    run_path(sys.argv[0], run_name='__main__')
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 268, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 97, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "optimizer.py", line 118, in <module>
+    x = solver.optimize(design)
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/site-packages/nlopt/nlopt.py", line 334, in optimize
+    return _nlopt.opt_optimize(self, *args)
+  File "optimizer.py", line 75, in f
+    f0, dJ_du, monitor = optimizer.optimize(design)
+  File "/zhome/ihammond/GitHub/emepy/emepy/optimization.py", line 266, in optimize
+    self.set_design(design)
+  File "/zhome/ihammond/GitHub/emepy/emepy/optimization.py", line 59, in set_design
+    geometry.set_design(remaining_design[:length])
+  File "/zhome/ihammond/GitHub/emepy/emepy/geometries.py", line 192, in set_design
+    self.set_layers()
+  File "/zhome/ihammond/GitHub/emepy/emepy/geometries.py", line 228, in set_layers
+    n = self.get_n(self.grid_x, self.grid_z)
+  File "/zhome/ihammond/GitHub/emepy/emepy/geometries.py", line 217, in get_n
+    polygon = vertices_to_n(
+  File "/zhome/ihammond/GitHub/emepy/emepy/tools.py", line 67, in vertices_to_n
+    return polygon_to_n_2D(polygon, x, y, subpixel, core_index, cladding_index)
+  File "/zhome/ihammond/GitHub/emepy/emepy/tools.py", line 43, in polygon_to_n_2D
+    overlapping_area = pixel_poly.intersection(polygon).area
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/site-packages/shapely/geometry/base.py", line 689, in intersection
+    return geom_factory(self.impl['intersection'](self, other))
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/site-packages/shapely/topology.py", line 72, in __call__
+    self._check_topology(err, this, other)
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/site-packages/shapely/topology.py", line 37, in _check_topology
+    raise TopologicalError(
+shapely.errors.TopologicalError: The operation 'GEOSIntersection_r' could not be performed. Likely cause is invalidity of the geometry <shapely.geometry.polygon.Polygon object at 0x7fbfcda82280>
