@@ -48,8 +48,8 @@ class MSEMpy(ModeSolver):
         width: float = None,
         thickness: float = None,
         num_modes: int = 1,
-        cladding_width: float = 2.5e-6,
-        cladding_thickness: float = 2.5e-6,
+        cladding_width: float = 2.5,
+        cladding_thickness: float = 2.5,
         core_index: float = None,
         cladding_index: float = None,
         x: "np.ndarray" = None,
@@ -77,9 +77,9 @@ class MSEMpy(ModeSolver):
         num_modes : int
             number of modes to solve for (default:1)
         cladding_width : number
-            width of the cladding in the cross section (default:5e-6)
+            width of the cladding in the cross section (default:5)
         cladding_thickness : number
-            thickness of the cladding in the cross section (default:5e-6)
+            thickness of the cladding in the cross section (default:5)
         core_index : number
             refractive index of the core (default:Si)
         cladding_index : number
@@ -124,9 +124,9 @@ class MSEMpy(ModeSolver):
         self.PML = PML
 
         if core_index is None:
-            self.core_index = Si(wl * 1e6)
+            self.core_index = Si(wl)
         if cladding_index is None:
-            self.cladding_index = SiO2(wl * 1e6)
+            self.cladding_index = SiO2(wl)
         if x is None:
             self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
         if y is None:
@@ -242,7 +242,7 @@ class MSEMpy(ModeSolver):
         """Plots the index of refraction profile"""
         plt.imshow(
             np.sqrt(np.real(self.n)).T,
-            extent=[self.x[0] * 1e6, self.x[-1] * 1e6, self.y[0] * 1e6, self.y[-1] * 1e6],
+            extent=[self.x[0], self.x[-1], self.y[0], self.y[-1]],
             cmap="Greys",
         )
         plt.colorbar()
@@ -259,7 +259,7 @@ class MSEMpy1D(ModeSolver):
         wl: float,
         width: float = None,
         num_modes: int = 1,
-        cladding_width: float = 2.5e-6,
+        cladding_width: float = 2.5,
         core_index: float = None,
         cladding_index: float = None,
         x: "np.ndarray" = None,
@@ -282,7 +282,7 @@ class MSEMpy1D(ModeSolver):
         num_modes : int
             number of modes to solve for (default:1)
         cladding_width : number
-            width of the cladding in the cross section (default:5e-6)
+            width of the cladding in the cross section (default:5)
         core_index : number
             refractive index of the core (default:Si)
         cladding_index : number
@@ -320,9 +320,9 @@ class MSEMpy1D(ModeSolver):
         self.PML = PML
 
         if core_index is None:
-            self.core_index = Si(wl * 1e6)
+            self.core_index = Si(wl)
         if cladding_index is None:
-            self.cladding_index = SiO2(wl * 1e6)
+            self.cladding_index = SiO2(wl)
         if x is None:
             self.x = np.linspace(-0.5 * cladding_width, 0.5 * cladding_width, mesh)
         if self.PML:  # Create a PML at least half a wavelength long

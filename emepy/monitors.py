@@ -59,7 +59,7 @@ class Monitor(object):
                 raise Exception(
                     "z_range should be a tuple or list of the form (start, end)"
                     " representing the range of the z values to extract where start "
-                    "and end are floats such as (0, 1e-6) for a 1 µm range"
+                    "and end are floats such as (0, 1) for a 1 µm range"
                 ) from e
 
         # Check axes
@@ -175,7 +175,7 @@ class Monitor(object):
                 raise Exception(
                     "z_range should be a tuple or list of the form (start, end)"
                     "representing the range of the z values to extract where start"
-                    "and end are floats such as (0, 1e-6) for a 1 µm range"
+                    "and end are floats such as (0, 1) for a 1 µm range"
                 ) from e
 
             # Get start and end

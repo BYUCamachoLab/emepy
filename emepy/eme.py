@@ -68,6 +68,8 @@ class EME(object):
         self.parallel = parallel
         if parallel:
             self._configure_parallel_resources()
+        else:
+            self.size = 1
         self.quiet = quiet or not self.am_master()
         self.reset(parallel=parallel, configure_parallel=False)
         self.layers = layers[:]
@@ -266,6 +268,9 @@ class EME(object):
         else:
             self.network = None
 
+        if self.size > 1:
+            self.network = self.comm.scatter([self.network]*self.size, root=0)
+
         # Finish building state
         self._update_state(6)
 
@@ -284,12 +289,19 @@ class EME(object):
         self._update_state(7)
 
         # Update all monitors
-        for m in self.custom_monitors + self.monitors:
+        all_ms = [self.monitors[0]] + self.custom_monitors if len(self.monitors) else self.custom_monitors
+        for which_mtype, m in enumerate(all_ms):
             if self.am_master():
                 # Reset monitor
-                m.reset_monitor()
-                m.left_source = len(left_coeffs) > 0
-                m.right_source = len(right_coeffs) > 0
+                if not which_mtype and len(self.monitors):
+                    for mm in self.monitors:
+                        mm.reset_monitor()
+                        mm.left_source = len(left_coeffs) > 0
+                        mm.right_source = len(right_coeffs) > 0
+                else:
+                    m.reset_monitor()
+                    m.left_source = len(left_coeffs) > 0
+                    m.right_source = len(right_coeffs) > 0
 
                 # Get full s params for all periods
                 cur_len = 0
@@ -306,11 +318,7 @@ class EME(object):
                                 i * 1,
                                 make_copy_model(layer),
                                 per * 1,
-                                left_coeffs[:],
-                                right_coeffs[:],
                                 cur_len * 1,
-                                just_z_list[:],
-                                m,
                         )
                         # Compute field propagation
                         task = (
@@ -336,22 +344,34 @@ class EME(object):
                     layer = make_copy_model(activated_layers[layer_index])
                     z_list = m.get_z_list(cur_len, cur_len + layer.length)
                     just_z_list = [j[1] for j in z_list]
-                    result_l2 = self._layer_field_propagate_part2(
-                                layer_index,
-                                layer,
-                                None,
-                                left_coeffs[:],
-                                right_coeffs[:],
-                                cur_len * 1,
-                                just_z_list[:],
-                                m,
-                                S, 
-                                checked_l
-                        )
+                    layer2func = lambda  mmm : self._layer_field_propagate_part2(
+                            layer_index,
+                            layer,
+                            left_coeffs[:],
+                            right_coeffs[:],
+                            cur_len * 1,
+                            just_z_list[:],
+                            mmm,
+                            S, 
+                            checked_l
+                    )
+
+                    # If there are default monitors, they can all be assigned at once due to similar format
+                    if not which_mtype and len(self.monitors):
+                        for mm in self.monitors:
+                            result_l2 = layer2func(mm)
+                            for z, r in zip(z_l, result_l2):
+                                self._set_monitor(mm, z[0], r)
+
+                    # Otherwise, each monitor must be assigned individually
+                    else:
+                        result_l2 = result_l2 = layer2func(m)
+                        for z, r in zip(z_l, result_l2):
+                            self._set_monitor(m, z[0], r)
+                        
+                    # Update current length
                     cur_len = cur_len + layer.length
 
-                    for z, r in zip(z_l, result_l2):
-                        self._set_monitor(m, z[0], r)
             
             # Ensure the workers are there to work
             else:
@@ -615,7 +635,7 @@ class EME(object):
         scattered = []
         serialized_data = [pickle.dumps(i,0) for i in data] if not data is None else []
         length = sum([len(i) for i in serialized_data])
-        num_divisors = self.comm.scatter([length // limit + 1 for i in range(self.size)], root=root)
+        num_divisors = self.comm.scatter([length // limit + 1]*self.size, root=root)
 
         # Wait
         self.comm.barrier()
@@ -627,7 +647,7 @@ class EME(object):
             to_scatter = []
             for i, serial in enumerate(serialized_data): # One for every worker
                 start = j * len(serial) // num_divisors
-                end = (j+1) * len(serial) // num_divisors if not j == num_divisors - 1 else (j+2) * length // num_divisors
+                end = (j+1) * len(serial) // num_divisors if not j == num_divisors - 1 else (j+2) * len(serial) // num_divisors
                 ser = serial[start:end]
                 to_scatter.append(ser)
 
@@ -648,9 +668,37 @@ class EME(object):
 
         return new_data
 
-    def batch_gather(self, data, root=0):
+    def batch_gather(self, data, root=0, limit=2**30):
         """Gathers data to all workers in a batched manner that will not exceed the MPI integer limit"""
-        return self.comm.gather(data, root=root)
+        
+        # Create local set of data
+        serial = pickle.dumps(data, 0)
+        num_divisors = self.comm.scatter([len(serial) * self.size // limit + 1]*self.size, root=root)
+        final_data = []
+        for j in range(num_divisors): # One for every worker
+            start = j * len(serial) // num_divisors
+            end = (j+1) * len(serial) // num_divisors if not j == num_divisors - 1 else (j+2) * len(serial) // num_divisors
+
+            # Gather
+            self.comm.barrier()
+            worker_results = self.comm.gather(serial[start:end], root=root)
+
+            # If root, then combine bytes
+            if self.rank == root:
+                if not len(final_data):
+                    final_data = worker_results
+                else:
+                    final_data = [final_data[i]+d for i,d in enumerate(worker_results)]
+
+        # Wait 
+        self.comm.barrier()
+
+        # Deserialize
+        if self.rank == root:
+            return [pickle.loads(i) for i in final_data]
+        else:
+            return None
+        
 
     def _run_parallel_functions(self, *tasks) -> list:
         """Takes a series of "tasks" as arguments and returns a list of "results" after running in parallel.
@@ -879,11 +927,7 @@ class EME(object):
         i: int,
         l: Model,
         per: int,
-        left_coeffs: list,
-        right_coeffs: list,
         cur_len: float,
-        z_list: list,
-        m: "Monitor",
     ) -> list:
         """Propagates the fields through the current layer only. Implements the "field spider/peaker" technique of extracting fields at an arbitrary location without approximating the reflections and actually finding the fully cascaded values.
 
@@ -912,7 +956,6 @@ class EME(object):
         """
 
         # Create output
-        result_list = []
         activated_layers = (
             self.activated_layers[per] if self.activated_layers[per] is not None else self.activated_layers[0]
         )
@@ -973,7 +1016,6 @@ class EME(object):
         self,
         i: int,
         l: Model,
-        per: int,
         left_coeffs: list,
         right_coeffs: list,
         cur_len: float,
