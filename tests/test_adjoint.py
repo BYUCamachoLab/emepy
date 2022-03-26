@@ -13,25 +13,25 @@ def get_geometry():
 
     # Create goemetry params
     rect_params = EMpyGeometryParameters(
-        wavelength=1.55, cladding_width=4, cladding_thickness=2.5, core_index=matSi, cladding_index=matSiO2, mesh=120
+        wavelength=1.55, cladding_width=4, cladding_thickness=2.5, core_index=matSi, cladding_index=matSiO2, mesh=100
     )
 
     # Create an input waveguide
-    input_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=10)
+    input_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=5)
 
     # Create an output waveguide
-    output_waveguide = Waveguide(rect_params, width=1.5, thickness=0.22, length=0.5, center=(0, 0), num_modes=10)
+    output_waveguide = Waveguide(rect_params, width=1.5, thickness=0.22, length=0.5, center=(0, 0), num_modes=5)
 
     # Create the design region geometry
     dynamic_rect = DynamicRect2D(
         params=rect_params,
         width=input_waveguide.width,
         length=2,
-        num_modes=10,
+        num_modes=5,
         num_params=30,
         symmetry=True,
         subpixel=True,
-        mesh_z=10,
+        mesh_z=15,
         input_width=input_waveguide.width,
         output_width=output_waveguide.width,
     )
@@ -55,7 +55,7 @@ def adjoint(geometry):
     # Get gradient
     f0, dJ_du, monitor = optimizer.optimize(optimizer.get_design())
 
-    return dJ_du
+    return dJ_du, eme, monitor
 
 def finite_difference(geometry, dp):
     input_waveguide, dynamic_rect, output_waveguide = geometry
@@ -98,19 +98,28 @@ def main(dp=1e-10):
 
     # Create vector dp
     input_waveguide, dynamic_rect, output_waveguide = get_geometry()
-    dpv = np.random.rand(dynamic_rect.num_params*2) * dp
+    dpv = np.ones(dynamic_rect.num_params*2) * dp
     dpv[1::2] = 0
+
+    # Get adjoint differential
+    adjoint_dfdp, eme, monitor = adjoint(get_geometry())
+    adjoint_dfdp, image = adjoint_dfdp
+    image = image @ dpv
+
+    plt.figure()
+    monitor.visualize(axes="xz", component="n")
+    x, z, field = monitor.get_array(axes="xz")
+    plt.imshow(np.real(image), alpha=0.7, cmap="RdBu", extent=[z[0],z[-1],x[0],x[-1]])
+    plt.savefig("gradients")
+    adjoint_df = np.sum(adjoint_dfdp @ dpv)
 
     # Get finite difference differential
     fd_df = finite_difference(get_geometry(), dpv[::2])
 
-    # Get adjoint differential
-    adjoint_dfdp = adjoint(get_geometry())
-    adjoint_df = np.sum(adjoint_dfdp @ dpv)
-
     # Compare 
-    print("Adjoint run differential: {}".format(adjoint_df))
-    print("Finite difference differential: {}".format(fd_df))
+    if eme.am_master():
+        print("Adjoint run differential: {}".format(adjoint_df))
+        print("Finite difference differential: {}".format(fd_df))
 
 if __name__ == "__main__":
     main()
