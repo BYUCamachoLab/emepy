@@ -1,0 +1,78 @@
+Running in parallel on 20 cores
+Now performing an optimization...
+5
+5
+5
+5
+6
+6
+6
+6
+6
+8
+8
+Now performing an optimization...
+5
+5
+5
+5
+6
+6
+6
+6
+6
+8
+8
+Running in parallel on 20 cores
+Now performing an optimization...
+5
+5
+5
+5
+6
+6
+6
+6
+6
+8
+8
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 0.0
+Finite difference differential: 2.492779888063623e-07
+Adjoint run differential: 3.2860256299087094e-07
+Finite difference differential: 2.492779888063623e-07

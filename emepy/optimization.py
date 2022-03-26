@@ -307,6 +307,7 @@ class Optimization(object):
 
         # Initialize final result
         f_u = np.zeros(A_u.shape[-1], dtype=float)
+        f_u_grid = np.zeros([3] + list(A_u.shape[2:-1]) + [A_u.shape[-1]], dtype=complex)
 
         # Reshape
         lamdagger = np.transpose(np.conj(lamdagger))
@@ -322,14 +323,16 @@ class Optimization(object):
             for i, mi in enumerate(A_u_temp):
                 for j, mij in enumerate(mi):
                     A_u_x[i] += mij * X[j]
-                    # print(np.sum(mi))
 
             # Compute lambda * A_u_x
             for i in range(3):
                 f_u[p] += np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
+                f_u_grid[...,p] += A_u_x[i] * lamdagger[..., i].T
 
+        ppp = np.sum(f_u_grid, axis=0)
+        ppp = ppp[:,ppp.shape[1]//2,:,:]
 
-        return f_u
+        return f_u, ppp
 
     def draw(self) -> None:
         self.start()

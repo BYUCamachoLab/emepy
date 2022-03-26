@@ -1,0 +1,40 @@
+Running in parallel on 20 cores
+Now performing an optimization...
+5
+5
+5
+5
+6
+6
+6
+6
+6
+8
+8
+Now performing an optimization...
+5
+5
+5
+5
+6
+6
+6
+6
+6
+8
+8
+Running in parallel on 20 cores
+Now performing an optimization...
+5
+5
+5
+5
+6
+6
+6
+6
+6
+8
+8
+Adjoint run differential: 9.264564104797886e-08
+Finite difference differential: 2.43771415275873e-07
