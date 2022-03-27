@@ -13,25 +13,25 @@ def get_geometry():
 
     # Create goemetry params
     rect_params = EMpyGeometryParameters(
-        wavelength=1.55, cladding_width=4, cladding_thickness=2.5, core_index=matSi, cladding_index=matSiO2, mesh=150
+        wavelength=1.55, cladding_width=4, cladding_thickness=2.5, core_index=matSi, cladding_index=matSiO2, mesh=50
     )
 
     # Create an input waveguide
-    input_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=10)
+    input_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=1)
 
     # Create an output waveguide
-    output_waveguide = Waveguide(rect_params, width=1.5, thickness=0.22, length=0.5, center=(0, 0), num_modes=10)
+    output_waveguide = Waveguide(rect_params, width=1.5, thickness=0.22, length=0.5, center=(0, 0), num_modes=1)
 
     # Create the design region geometry
     dynamic_rect = DynamicRect2D(
         params=rect_params,
         width=input_waveguide.width,
         length=2,
-        num_modes=10,
+        num_modes=1,
         num_params=30,
         symmetry=True,
         subpixel=True,
-        mesh_z=25,
+        mesh_z=3,
         input_width=input_waveguide.width,
         output_width=output_waveguide.width,
     )
@@ -42,7 +42,7 @@ def adjoint(geometry):
     input_waveguide, dynamic_rect, output_waveguide = geometry
 
     # Create the EME and Optimization
-    eme = EME(quiet=True, parallel=True,mesh_z=100)
+    eme = EME(quiet=False, parallel=True,mesh_z=100)
     optimizer = Optimization(eme, geometry, mesh_z=100)
 
 
@@ -54,8 +54,9 @@ def adjoint(geometry):
 
     # Get gradient
     f0, dJ_du, monitor = optimizer.optimize(optimizer.get_design())
+    design_x, design_z = optimizer.get_design_readable()
 
-    return dJ_du, eme, monitor
+    return dJ_du, eme, monitor, design_x, design_z
 
 def finite_difference(geometry, dp):
     input_waveguide, dynamic_rect, output_waveguide = geometry
@@ -93,14 +94,15 @@ def main(dp=1e-10):
     dpv[1::2] = 0
 
     # Get adjoint differential
-    adjoint_dfdp, eme, monitor = adjoint(get_geometry())
-    adjoint_dfdp, image = adjoint_dfdp
-    image = image @ dpv
+    adjoint_dfdp, eme, monitor, design_x, design_z = adjoint(get_geometry())
+    vertices_gradients = np.array([[z,x] for z,x in zip(adjoint_df[1::2], adjoint_df[::2])])
+    vertices_origins =  np.array([[z,x] for z,x in zip(design_z, design_x)]).T
 
     plt.figure()
     monitor.visualize(axes="xz", component="n")
     x, z, field = monitor.get_array(axes="xz")
-    plt.imshow(np.real(image), alpha=0.7, cmap="RdBu", extent=[z[0],z[-1],x[0],x[-1]])
+    plt.quiver(*vertices_origins, vertices_gradients[:,0], vertices_gradients[:,1], color="r", scale=21)
+    # plt.imshow(np.real(image), alpha=0.7, cmap="RdBu", extent=[z[0],z[-1],x[0],x[-1]])
     if eme.am_master():
         plt.savefig("gradients")
     adjoint_df = np.sum(adjoint_dfdp @ dpv)

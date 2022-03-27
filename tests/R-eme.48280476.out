@@ -1,0 +1,26 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [01:41, 101.78s/it]2it [03:00, 87.95s/it] 2it [03:00, 90.02s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:01,  1.67s/it]2it [00:04,  2.34s/it]2it [00:04,  2.24s/it]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [01:05, 65.35s/it]2it [01:47, 51.98s/it]2it [01:47, 53.98s/it]
+--------------------------------------------------------------------------
+ORTE has lost communication with its daemon located on node:
+
+  hostname:  m9-3-3
+
+This is usually due to either a failure of the TCP network
+connection to the node, or possibly an internal failure of
+the daemon itself. We cannot recover from this failure, and
+therefore will terminate the job.
+
+--------------------------------------------------------------------------

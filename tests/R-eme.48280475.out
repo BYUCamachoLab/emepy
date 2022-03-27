@@ -1,0 +1,21 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [01:42, 102.30s/it]2it [03:01, 88.61s/it] 2it [03:01, 90.67s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:01,  1.64s/it]2it [00:04,  2.30s/it]2it [00:04,  2.20s/it]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [01:04, 64.65s/it]2it [01:46, 51.39s/it]2it [01:46, 53.38s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+--------------------------------------------------------------------------
+mpirun noticed that process rank 9 with PID 0 on node m9-1-3 exited on signal 9 (Killed).
+--------------------------------------------------------------------------
