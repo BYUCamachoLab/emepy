@@ -1,17 +1,0 @@
-Running in parallel on 5 cores
-current state: start
-  0%|          | 0/7 [00:00<?, ?it/s]100%|██████████| 7/7 [00:00<00:00, 6389.58it/s]
-current state: mode_solving
-0it [00:00, ?it/s]1it [00:01,  1.42s/it]2it [00:03,  1.97s/it]2it [00:03,  1.89s/it]
-current state: finished_modes
-current state: layer_propagating
-0it [00:00, ?it/s]2it [00:02,  1.15s/it]2it [00:02,  1.15s/it]
-current state: finished_layer
-current state: network_building
-current state: finished_network
-current state: field_propagating
-0it [00:00, ?it/s]1it [00:04,  4.08s/it]2it [00:11,  6.01s/it]2it [00:11,  5.72s/it]
-current state: finished
-current state: field_propagating
-0it [00:00, ?it/s]1it [00:04,  4.07s/it]2it [00:11,  6.00s/it]2it [00:11,  5.71s/it]
-current state: finished

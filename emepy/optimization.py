@@ -57,10 +57,18 @@ class Optimization(object):
                 length = len(geometry)
                 if length:
                     geometry.set_design(remaining_design[:length])
-                    remaining_design = remaining_design[length:] if length < len(remaining_design) else []
+                    remaining_design = (
+                        remaining_design[length:]
+                        if length < len(remaining_design)
+                        else []
+                    )
 
     def set_design_readable(
-        self, design_x: list = [], design_y: list = [], design_z: list = [], dimensions: int = 2
+        self,
+        design_x: list = [],
+        design_y: list = [],
+        design_z: list = [],
+        dimensions: int = 2,
     ) -> None:
         """Sets the design region provided for the entire system of design regions using readable coordinates"""
         design = []
@@ -86,24 +94,37 @@ class Optimization(object):
         """Updades the eme object with geometric changes"""
         self.start()
 
-    def get_n(self, grid_x: "np.ndarray", grid_y: "np.ndarray", grid_z: "np.ndarray") -> "np.ndarray":
+    def get_n(
+        self, grid_x: "np.ndarray", grid_y: "np.ndarray", grid_z: "np.ndarray"
+    ) -> "np.ndarray":
         """Currently returns the n for the first design region"""
         for geometry in self.geometries:
             if isinstance(geometry, DynamicPolygon):
-                return geometry.get_n(grid_x, grid_y, grid_z-grid_z[0])
+                return geometry.get_n(grid_x, grid_y, grid_z - grid_z[0])
 
-    def gradient(self, grid_x: "np.ndarray", grid_y, grid_z: "np.ndarray", dp=1e-10) -> "np.ndarray":
+    def gradient(
+        self, grid_x: "np.ndarray", grid_y, grid_z: "np.ndarray", dp=1e-10
+    ) -> "np.ndarray":
         """Computes the gradient A_u using a finite difference"""
 
         # Get initial design
         design = self.get_design()
 
         # Final jacobian setup
-        jacobian = np.zeros((3, 3, grid_x.shape[0] - 1, grid_y.shape[0] - 1, grid_z.shape[0] - 1, len(design)), dtype=complex)
+        jacobian = np.zeros(
+            (
+                3,
+                3,
+                grid_x.shape[0] - 1,
+                grid_y.shape[0] - 1,
+                grid_z.shape[0] - 1,
+                len(design),
+            ),
+            dtype=complex,
+        )
 
         # Get initial A
         A_ii = self.get_n(grid_x, grid_y, grid_z)
-        
 
         # Get gradients
         for i, d in enumerate(design):
@@ -111,6 +132,8 @@ class Optimization(object):
             # Step
             design[i] = d + dp
             self.set_design(design)
+            xx, zz = self.get_design_readable()
+            # print("\n",np.array(zz)/np.array(xx))
 
             # Compute new A
             A_new = self.get_n(grid_x, grid_y, grid_z)
@@ -147,31 +170,93 @@ class Optimization(object):
 
         # Create source and monitor
         source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
-        forward_monitor = self.eme.add_monitor(axes="xyz",mesh_z=self.mesh_z, sources=[source])
+        forward_monitor = self.eme.add_monitor(
+            axes="xyz", mesh_z=self.mesh_z, sources=[source]
+        )
 
         a_source = Source(z=2.75, mode_coeffs=[1], k=-1)  # Hard coded
-        adjoint_monitor = self.eme.add_monitor(axes="xyz",mesh_z=self.mesh_z, sources=[a_source])
+        adjoint_monitor = self.eme.add_monitor(
+            axes="xyz", mesh_z=self.mesh_z, sources=[a_source]
+        )
 
         # Run eme
         self.eme.propagate()
 
         # Get near results
-        grid_x, grid_y, grid_z, field_x = forward_monitor.get_array("Ex", z_range=(z_start, z_end))
-        field_x = 0.125 * (field_x[1:, 1:, 1:] + field_x[1:, :-1, 1:] + field_x[:-1, 1:, 1:] + field_x[:-1, :-1, 1:] + field_x[1:, 1:,:-1] + field_x[1:, :-1,:-1] + field_x[:-1, 1:,:-1] + field_x[:-1, :-1,:-1])
+        grid_x, grid_y, grid_z, field_x = forward_monitor.get_array(
+            "Ex", z_range=(z_start, z_end)
+        )
+        field_x = 0.125 * (
+            field_x[1:, 1:, 1:]
+            + field_x[1:, :-1, 1:]
+            + field_x[:-1, 1:, 1:]
+            + field_x[:-1, :-1, 1:]
+            + field_x[1:, 1:, :-1]
+            + field_x[1:, :-1, :-1]
+            + field_x[:-1, 1:, :-1]
+            + field_x[:-1, :-1, :-1]
+        )
         field_y = forward_monitor.get_array("Ey", z_range=(z_start, z_end))[3]
-        field_y = 0.125 * (field_y[1:, 1:, 1:] + field_y[1:, :-1, 1:] + field_y[:-1, 1:, 1:] + field_y[:-1, :-1, 1:] + field_y[1:, 1:,:-1] + field_y[1:, :-1,:-1] + field_y[:-1, 1:,:-1] + field_y[:-1, :-1,:-1])
+        field_y = 0.125 * (
+            field_y[1:, 1:, 1:]
+            + field_y[1:, :-1, 1:]
+            + field_y[:-1, 1:, 1:]
+            + field_y[:-1, :-1, 1:]
+            + field_y[1:, 1:, :-1]
+            + field_y[1:, :-1, :-1]
+            + field_y[:-1, 1:, :-1]
+            + field_y[:-1, :-1, :-1]
+        )
         field_z = forward_monitor.get_array("Ez", z_range=(z_start, z_end))[3]
-        field_z = 0.125 * (field_z[1:, 1:, 1:] + field_z[1:, :-1, 1:] + field_z[:-1, 1:, 1:] + field_z[:-1, :-1, 1:] + field_z[1:, 1:,:-1] + field_z[1:, :-1,:-1] + field_z[:-1, 1:,:-1] + field_z[:-1, :-1,:-1])
+        field_z = 0.125 * (
+            field_z[1:, 1:, 1:]
+            + field_z[1:, :-1, 1:]
+            + field_z[:-1, 1:, 1:]
+            + field_z[:-1, :-1, 1:]
+            + field_z[1:, 1:, :-1]
+            + field_z[1:, :-1, :-1]
+            + field_z[:-1, 1:, :-1]
+            + field_z[:-1, :-1, :-1]
+        )
         field = np.array([field_x, field_y, field_z])
         results = (grid_x, grid_y, grid_z, field, forward_monitor)
 
         # Save adjoint results
-        a_grid_x, a_grid_y, a_grid_z, a_field_x = adjoint_monitor.get_array("Ex", z_range=(z_start, z_end))
-        a_field_x = 0.125 * (a_field_x[1:, 1:, 1:] + a_field_x[1:, :-1, 1:] + a_field_x[:-1, 1:, 1:] + a_field_x[:-1, :-1, 1:] + a_field_x[1:, 1:,:-1] + a_field_x[1:, :-1,:-1] + a_field_x[:-1, 1:,:-1] + a_field_x[:-1, :-1,:-1])
+        a_grid_x, a_grid_y, a_grid_z, a_field_x = adjoint_monitor.get_array(
+            "Ex", z_range=(z_start, z_end)
+        )
+        a_field_x = 0.125 * (
+            a_field_x[1:, 1:, 1:]
+            + a_field_x[1:, :-1, 1:]
+            + a_field_x[:-1, 1:, 1:]
+            + a_field_x[:-1, :-1, 1:]
+            + a_field_x[1:, 1:, :-1]
+            + a_field_x[1:, :-1, :-1]
+            + a_field_x[:-1, 1:, :-1]
+            + a_field_x[:-1, :-1, :-1]
+        )
         a_field_y = adjoint_monitor.get_array("Ey", z_range=(z_start, z_end))[3]
-        a_field_y = 0.125 * (a_field_y[1:, 1:, 1:] + a_field_y[1:, :-1, 1:] + a_field_y[:-1, 1:, 1:] + a_field_y[:-1, :-1, 1:] + a_field_y[1:, 1:,:-1] + a_field_y[1:, :-1,:-1] + a_field_y[:-1, 1:,:-1] + a_field_y[:-1, :-1,:-1])
+        a_field_y = 0.125 * (
+            a_field_y[1:, 1:, 1:]
+            + a_field_y[1:, :-1, 1:]
+            + a_field_y[:-1, 1:, 1:]
+            + a_field_y[:-1, :-1, 1:]
+            + a_field_y[1:, 1:, :-1]
+            + a_field_y[1:, :-1, :-1]
+            + a_field_y[:-1, 1:, :-1]
+            + a_field_y[:-1, :-1, :-1]
+        )
         a_field_z = adjoint_monitor.get_array("Ez", z_range=(z_start, z_end))[3]
-        a_field_z = 0.125 * (a_field_z[1:, 1:, 1:] + a_field_z[1:, :-1, 1:] + a_field_z[:-1, 1:, 1:] + a_field_z[:-1, :-1, 1:] + a_field_z[1:, 1:,:-1] + a_field_z[1:, :-1,:-1] + a_field_z[:-1, 1:,:-1] + a_field_z[:-1, :-1,:-1])
+        a_field_z = 0.125 * (
+            a_field_z[1:, 1:, 1:]
+            + a_field_z[1:, :-1, 1:]
+            + a_field_z[:-1, 1:, 1:]
+            + a_field_z[:-1, :-1, 1:]
+            + a_field_z[1:, 1:, :-1]
+            + a_field_z[1:, :-1, :-1]
+            + a_field_z[:-1, 1:, :-1]
+            + a_field_z[:-1, :-1, :-1]
+        )
         a_field = np.array([a_field_x, a_field_y, a_field_z])
         self.adjoint_results = (a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor)
 
@@ -206,7 +291,9 @@ class Optimization(object):
         # power = overlap(Ex, Ey, exp_Hx, exp_Hy, x) / np.sqrt(norm) / np.sqrt(exp_norm)
         # power = np.abs(power)
         network = self.eme.network
-        pins = dict(zip([pin.name for pin in network.pins], [0.0 for pin in network.pins]))
+        pins = dict(
+            zip([pin.name for pin in network.pins], [0.0 for pin in network.pins])
+        )
         pins["left0"] = 1
         power = np.abs(emepy.ModelTools.compute(network, pins, 0)["right0"])
 
@@ -273,7 +360,7 @@ class Optimization(object):
         if self.eme.am_master():
             plt.figure()
             monitor_forward.visualize(axes="xz")
-            plt.savefig('forward')
+            plt.savefig("forward")
 
         # Compute the partial gradient of the objective function f_x
         f_x, overlap = self.objective_gradient(monitor_forward)
@@ -287,7 +374,7 @@ class Optimization(object):
         if self.eme.am_master():
             plt.figure()
             monitor_adjoint.visualize(axes="xz")
-            plt.savefig('adjoint')
+            plt.savefig("adjoint")
 
         # Compute the gradient of the constraint A_u
         A_u = self.gradient(
@@ -300,11 +387,13 @@ class Optimization(object):
 
         # Calculate the full gradient of the objective function f_u
         f_u = self.compute_final_gradient(lamdagger, A_u, X)
-    
+
         # Return the gradient
         return overlap, f_u, monitor_forward
 
-    def compute_final_gradient(self, lamdagger: "np.ndarray", A_u: "np.ndarray", X: "np.ndarray"):
+    def compute_final_gradient(
+        self, lamdagger: "np.ndarray", A_u: "np.ndarray", X: "np.ndarray"
+    ):
         """Computes the final gradient using the adjoint formulation and loops to conserve memory"""
 
         # Initialize final result

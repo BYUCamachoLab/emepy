@@ -1,44 +1,0 @@
-Running in parallel on 5 cores
-current state: start
-  0%|          | 0/37 [00:00<?, ?it/s]100%|██████████| 37/37 [00:00<00:00, 8110.23it/s]
-current state: mode_solving
-0it [00:00, ?it/s]1it [00:29, 29.32s/it]2it [03:22, 114.12s/it]3it [06:07, 137.09s/it]4it [07:18, 111.24s/it]5it [08:27, 96.06s/it] 6it [09:35, 86.47s/it]7it [10:43, 80.35s/it]8it [11:50, 76.07s/it]8it [11:50, 88.81s/it]
-Traceback (most recent call last):
-  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 197, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/__main__.py", line 7, in <module>
-    main()
-  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/run.py", line 198, in main
-    run_command_line(args)
-  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/mpi4py/run.py", line 47, in run_command_line
-    run_path(sys.argv[0], run_name='__main__')
-  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 268, in run_path
-    return _run_module_code(code, init_globals, run_name,
-  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 97, in _run_module_code
-    _run_code(code, mod_globals, init_globals,
-  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "adiabatic.py", line 79, in <module>
-    eme.propagate()
-  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 590, in propagate
-    self.solve_modes()
-  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 156, in solve_modes
-    results = self._run_parallel_functions(*tasks)
-  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 660, in _run_parallel_functions
-    finished_tasks_collective = self.comm.gather(new_data, root=0)
-  File "mpi4py/MPI/Comm.pyx", line 1578, in mpi4py.MPI.Comm.gather
-  File "mpi4py/MPI/msgpickle.pxi", line 773, in mpi4py.MPI.PyMPI_gather
-  File "mpi4py/MPI/msgpickle.pxi", line 778, in mpi4py.MPI.PyMPI_gather
-  File "mpi4py/MPI/msgpickle.pxi", line 191, in mpi4py.MPI.pickle_allocv
-  File "mpi4py/MPI/msgpickle.pxi", line 182, in mpi4py.MPI.pickle_alloc
-SystemError: Negative size passed to PyBytes_FromStringAndSize
---------------------------------------------------------------------------
-MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD 
-with errorcode 1.
-
-NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
-You may or may not see output from other processes, depending on
-exactly when Open MPI kills them.
---------------------------------------------------------------------------
