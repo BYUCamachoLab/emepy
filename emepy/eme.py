@@ -323,7 +323,7 @@ class EME(object):
                         # Compute field propagation
                         task = (
                             _prop_all_wrapper,
-                            [[t for t in prop if (t is not None) and not (isinstance(t, list) and not len(t))],checked_l],
+                            [[make_copy_model(t,False) for t in prop if (t is not None) and not (isinstance(t, list) and not len(t))],checked_l],
                             {},
                         )
                         full_z_list.append(z_list)

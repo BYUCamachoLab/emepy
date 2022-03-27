@@ -13,25 +13,25 @@ def get_geometry():
 
     # Create goemetry params
     rect_params = EMpyGeometryParameters(
-        wavelength=1.55, cladding_width=4, cladding_thickness=2.5, core_index=matSi, cladding_index=matSiO2, mesh=100
+        wavelength=1.55, cladding_width=4, cladding_thickness=2.5, core_index=matSi, cladding_index=matSiO2, mesh=150
     )
 
     # Create an input waveguide
-    input_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=5)
+    input_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=10)
 
     # Create an output waveguide
-    output_waveguide = Waveguide(rect_params, width=1.5, thickness=0.22, length=0.5, center=(0, 0), num_modes=5)
+    output_waveguide = Waveguide(rect_params, width=1.5, thickness=0.22, length=0.5, center=(0, 0), num_modes=10)
 
     # Create the design region geometry
     dynamic_rect = DynamicRect2D(
         params=rect_params,
         width=input_waveguide.width,
         length=2,
-        num_modes=5,
+        num_modes=10,
         num_params=30,
         symmetry=True,
         subpixel=True,
-        mesh_z=15,
+        mesh_z=25,
         input_width=input_waveguide.width,
         output_width=output_waveguide.width,
     )
@@ -87,15 +87,6 @@ def finite_difference(geometry, dp):
 
 def main(dp=1e-10):
 
-    # ms = get_geometry()[-1].layers[0].mode_solver
-    # ms.solve()
-    # for i in range(ms.num_modes):
-    #     print(i, ms.get_mode(i).check_spurious())
-    #     plt.figure()
-    #     ms.get_mode(i).plot()
-    #     plt.show()
-    # quit()
-
     # Create vector dp
     input_waveguide, dynamic_rect, output_waveguide = get_geometry()
     dpv = np.ones(dynamic_rect.num_params*2) * dp
@@ -110,7 +101,8 @@ def main(dp=1e-10):
     monitor.visualize(axes="xz", component="n")
     x, z, field = monitor.get_array(axes="xz")
     plt.imshow(np.real(image), alpha=0.7, cmap="RdBu", extent=[z[0],z[-1],x[0],x[-1]])
-    plt.savefig("gradients")
+    if eme.am_master():
+        plt.savefig("gradients")
     adjoint_df = np.sum(adjoint_dfdp @ dpv)
 
     # Get finite difference differential

@@ -752,7 +752,7 @@ class SourceDuplicator(Model):
 class CopyModel(Model):
     """A simple Model that can be used to deep copy any of EMEPy's Models"""
 
-    def __init__(self, model: "Model", **kwargs) -> None:
+    def __init__(self, model: "Model",keep_modes:bool=True, **kwargs) -> None:
         """Creates an instance of CopyModel by deepcopying all the attributes of model
 
         Parameters
@@ -762,13 +762,13 @@ class CopyModel(Model):
         """
 
         self.num_modes = model.num_modes if hasattr(model, "num_modes") else None
-        self.modes = model.modes if hasattr(model, "modes") else []
+        self.modes = model.modes if hasattr(model, "modes") and keep_modes else []
         self.wavelength = model.wavelength if hasattr(model, "wavelength") else None
         self.length = model.length if hasattr(model, "length") else None
         self.left_ports = model.left_ports if hasattr(model, "left_ports") else []
         self.right_ports = model.right_ports if hasattr(model, "right_ports") else []
 
-        self.S0 = ModelTools.make_copy_model(model.S0) if hasattr(model, "S0") else None
+        self.S0 = ModelTools.make_copy_model(model.S0, keep_modes=False) if hasattr(model, "S0") else None
         self.nk = model.nk if hasattr(model, "nk") else []
         self.pk = model.pk if hasattr(model, "pk") else []
         self.pins = self.copy_pins(model.pins) if hasattr(model, "pins") else []
@@ -926,7 +926,7 @@ class ModelTools(object):
     def _prop_all(*args) -> "Model":
         """Given an arbitrary amount of simphony models as inputs, cascades them and returns the cascaded network"""
 
-        layers = [ModelTools.make_copy_model(a) for a in args if a is not None]
+        layers = [ModelTools.make_copy_model(a, keep_modes=False) for a in args if a is not None]
         temp_s = layers[0]
         for s in layers[1:]:
             Subcircuit.clear_scache()
@@ -1002,7 +1002,7 @@ class ModelTools(object):
         return model
 
     @staticmethod
-    def make_copy_model(model: Model) -> CopyModel:
+    def make_copy_model(model: Model,keep_modes=True) -> CopyModel:
         """Takes an EMEPy model (inheriting a simphony model) and deepcopies it
 
         Parameters
@@ -1015,7 +1015,7 @@ class ModelTools(object):
         CopyModel
             the deepcopied model
         """
-        new_model = CopyModel(model) if model is not None else None
+        new_model = CopyModel(model,keep_modes) if model is not None else None
         return new_model
 
     @staticmethod
