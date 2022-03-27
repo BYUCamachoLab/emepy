@@ -270,9 +270,10 @@ class Optimization(object):
         # Compute the forward run
         grid_x, grid_y, grid_z, X, monitor_forward = self.forward_run()
 
-        plt.figure()
-        monitor_forward.visualize(axes="xz")
-        plt.savefig('forward')
+        if self.eme.am_master():
+            plt.figure()
+            monitor_forward.visualize(axes="xz")
+            plt.savefig('forward')
 
         # Compute the partial gradient of the objective function f_x
         f_x, overlap = self.objective_gradient(monitor_forward)
@@ -283,9 +284,10 @@ class Optimization(object):
         # Compute the adjoint run
         grid_x, grid_y, grid_z, lamdagger, monitor_adjoint = self.adjoint_run(sources)
 
-        plt.figure()
-        monitor_adjoint.visualize(axes="xz")
-        plt.savefig('adjoint')
+        if self.eme.am_master():
+            plt.figure()
+            monitor_adjoint.visualize(axes="xz")
+            plt.savefig('adjoint')
 
         # Compute the gradient of the constraint A_u
         A_u = self.gradient(
