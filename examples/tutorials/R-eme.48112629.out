@@ -1,16 +1,0 @@
-Running in parallel on 20 cores
-current state: start
-  0%|          | 0/37 [00:00<?, ?it/s]100%|██████████| 37/37 [00:00<00:00, 4806.41it/s]
-current state: mode_solving
-0it [00:00, ?it/s]1it [00:29, 29.56s/it]2it [01:25, 45.18s/it]2it [01:25, 42.83s/it]
-current state: finished_modes
-current state: layer_propagating
-0it [00:00, ?it/s]1it [00:00,  1.36it/s]2it [00:26, 15.18s/it]2it [00:26, 13.01s/it]
-current state: finished_layer
-current state: network_building
-current state: finished_network
-current state: field_propagating
---------------------------------------------------------------------------
-mpirun noticed that process rank 0 with PID 522 on node m9-12-3 exited on signal 9 (Killed).
---------------------------------------------------------------------------
-slurmstepd: error: Detected 9 oom-kill event(s) in StepId=48112629.batch. Some of your processes may have been killed by the cgroup out-of-memory handler.
