@@ -487,7 +487,6 @@ class InterfaceMultiMode(Model):
 
         self.layer1 = layer1
         self.layer2 = layer2
-        self.num_ports = layer1.right_ports + layer2.left_ports
         self.left_ports = layer1.right_ports
         self.right_ports = layer2.left_ports
         self.left_pins = ["left" + str(i) for i in range(self.left_ports)]
@@ -501,6 +500,7 @@ class InterfaceMultiMode(Model):
             pins.append(Pin(self, name))
 
         super().__init__(**kwargs, pins=pins)
+        self.num_ports = layer1.right_ports + layer2.left_ports
         self.solve()
 
     def s_parameters(self, freqs: "np.ndarray" = None) -> "np.ndarray":
@@ -765,8 +765,8 @@ class CopyModel(Model):
         self.modes = model.modes if hasattr(model, "modes") and keep_modes else []
         self.wavelength = model.wavelength if hasattr(model, "wavelength") else None
         self.length = model.length if hasattr(model, "length") else None
-        self.left_ports = model.left_ports if hasattr(model, "left_ports") else []
-        self.right_ports = model.right_ports if hasattr(model, "right_ports") else []
+        self.left_ports = model.left_ports if hasattr(model, "left_ports") else 0
+        self.right_ports = model.right_ports if hasattr(model, "right_ports") else 0
 
         self.S0 = ModelTools.make_copy_model(model.S0, keep_modes=False) if hasattr(model, "S0") else None
         self.nk = model.nk if hasattr(model, "nk") else []
@@ -927,6 +927,7 @@ class ModelTools(object):
         """Given an arbitrary amount of simphony models as inputs, cascades them and returns the cascaded network"""
 
         layers = [ModelTools.make_copy_model(a, keep_modes=False) for a in args if a is not None]
+
         temp_s = layers[0]
         for s in layers[1:]:
             Subcircuit.clear_scache()
