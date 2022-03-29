@@ -441,6 +441,7 @@ class Monitor(object):
                 vmin=vmin,
                 vmax=vmax,
             )
+            # plt.show()
             if not ax:
                 plt.xlabel(np.real(axes[1]))
                 plt.ylabel(np.real(axes[0]))

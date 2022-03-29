@@ -1,0 +1,27 @@
+Now performing an optimization...
+Traceback (most recent call last):
+  File "/zhome/ihammond/GitHub/emepy/examples/tutorials/optimizer.py", line 131, in <module>
+    x = solver.optimize(design)
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/site-packages/nlopt/nlopt.py", line 334, in optimize
+    return _nlopt.opt_optimize(self, *args)
+  File "/zhome/ihammond/GitHub/emepy/examples/tutorials/optimizer.py", line 56, in f
+    f0, dJ_du, monitor = optimizer.optimize(design)
+  File "/zhome/ihammond/GitHub/emepy/emepy/optimization.py", line 358, in optimize
+    grid_x, grid_y, grid_z, X, monitor_forward = self.forward_run()
+  File "/zhome/ihammond/GitHub/emepy/emepy/optimization.py", line 183, in forward_run
+    self.eme.propagate()
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 627, in propagate
+    self.field_propagate(left_coeffs, right_coeffs)
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 334, in field_propagate
+    results = self._run_parallel_functions(*tasks)
+  File "/zhome/ihammond/GitHub/emepy/emepy/eme.py", line 726, in _run_parallel_functions
+    finished_tasks.append(func(*arguments, **kwarguments))
+  File "/zhome/ihammond/GitHub/emepy/emepy/models.py", line 1054, in _prop_all_wrapper
+    return ModelTools._prop_all(*arg_list), result_list
+  File "/zhome/ihammond/GitHub/emepy/emepy/models.py", line 943, in _prop_all
+    temp_s = temp_s.circuit.to_subcircuit()
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/simphony/layout.py", line 191, in to_subcircuit
+    return Subcircuit(self, **kwargs, name=name)
+  File "/fslhome/ihammond/.local/lib/python3.9/site-packages/simphony/models.py", line 508, in __init__
+    raise ValueError(
+ValueError: Multiple pins named 'left4' cannot exist in a subcircuit.

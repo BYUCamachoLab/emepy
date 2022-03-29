@@ -329,7 +329,6 @@ class EME(object):
                         full_z_list.append(z_list)
                         tasks.append(task)
                         cur_len += layer.length
-
                 # Get restults
                 results = self._run_parallel_functions(*tasks)
 
@@ -997,11 +996,14 @@ class EME(object):
             S1.append(perf(lay, S1_length, S1_length + lay.length))
             S1_length += lay.length
 
-        # Distance params
-        dup = Duplicator(l.wavelength, len(l.modes))
-
         # See if need to remove sources for periodic l
         checked_l = perf(l, cur_len, cur_len + l.length)
+
+        # Distance params
+        num_non_dups = len([i for i in checked_l.pins if "right" in i.name and not "dup" in i.name]) if (
+            sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]) 
+        ) else len([i for i in checked_l.pins if "left" in i.name and not "dup" in i.name])
+        dup = Duplicator(l.wavelength, num_non_dups)
 
         # create all prop layers
         prop = (
