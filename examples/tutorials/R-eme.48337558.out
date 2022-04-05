@@ -1,0 +1,25 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/8 [00:00<?, ?it/s]100%|██████████| 8/8 [00:00<00:00, 5858.99it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:16, 16.06s/it]1it [00:16, 16.06s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.59it/s]1it [00:00,  1.59it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:07,  7.38s/it]1it [00:07,  7.38s/it]
+current state: finished
+Run 0 finished with value 0.8630956374073907
+Now performing an optimization...
+current state: start
+  0%|          | 0/8 [00:00<?, ?it/s]100%|██████████| 8/8 [00:00<00:00, 8017.79it/s]
+current state: start
+current state: mode_solving
+slurmstepd: error: *** JOB 48337558 ON m8-1-5 CANCELLED AT 2022-03-29T11:09:24 ***

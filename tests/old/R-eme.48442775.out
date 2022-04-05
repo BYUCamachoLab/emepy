@@ -1,0 +1,256 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/8 [00:00<?, ?it/s]100%|██████████| 8/8 [00:00<00:00, 10876.64it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:02,  2.89s/it]1it [00:02,  2.89s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  4.46it/s]1it [00:00,  4.45it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:11, 11.58s/it]1it [00:11, 11.58s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: -8.680540671481481e-07
+Finite difference differential: 0.0001989683186711666
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/10 [00:00<?, ?it/s]100%|██████████| 10/10 [00:00<00:00, 13595.80it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:10, 10.40s/it]1it [00:10, 10.40s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  4.39it/s]1it [00:00,  4.38it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:10, 10.88s/it]1it [00:10, 10.88s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 4.624152431641497e-06
+Finite difference differential: 3.478924306543618e-05
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/12 [00:00<?, ?it/s]100%|██████████| 12/12 [00:00<00:00, 14467.27it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:18, 18.03s/it]1it [00:18, 18.03s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.89it/s]1it [00:00,  2.88it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:19, 19.55s/it]1it [00:19, 19.55s/it]
+current state: finished
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:383: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 4.229512184653449e-06
+Finite difference differential: 3.803799486223891e-05
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/14 [00:00<?, ?it/s]100%|██████████| 14/14 [00:00<00:00, 15161.44it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:32, 32.83s/it]1it [00:32, 32.83s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.17it/s]1it [00:00,  2.17it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:19, 19.18s/it]1it [00:19, 19.18s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 2.0224735826053827e-06
+Finite difference differential: 1.442939464579851e-07
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/17 [00:00<?, ?it/s]100%|██████████| 17/17 [00:00<00:00, 15980.09it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:53, 53.21s/it]1it [00:53, 53.21s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.61it/s]1it [00:00,  1.61it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:27, 27.10s/it]1it [00:27, 27.10s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 2.7495754804055262e-06
+Finite difference differential: -2.2259699639093355e-09
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/19 [00:00<?, ?it/s]100%|██████████| 19/19 [00:00<00:00, 16125.41it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [01:18, 78.49s/it]1it [01:18, 78.49s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.32it/s]1it [00:00,  1.32it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:27, 27.65s/it]2it [00:41, 19.62s/it]2it [00:41, 20.82s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 1.3018362022395383e-05
+Finite difference differential: -2.3685883254742635e-09
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/21 [00:00<?, ?it/s]100%|██████████| 21/21 [00:00<00:00, 17036.82it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [01:50, 110.19s/it]2it [02:29, 68.76s/it] 2it [02:29, 74.98s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:01,  1.29s/it]2it [00:07,  4.32s/it]2it [00:07,  3.86s/it]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:39, 39.98s/it]2it [01:03, 30.19s/it]2it [01:03, 31.66s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:360: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+Now performing an optimization...
+Adjoint run differential: 6.224912002386539e-06
+Finite difference differential: -2.1420358820023466e-09
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/23 [00:00<?, ?it/s]100%|██████████| 23/23 [00:00<00:00, 16367.32it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [02:34, 154.60s/it]2it [03:41, 103.19s/it]2it [03:41, 110.90s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:01,  1.53s/it]2it [00:07,  3.98s/it]2it [00:07,  3.61s/it]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:41, 41.24s/it]2it [01:04, 30.87s/it]2it [01:04, 32.42s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 1.7186641996420694e-05
+Finite difference differential: -2.2684436551401177e-09
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/26 [00:00<?, ?it/s]100%|██████████| 26/26 [00:00<00:00, 17686.00it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [03:44, 224.58s/it]2it [06:27, 188.43s/it]2it [06:27, 193.85s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:02,  2.31s/it]2it [00:10,  5.70s/it]2it [00:10,  5.19s/it]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:51, 51.38s/it]2it [01:24, 40.55s/it]2it [01:24, 42.18s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 1.8254344376759035e-05
+Finite difference differential: -5.201202468718691e-09
+

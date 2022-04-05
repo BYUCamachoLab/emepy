@@ -1020,7 +1020,7 @@ class ModelTools(object):
         return new_model
 
     @staticmethod
-    def compute(model, pin_values: "dict", freq: "float") -> dict:
+    def compute(model, pin_values: "dict", freq: "float"=0) -> dict:
         """Takes a dictionary mapping each pin name to a coefficent and multiplies by the S matrix
 
         Parameters

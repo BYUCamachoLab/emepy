@@ -1,0 +1,146 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/6 [00:00<?, ?it/s]100%|██████████| 6/6 [00:00<00:00, 9679.16it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:00,  1.06it/s]1it [00:00,  1.06it/s]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  7.54it/s]1it [00:00,  7.54it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:04,  4.95s/it]1it [00:04,  4.95s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: -3.764279174808804e-06
+Finite difference differential: -0.0015863637103439299
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/9 [00:00<?, ?it/s]100%|██████████| 9/9 [00:00<00:00, 12629.22it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:03,  3.46s/it]1it [00:03,  3.46s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  5.40it/s]1it [00:00,  5.40it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:11, 11.38s/it]1it [00:11, 11.38s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: -3.2254942237182947e-06
+Finite difference differential: 4.129771794103565e-05
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/12 [00:00<?, ?it/s]100%|██████████| 12/12 [00:00<00:00, 14110.36it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:18, 18.07s/it]1it [00:18, 18.07s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  3.55it/s]1it [00:00,  3.55it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:11, 11.84s/it]1it [00:11, 11.84s/it]
+current state: finished
+/zhome/ihammond/GitHub/emepy/emepy/optimization.py:383: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  plt.figure()
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 1.8415695609303942e-05
+Finite difference differential: 6.886275593864788e-06
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+  0%|          | 0/15 [00:00<?, ?it/s]current state: start
+100%|██████████| 15/15 [00:00<00:00, 15630.95it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:36, 36.16s/it]1it [00:36, 36.16s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.23it/s]1it [00:00,  2.23it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:21, 21.62s/it]1it [00:21, 21.62s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 9.972245562733456e-06
+Finite difference differential: 5.933889876130749e-07
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/18 [00:00<?, ?it/s]100%|██████████| 18/18 [00:00<00:00, 15423.39it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [01:04, 64.00s/it]1it [01:04, 64.00s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.42it/s]1it [00:00,  1.42it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:33, 33.84s/it]1it [00:33, 33.84s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: -2.2152437591608423e-05
+Finite difference differential: -7.087378481873685e-07
+
+Running in parallel on 20 cores
+current state: start
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/21 [00:00<?, ?it/s]100%|██████████| 21/21 [00:00<00:00, 16915.76it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [01:47, 107.65s/it]2it [02:22, 64.85s/it] 2it [02:22, 71.27s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:01,  1.01s/it]2it [00:04,  2.71s/it]2it [00:04,  2.45s/it]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:34, 34.62s/it]2it [00:53, 25.20s/it]2it [00:53, 26.61s/it]
+current state: finished
+Running in parallel on 20 cores
+Now performing an optimization...
+Now performing an optimization...
+Adjoint run differential: 2.8012812884963418e-05
+Finite difference differential: -1.10707086442563e-06
+
