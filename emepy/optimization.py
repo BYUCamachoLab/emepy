@@ -2,6 +2,7 @@ from emepy.eme import EME
 from emepy.geometries import Geometry, DynamicPolygon
 from emepy.source import Source
 from emepy.monitors import Monitor
+from emepy.models import ModelTools
 import emepy
 import numpy as np
 from matplotlib import pyplot as plt
@@ -133,7 +134,6 @@ class Optimization(object):
             design[i] = d + dp
             self.set_design(design)
             xx, zz = self.get_design_readable()
-            # print("\n",np.array(zz)/np.array(xx))
 
             # Compute new A
             A_new = self.get_n(grid_x, grid_y, grid_z)
@@ -152,13 +152,7 @@ class Optimization(object):
 
         return jacobian
 
-    def forward_run(self) -> tuple:
-        """Computes the forward run for the adjoint formulation"""
-
-        # Clear the eme and ensure design is inside
-        self.start()
-
-        # Find where monitor should be in range of only the design region
+    def get_design_region(self) -> tuple: 
         z_start, z_end = (0, 0)
         for geometry in self.geometries:
             if isinstance(geometry, DynamicPolygon):
@@ -167,6 +161,16 @@ class Optimization(object):
             else:
                 z_start += geometry.length
                 z_end += geometry.length
+        return z_start, z_end
+
+    def forward_run(self) -> tuple:
+        """Computes the forward run for the adjoint formulation"""
+
+        # Clear the eme and ensure design is inside
+        self.start()
+
+        # Find where monitor should be in range of only the design region
+        z_start, z_end = self.get_design_region()
 
         # Create source and monitor
         source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
@@ -354,6 +358,11 @@ class Optimization(object):
         design = design if not isinstance(design, np.ndarray) else design.tolist()
         self.set_design(design)
 
+        plt.figure()
+        self.start()
+        self.eme.draw()
+        plt.savefig("latest_design")
+
         # Compute the forward run
         grid_x, grid_y, grid_z, X, monitor_forward = self.forward_run()
 
@@ -428,3 +437,108 @@ class Optimization(object):
     def draw(self) -> None:
         self.start()
         self.eme.draw()
+
+    def plot_gradients(self, gradients, monitor) -> None:
+        
+        # Get the gradients
+        design_x, design_z = self.get_design_readable()
+        z_start, z_end = self.get_design_region()
+        vertices_gradients = np.array(
+            [[z, x] for z, x in zip(gradients[1::2], gradients[::2])]
+        )
+        vertices_origins = np.array(
+            [[z + z_start, x] for z, x in zip(design_z, design_x)]
+        ).T
+
+        # Get n
+        grid_x, grid_z, n_original = monitor.get_array(axes="xz", component="n")
+        n_grid_z = np.array([i for i in grid_z if i >= z_start and i <= z_end])
+        n = self.get_n(grid_x, None, n_grid_z)
+
+        # Plot gradients
+        plt.imshow(np.real(n_original[::-1]), extent=[grid_z[0], grid_z[-1], grid_x[0], grid_x[-1]], cmap="Greys")
+        plt.imshow(np.real(n[::-1]), extent=[z_start, z_end, grid_x[0], grid_x[-1]], cmap="Greys")
+        plt.quiver(
+            *vertices_origins, vertices_gradients[:, 0], vertices_gradients[:, 1], color="r"
+        )
+
+    def calculate_fd_gradient(
+        self,
+        num_gradients:int=1,
+        dp:float=1e-4,
+        rand: "np.random.RandomState" = None
+    ):
+        '''
+        Estimate central difference gradients.
+
+        Parameters
+        ----------
+        num_gradients : int
+            number of gradients to estimate. Randomly sampled from parameters.
+        du : float
+            finite difference step size
+
+        Returns
+        -----------
+        fd_gradient : lists
+            [number of objective functions][number of gradients]
+
+        '''
+
+        # Get the design
+        design = self.get_design()
+        if num_gradients > len(design):
+            raise ValueError(
+                "The requested number of gradients must be less than or equal to the total number of design parameters."
+            )
+
+        # cleanup 
+        self.start()
+
+        # preallocate result vector
+        fd_gradient = []
+
+        # randomly choose indices to loop estimate
+        fd_gradient_idx = np.random.choice(
+            len(design),
+            num_gradients,
+            replace=False,
+        ) if rand is None else rand.choice(
+            len(design),
+            num_gradients,
+            replace=False,
+        )
+
+        # loop over indices
+        for k in fd_gradient_idx:
+
+            # get current design region
+            b0 = np.ones((len(design), ))
+            b0[:] = (design)
+
+            # assign new design vector
+            b0[k] -= dp
+            self.set_design(b0)
+
+            # run forward run
+            self.eme.propagate()
+
+            # record final objective function value
+            fm = np.abs(ModelTools.compute(self.eme.network, {"left0":1})["right0"]) ** 2
+
+            # assign new design vector
+            b0[k] += 2 * dp  
+            self.set_design(b0)
+
+            # propagate
+            self.eme.propagate()
+
+            # record final objective function value
+            fp = np.abs(ModelTools.compute(self.eme.network, {"left0":1})["right0"]) ** 2
+
+            # derivative
+            fd_gradient.append(
+                (fp - fm) / (2 * dp)
+            )
+
+        return fd_gradient, fd_gradient_idx

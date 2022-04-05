@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 # Design parameters
-taper_length = 7e-6  # The length of the taper
+taper_length = 7  # The length of the taper
 taper_density = 20 # Number of taper segments
 alpha = 3 # Strength of function (either tanh or bezier) -> 0 = linear
 type_tanh = True # "bezier"
@@ -26,12 +26,12 @@ def taper_func(start, end, num_points):
     return tanh
 
 # Geometric parameters
-width1 = 0.5e-6  # Width of left waveguide
-thickness1 = 0.22e-6  # Thickness of left waveguide
-width2 = 7e-6  # Width of right waveguide
-thickness2 = 0.22e-6  # Thickness of right waveguide
-wavelength = 1.55e-6  # Wavelength of light (m)
-length = 3e-6  # Length of the waveguides
+width1 = 0.5  # Width of left waveguide
+thickness1 = 0.22  # Thickness of left waveguide
+width2 = 7  # Width of right waveguide
+thickness2 = 0.22  # Thickness of right waveguide
+wavelength = 1.55  # Wavelength of light (m)
+length = 3  # Length of the waveguides
 num_modes_first_half = 3 # Number of modes to solve for
 num_modes_second_half = 3 # Number of modes to solve for
 mesh=275 # Number of mesh points in each xy dimension
@@ -44,8 +44,8 @@ mode1 = MSEMpy(
     width1,
     thickness1,
     num_modes=3,
-    cladding_width=20e-6,
-    cladding_thickness=20e-6,
+    cladding_width=20,
+    cladding_thickness=20,
     mesh=mesh,
     subpixel=True
 )
@@ -60,12 +60,12 @@ taper_length_per = taper_length / taper_density
 # add the taper layers
 for i in range(taper_density):
     num_modes = num_modes_first_half if i < taper_density / 2.0 else num_modes_second_half
-    solver = MSEMpy(wavelength, widths[i], thicknesses[i], num_modes=num_modes, mesh=mesh,cladding_width=20e-6,cladding_thickness=20e-6,subpixel=True)
+    solver = MSEMpy(wavelength, widths[i], thicknesses[i], num_modes=num_modes, mesh=mesh,cladding_width=20,cladding_thickness=20,subpixel=True)
     taper_layer = Layer(solver, num_modes, wavelength, taper_length_per)
     eme.add_layer(taper_layer)
 
 # last layer is a straight waveguide of smaller geometry
-mode2 = MSEMpy(wavelength, width2, thickness2, num_modes=num_modes_second_half, mesh=mesh,cladding_width=20e-6,cladding_thickness=20e-6,subpixel=True)
+mode2 = MSEMpy(wavelength, width2, thickness2, num_modes=num_modes_second_half, mesh=mesh,cladding_width=20,cladding_thickness=20,subpixel=True)
 straight2 = Layer(mode2, num_modes_second_half, wavelength, length)
 eme.add_layer(straight2)
 
