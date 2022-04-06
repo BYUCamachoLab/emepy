@@ -172,12 +172,17 @@ class Optimization(object):
         # Find where monitor should be in range of only the design region
         z_start, z_end = self.get_design_region()
 
-        # Create source and monitor
+        # Create forward source and monitor
         source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
         forward_monitor = self.eme.add_monitor(
             axes="xyz", mesh_z=self.mesh_z, sources=[source]
         )
 
+        # FOM monitor
+        source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
+        fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
+
+        # Adjoint source and monitor
         a_source = Source(z=2.75, mode_coeffs=[1], k=-1)  # Hard coded
         adjoint_monitor = self.eme.add_monitor(
             axes="xyz", mesh_z=self.mesh_z, sources=[a_source]
@@ -223,7 +228,7 @@ class Optimization(object):
             + field_z[:-1, :-1, :-1]
         )
         field = np.array([field_x, field_y, field_z])
-        results = (grid_x, grid_y, grid_z, field, forward_monitor)
+        results = (grid_x, grid_y, grid_z, field, forward_monitor, fom_monitor)
 
         # Save adjoint results
         a_grid_x, a_grid_y, a_grid_z, a_field_x = adjoint_monitor.get_array(
@@ -266,83 +271,58 @@ class Optimization(object):
 
         return results
 
+    def overlap(self, E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
+        term1 = np.conj(E1x) * H2y - np.conj(E1y) * H2x
+        term2 = E2x * np.conj(H1y) - E2y * np.conj(H1x)
+        return np.trapz(np.trapz((term1 + term2), x), y)
+
     def objective_gradient(self, monitor: "Monitor"):
         """Computes the objective function gradient to the sources for the adjoint formulation"""
 
         #### HARD CODED FOR NOW
 
-        # # Compute power in end
-        # x, _, Ex = monitor.get_array(component="Ex", z_range=(2.746, 2.754))
-        # Ex = Ex[:, 0]
-        # Ey = monitor.get_array(component="Ey", z_range=(2.746, 2.754))[2][:, 0]
-        # Hx = monitor.get_array(component="Hx", z_range=(2.746, 2.754))[2][:, 0]
-        # Hy = monitor.get_array(component="Hy", z_range=(2.746, 2.754))[2][:, 0]
-        # exp_Ex = self.eme.activated_layers[0][-1].modes[0].Ex
-        # exp_Ey = self.eme.activated_layers[0][-1].modes[0].Ey
-        # exp_Hx = self.eme.activated_layers[0][-1].modes[0].Hx
-        # exp_Hy = self.eme.activated_layers[0][-1].modes[0].Hy
-        # exp_Ex = exp_Ex[:, exp_Ex.shape[1] // 2]
-        # exp_Ey = exp_Ey[:, exp_Ey.shape[1] // 2]
-        # exp_Hx = exp_Hx[:, exp_Hx.shape[1] // 2]
-        # exp_Hy = exp_Hy[:, exp_Hy.shape[1] // 2]
+        # Compute power in end
+        x, y, Ex = monitor.get_array(component="Ex")
+        _, _, Ey = monitor.get_array(component="Ey")
+        _, _, Hx = monitor.get_array(component="Hx")
+        _, _, Hy = monitor.get_array(component="Hy")
 
-        # # Compute power in source
-        # def overlap(Ex, Ey, Hx, Hy, grid):
-        #     return np.trapz(Ex * np.conj(Hy) - Ey * np.conj(Hx), grid)
+        # Reference mode
+        reference_mode = self.eme.activated_layers[0][-1].modes[0]
+        r_Ex = reference_mode.Ex
+        r_Ey = reference_mode.Ey
+        r_Hx = reference_mode.Hx
+        r_Hy = reference_mode.Hy
+        norm = np.sqrt(self.overlap(r_Ex, r_Ey, r_Hx, r_Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y))
+        r_Ex /= norm
+        r_Ey /= norm
+        r_Hx /= norm
+        r_Hy /= norm
 
-        # norm = overlap(Ex, Ey, Hx, Hy, x)
-        # exp_norm = overlap(exp_Ex, exp_Ey, exp_Hx, exp_Hy, x)
-        # power = overlap(Ex, Ey, exp_Hx, exp_Hy, x) / np.sqrt(norm) / np.sqrt(exp_norm)
-        # power = np.abs(power)
-        network = self.eme.network
-        pins = dict(
-            zip([pin.name for pin in network.pins], [0.0 for pin in network.pins])
-        )
-        pins["left0"] = 1
-        power = np.abs(emepy.ModelTools.compute(network, pins, 0)["right0"])
+        # Compute overlap
+        overlap = self.overlap(Ex, Ey, Hx, Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y)
+
+        ###################
+        # network = self.eme.network
+        # pins = dict(
+        #     zip([pin.name for pin in network.pins], [0.0 for pin in network.pins])
+        # )
+        # pins["left0"] = 1
+        # power = np.abs(emepy.ModelTools.compute(network, pins, 0)["right0"]) ** 2
+        ###################
 
         # Compute autogradient
-        f_x = 0.0
+        f_x = 2 * np.pi * self.eme.wavelength * overlap
+        power = np.abs(overlap) ** 2
 
         return f_x, power
 
-    def set_adjoint_sources(self, f_x: float = 0.0, overlap: float = 1.0):
+    def set_adjoint_sources(self, f_x: float = 0.0):
         """Computes and places the adjoint sources for use in the adjoint formulation"""
-
-        # Create source and monitor
-        scale = 2 * np.pi * self.eme.wavelength * overlap
-        source = Source(z=2.75, mode_coeffs=[scale], k=-1)  # Hard coded
-        return [source]
+        return [Source(z=2.75, mode_coeffs=[f_x], k=-1)]
 
     def adjoint_run(self, sources: list):
         """Performs the adjoint run for use in the adjoint formulation"""
-        # # Clear the eme and ensure design is inside
-        # self.start()
-
-        # # Find where monitor should be in range of only the design region
-        # z_start, z_end = (0.5, 2.5)
-        # # for geometry in self.geometries:
-        # #     if isinstance(geometry, DynamicPolygon):
-        # #         z_end += geometry.length
-        # #         break
-        # #     else:
-        # #         z_start += geometry.length
-
-        # # Set monitor
-        # monitor = self.eme.add_monitor(mesh_z=self.mesh_z, sources=sources)
-
-        # # Run eme
-        # self.eme.propagate()
-
-        # # Get results
-        # grid_x, grid_z, field_x = monitor.get_array("Ex", z_range=(z_start, z_end))
-        # field_x = 0.25 * (field_x[1:, 1:] + field_x[1:, :-1] + field_x[:-1, 1:] + field_x[:-1, :-1])
-        # field_y = monitor.get_array("Ey", z_range=(z_start, z_end))[2]
-        # field_y = 0.25 * (field_y[1:, 1:] + field_y[1:, :-1] + field_y[:-1, 1:] + field_y[:-1, :-1])
-        # field_z = monitor.get_array("Ez", z_range=(z_start, z_end))[2]
-        # field_z = 0.25 * (field_z[1:, 1:] + field_z[1:, :-1] + field_z[:-1, 1:] + field_z[:-1, :-1])
-        # field = np.array([field_x, field_y, field_z])
-        # return grid_x, grid_z, field, monitor
 
         a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor = self.adjoint_results
         a_field *= sources[0].mode_coeffs[0]
@@ -364,7 +344,7 @@ class Optimization(object):
         plt.savefig("latest_design")
 
         # Compute the forward run
-        grid_x, grid_y, grid_z, X, monitor_forward = self.forward_run()
+        grid_x, grid_y, grid_z, X, monitor_forward, monitor_fom = self.forward_run()
 
         if self.eme.am_master():
             plt.figure()
@@ -372,10 +352,10 @@ class Optimization(object):
             plt.savefig("forward")
 
         # Compute the partial gradient of the objective function f_x
-        f_x, overlap = self.objective_gradient(monitor_forward)
+        f_x, fom = self.objective_gradient(monitor_fom)
 
         # Calculate the adjoint sources
-        sources = self.set_adjoint_sources(overlap)
+        sources = self.set_adjoint_sources(f_x)
 
         # Compute the adjoint run
         grid_x, grid_y, grid_z, lamdagger, monitor_adjoint = self.adjoint_run(sources)
@@ -398,7 +378,7 @@ class Optimization(object):
         f_u = self.compute_final_gradient(lamdagger, A_u, X)
 
         # Return the gradient
-        return overlap, f_u, monitor_forward
+        return fom, f_u, monitor_forward
 
     def compute_final_gradient(
         self, lamdagger: "np.ndarray", A_u: "np.ndarray", X: "np.ndarray"
@@ -519,22 +499,26 @@ class Optimization(object):
             # assign new design vector
             b0[k] -= dp
             self.set_design(b0)
+            self.start()
 
             # run forward run
+            fom_monitor = self.eme.add_monitor(axes="xy", location=2.75)
             self.eme.propagate()
 
             # record final objective function value
-            fm = np.abs(ModelTools.compute(self.eme.network, {"left0":1})["right0"]) ** 2
+            _, fm = self.objective_gradient(fom_monitor)
 
             # assign new design vector
             b0[k] += 2 * dp  
             self.set_design(b0)
+            self.start()
 
             # propagate
+            fom_monitor = self.eme.add_monitor(axes="xy", location=2.75)
             self.eme.propagate()
 
             # record final objective function value
-            fp = np.abs(ModelTools.compute(self.eme.network, {"left0":1})["right0"]) ** 2
+            _, fp = self.objective_gradient(fom_monitor)
 
             # derivative
             fd_gradient.append(

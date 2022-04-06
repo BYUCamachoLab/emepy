@@ -10,11 +10,11 @@ from utils import ApproxComparisonTestCase
 from matplotlib import pyplot as plt
 
 # Resolution
-mesh = 100
-num_layers = 6
+mesh = 150
+num_layers = 15
 num_params = 30
 num_modes = 10
-parallel = False
+parallel = True
 mesh_z = 100
 
 # Materials
@@ -78,17 +78,17 @@ linear_taper = (
 design_x[:] = linear_taper[:]
 
 ## vertex constraints
-ul_x = 1.2 * design_x
-ll_x = 0.8 * design_x
-ul_z = 1.05 * design_z
-ll_z = 0.95 * design_z
+ul_x = 1.05 * design_x
+ll_x = 0.95 * design_x
+ul_z = 1.01 * design_z
+ll_z = 0.99 * design_z
 
 ## random design region
 design_x_i = (ul_x-ll_x)*rng.rand(design_x.shape[0]) + ll_x
 design_z_i = (ul_z-ll_z)*rng.rand(design_z.shape[0]) + ll_z
 
 ## random epsilon perturbation for design region
-deps = 1e-5
+deps = 1e-6
 dp_x = deps*rng.rand(design_x.shape[0])
 dp_z = deps*rng.rand(design_z.shape[0])
 dp = np.zeros(design_x.shape[0]+design_z.shape[0])
@@ -116,13 +116,13 @@ def forward_simulation(design_x, design_y):
     return f0
     
 
-def adjoint_solver(design_x, design_y):
+def adjoint_solver(design_x, design_y, dp):
 
     # Set the design region
     optimizer.set_design_readable(design_x, None, design_y)
 
     # Run the simulation
-    f0, dJ_du, _ = optimizer.optimize(optimizer.get_design(), dp=deps)
+    f0, dJ_du, _ = optimizer.optimize(optimizer.get_design(), dp=dp)
 
     return f0, dJ_du
 
@@ -134,48 +134,54 @@ class TestAdjointSolver(ApproxComparisonTestCase):
         if True:
             return
 
-        print("*** TESTING OVERLAP ADJOINT ***")
+        if em.am_master(parallel):
+            print("*** TESTING OVERLAP ADJOINT ***")
 
         ## compute gradient using adjoint solver
-        adjsol_obj, adjsol_grad = adjoint_solver(design_x_i, design_z_i)
+        adjsol_obj, adjsol_grad = adjoint_solver(design_x_i, design_z_i, deps)
 
         ## compute unperturbed |Ez|^2
         Ez2_unperturbed = forward_simulation(design_x_i, design_z_i)
 
         ## compare objective results
-        print("|Ez|^2 -- adjoint solver: {}, traditional simulation: {}".format(adjsol_obj,Ez2_unperturbed))
-        self.assertClose(adjsol_obj,Ez2_unperturbed,epsilon=1e-6)
+        if em.am_master(parallel):
+            print("|Ez|^2 -- adjoint solver: {}, traditional simulation: {}".format(adjsol_obj,Ez2_unperturbed))
+        # self.assertClose(adjsol_obj,Ez2_unperturbed,epsilon=1e-6)
 
         ## compute perturbed Ez2
         Ez2_perturbed = forward_simulation(design_x + dp_x, design_z + dp_z)
 
         ## compare gradients
-        if adjsol_grad.ndim < 2:
-            adjsol_grad = np.expand_dims(adjsol_grad,axis=1)
-        adj_scale = (dp[None,:]@adjsol_grad).flatten()
+        adj_scale = (adjsol_grad@dp).flatten()[0]
         fd_grad = Ez2_perturbed-Ez2_unperturbed
-        print("Directional derivative -- adjoint solver: {}, FD: {}".format(adj_scale,fd_grad))
+        if em.am_master(parallel):
+            print("Directional derivative -- adjoint solver: {}, FD: {}".format(adj_scale,fd_grad))
         tol = 0.006
-        self.assertClose(adj_scale,fd_grad,epsilon=tol)
+        # self.assertClose(adj_scale,fd_grad,epsilon=tol)
 
     def test_adjoint_solver_gradient(self):
 
         if False:
             return
 
-        print("*** TESTING GRADIENT ADJOINT ***")
+        if em.am_master(parallel):
+            print("*** TESTING GRADIENT ADJOINT ***")
 
         ## compute gradient using adjoint solver
-        f0, dJ_du = adjoint_solver(design_x_i, design_z_i)
+        f0, dJ_du = adjoint_solver(design_x_i, design_z_i, deps)
 
         ## finite difference gradient
-        dp = 1e-3
-        num_gradients = 10
+        num_gradients = 6
         optimizer.set_design_readable(design_x_i, None, design_z_i)
-        g_discrete, idx = optimizer.calculate_fd_gradient(num_gradients=num_gradients,dp=dp,rand=rng)
+        g_discrete, idx = optimizer.calculate_fd_gradient(num_gradients=num_gradients,dp=deps,rand=rng)
 
         # compare gradients
-        (m, b) = np.polyfit(np.squeeze(g_discrete), dJ_du[idx], 1)
+        if em.am_master(parallel):
+            print(g_discrete)
+        if em.am_master(parallel):
+            print(dJ_du[idx], (dJ_du@dp).flatten()[0])
+
+        (m, b) = np.polyfit(g_discrete, dJ_du[idx], 1)
 
         # plot results
         min_g = np.min(g_discrete)
@@ -202,7 +208,8 @@ class TestAdjointSolver(ApproxComparisonTestCase):
 
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
         fig.suptitle('Resolution: {} Seed: {} Np: {}'.format(mesh,seed,num_params))
-        plt.show()
+        if em.am_master(parallel):
+            plt.savefig('testing')
 
         
 

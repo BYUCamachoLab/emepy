@@ -1,0 +1,17 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+*** TESTING GRADIENT ADJOINT ***
+Now performing an optimization...
+current state: start
+  0%|          | 0/16 [00:00<?, ?it/s]100%|██████████| 16/16 [00:00<00:00, 15286.76it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:39, 39.46s/it]1it [00:39, 39.46s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.01it/s]1it [00:00,  2.01it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating

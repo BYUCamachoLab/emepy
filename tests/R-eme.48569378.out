@@ -1,0 +1,679 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+*** TESTING GRADIENT ADJOINT ***
+Now performing an optimization...
+current state: start
+
+  0%|          | 0/21 [00:00<?, ?it/s]
+100%|██████████| 21/21 [00:00<00:00, 15816.19it/s]
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:49, 49.91s/it]
+2it [01:06, 30.53s/it]
+2it [01:06, 33.43s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.98it/s]
+2it [00:02,  1.56s/it]
+2it [00:02,  1.40s/it]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+
+0it [00:00, ?it/s]
+1it [00:34, 34.81s/it]
+2it [00:53, 25.30s/it]
+2it [00:53, 26.73s/it]
+current state: finished
+current state: start
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:49, 49.64s/it]
+2it [01:06, 30.43s/it]
+2it [01:06, 33.31s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.95it/s]
+1it [00:00,  1.95it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:49, 49.66s/it]
+2it [01:06, 30.20s/it]
+2it [01:06, 33.12s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.96it/s]
+1it [00:00,  1.96it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:50, 50.23s/it]
+2it [01:07, 30.63s/it]
+2it [01:07, 33.57s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.88it/s]
+1it [00:00,  1.88it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:50, 50.73s/it]
+2it [01:07, 30.81s/it]
+2it [01:07, 33.80s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.73it/s]
+1it [00:00,  1.73it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:50, 50.87s/it]
+2it [01:07, 30.46s/it]
+2it [01:07, 33.52s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.41it/s]
+1it [00:00,  1.41it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:50, 50.94s/it]
+2it [01:07, 30.96s/it]
+2it [01:07, 33.96s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.88it/s]
+1it [00:00,  1.88it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:50, 50.39s/it]
+2it [01:06, 30.22s/it]
+2it [01:06, 33.25s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.94it/s]
+1it [00:00,  1.94it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:50, 50.89s/it]
+2it [01:08, 31.42s/it]
+2it [01:08, 34.34s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.91it/s]
+1it [00:00,  1.91it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:48, 48.74s/it]
+2it [01:04, 29.62s/it]
+2it [01:04, 32.49s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.88it/s]
+1it [00:00,  1.88it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:50, 50.28s/it]
+2it [01:06, 30.54s/it]
+2it [01:06, 33.50s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.92it/s]
+1it [00:00,  1.92it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:50, 50.44s/it]
+2it [01:06, 30.38s/it]
+2it [01:06, 33.39s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.81it/s]
+1it [00:00,  1.81it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+current state: start
+current state: mode_solving
+
+0it [00:00, ?it/s]
+1it [00:49, 49.33s/it]
+2it [01:06, 30.40s/it]
+2it [01:06, 33.24s/it]
+current state: finished_modes
+current state: layer_propagating
+
+0it [00:00, ?it/s]
+1it [00:00,  1.93it/s]
+1it [00:00,  1.93it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+current state: finished
+
+
+
+fd: [0.09753209062601798, -0.07919586902938036, 0.1135283451692004, -0.010765714208993415, 0.2269459566939247, -0.7660323501079702]
+adjoint: [ -96.4932166    14.83166238    2.02171214  123.59651184  209.72862705 -552.98722868] 
+
+
+
+-0.003050233230612954
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+made it here
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.299s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.272s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.299s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.295s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.377s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.273s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.311s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.316s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.469s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.300s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.200s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.327s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.292s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.440s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.287s
+
+FAILED (errors=1)
+EEEE....
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.303s
+
+
+======================================================================
+
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+
+======================================================================
+FAILED (errors=1)
+----------------------------------------------------------------------
+Ran 2 tests in 1642.299s
+
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+FAILED (errors=1)
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.304s
+
+FAILED (errors=1)
+----------------------------------------------------------------------
+Ran 2 tests in 1642.311s
+
+FAILED (errors=1)
+E.
+======================================================================
+ERROR: test_adjoint_solver_gradient (__main__.TestAdjointSolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_adjoint_solver.py", line 189, in test_adjoint_solver_gradient
+    quit()
+  File "/fslhome/ihammond/miniconda3/envs/emepy/lib/python3.9/_sitebuiltins.py", line 26, in __call__
+    raise SystemExit(code)
+SystemExit: None
+
+----------------------------------------------------------------------
+Ran 2 tests in 1642.325s
+
+FAILED (errors=1)
