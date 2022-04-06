@@ -201,7 +201,6 @@ class MSEMpy(ModeSolver):
         Mode
             the eigenmode of index mode_num
         """
-
         x = self.solver.modes[mode_num].get_x()
         y = self.solver.modes[mode_num].get_y()
         x0, y0 = [np.real(x), np.real(y)]
