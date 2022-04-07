@@ -169,6 +169,8 @@ class TestAdjointSolver(ApproxComparisonTestCase):
 
         ## compute gradient using adjoint solver
         f0, dJ_du = adjoint_solver(design_x_i, design_z_i, deps)
+        if em.am_master(parallel):
+            print("Adjoint FOM: {}".format(f0))
 
         ## finite difference gradient
         num_gradients = 6
@@ -181,35 +183,41 @@ class TestAdjointSolver(ApproxComparisonTestCase):
         if em.am_master(parallel):
             print(dJ_du[idx], (dJ_du@dp).flatten()[0])
 
-        (m, b) = np.polyfit(g_discrete, dJ_du[idx], 1)
+        else:
+            print("nothing")
+            print("nothing")
+            print("nothing")
+            print("nothing")
 
-        # plot results
-        min_g = np.min(g_discrete)
-        max_g = np.max(g_discrete)
+        # (m, b) = np.polyfit(g_discrete, dJ_du[idx], 1)
 
-        fig = plt.figure(figsize=(12,6))
+        # # plot results
+        # min_g = np.min(g_discrete)
+        # max_g = np.max(g_discrete)
 
-        plt.subplot(1,2,1)
-        plt.plot([min_g, max_g],[min_g, max_g],label='y=x comparison')
-        plt.plot([min_g, max_g],[m*min_g+b, m*max_g+b],'--',label='Best fit')
-        plt.plot(g_discrete,dJ_du[idx],'o',label='Adjoint comparison')
-        plt.xlabel('Finite Difference Gradient')
-        plt.ylabel('Adjoint Gradient')
-        plt.legend()
-        plt.grid(True)
-        plt.axis("square")
+        # fig = plt.figure(figsize=(12,6))
 
-        plt.subplot(1,2,2)
-        rel_err = np.abs(np.squeeze(g_discrete) - np.squeeze(dJ_du[idx])) / np.abs(np.squeeze(g_discrete)) * 100
-        plt.semilogy(g_discrete,rel_err,'o')
-        plt.grid(True)
-        plt.xlabel('Finite Difference Gradient')
-        plt.ylabel('Relative Error (%)')
+        # plt.subplot(1,2,1)
+        # plt.plot([min_g, max_g],[min_g, max_g],label='y=x comparison')
+        # plt.plot([min_g, max_g],[m*min_g+b, m*max_g+b],'--',label='Best fit')
+        # plt.plot(g_discrete,dJ_du[idx],'o',label='Adjoint comparison')
+        # plt.xlabel('Finite Difference Gradient')
+        # plt.ylabel('Adjoint Gradient')
+        # plt.legend()
+        # plt.grid(True)
+        # plt.axis("square")
 
-        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-        fig.suptitle('Resolution: {} Seed: {} Np: {}'.format(mesh,seed,num_params))
-        if em.am_master(parallel):
-            plt.savefig('testing')
+        # plt.subplot(1,2,2)
+        # rel_err = np.abs(np.squeeze(g_discrete) - np.squeeze(dJ_du[idx])) / np.abs(np.squeeze(g_discrete)) * 100
+        # plt.semilogy(g_discrete,rel_err,'o')
+        # plt.grid(True)
+        # plt.xlabel('Finite Difference Gradient')
+        # plt.ylabel('Relative Error (%)')
+
+        # fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        # fig.suptitle('Resolution: {} Seed: {} Np: {}'.format(mesh,seed,num_params))
+        # if em.am_master(parallel):
+        #     plt.savefig('testing')
 
         
 

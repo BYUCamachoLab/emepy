@@ -1,0 +1,53 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+*** TESTING GRADIENT ADJOINT ***
+current state: start
+Now performing an optimization...
+current state: start
+  0%|          | 0/16 [00:00<?, ?it/s]100%|██████████| 16/16 [00:00<00:00, 15314.67it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:37, 37.25s/it]1it [00:37, 37.25s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.97it/s]1it [00:00,  1.97it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:25, 25.17s/it]1it [00:25, 25.17s/it]
+0it [00:00, ?it/s]1it [00:24, 24.94s/it]1it [00:24, 24.94s/it]
+current state: finished
+adjoint fom:  7.804626531771371
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:37, 37.83s/it]1it [00:37, 37.83s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.96it/s]1it [00:00,  1.96it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.44s/it]1it [00:16, 16.44s/it]
+current state: finished
+finite difference fom:  1.950309732292844
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:36, 36.33s/it]1it [00:36, 36.33s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.92it/s]1it [00:00,  1.92it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.47s/it]1it [00:16, 16.47s/it]
+current state: finished
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:37, 37.89s/it]1it [00:37, 37.89s/it]
+current state: finished_modes
+current state: layer_propagating
+slurmstepd: error: *** JOB 48590576 ON m11-1-1 CANCELLED AT 2022-04-06T17:39:30 ***

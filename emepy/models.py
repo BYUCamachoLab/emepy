@@ -944,7 +944,7 @@ class ModelTools(object):
             temp_s = temp_s.circuit.to_subcircuit()
             temp_s.s_params = temp_s.s_parameters([0])
 
-        return temp_s
+        return ModelTools.make_copy_model(temp_s, keep_modes=False)
 
     @staticmethod
     def periodic_duplicate_format(model: "Model", start: float, end: float) -> "Model":

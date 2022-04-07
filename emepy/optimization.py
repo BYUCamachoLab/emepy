@@ -288,30 +288,25 @@ class Optimization(object):
         _, _, Hy = monitor.get_array(component="Hy")
 
         # Reference mode
-        reference_mode = self.eme.activated_layers[0][-1].modes[0]
-        r_Ex = reference_mode.Ex
-        r_Ey = reference_mode.Ey
-        r_Hx = reference_mode.Hx
-        r_Hy = reference_mode.Hy
-        norm = np.sqrt(self.overlap(r_Ex, r_Ey, r_Hx, r_Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y))
-        r_Ex /= norm
-        r_Ey /= norm
-        r_Hx /= norm
-        r_Hy /= norm
+        if self.eme.am_master():
+            reference_mode = self.eme.activated_layers[0][-1].modes[0]
+            r_Ex = reference_mode.Ex
+            r_Ey = reference_mode.Ey
+            r_Hx = reference_mode.Hx
+            r_Hy = reference_mode.Hy
+            norm = np.sqrt(np.abs(self.overlap(r_Ex, r_Ey, r_Hx, r_Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y)))
+            r_Ex = r_Ex / norm
+            r_Ey = r_Ey / norm
+            r_Hx = r_Hx / norm
+            r_Hy = r_Hy / norm
 
-        # Compute overlap
-        overlap = self.overlap(Ex, Ey, Hx, Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y)
-
-        ###################
-        # network = self.eme.network
-        # pins = dict(
-        #     zip([pin.name for pin in network.pins], [0.0 for pin in network.pins])
-        # )
-        # pins["left0"] = 1
-        # power = np.abs(emepy.ModelTools.compute(network, pins, 0)["right0"]) ** 2
-        ###################
+            # Compute overlap
+            overlap = self.overlap(Ex, Ey, Hx, Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y)
+        else:
+            overlap = 0
 
         # Compute autogradient
+        print("OVERLAP: ", overlap)
         f_x = 2 * np.pi * self.eme.wavelength * overlap
         power = np.abs(overlap) ** 2
 
@@ -338,18 +333,14 @@ class Optimization(object):
         design = design if not isinstance(design, np.ndarray) else design.tolist()
         self.set_design(design)
 
-        plt.figure()
-        self.start()
-        self.eme.draw()
-        plt.savefig("latest_design")
 
         # Compute the forward run
         grid_x, grid_y, grid_z, X, monitor_forward, monitor_fom = self.forward_run()
 
-        if self.eme.am_master():
-            plt.figure()
-            monitor_forward.visualize(axes="xz")
-            plt.savefig("forward")
+        # if self.eme.am_master():
+        #     plt.figure()
+        #     monitor_forward.visualize(axes="xz")
+        #     plt.savefig("forward")
 
         # Compute the partial gradient of the objective function f_x
         f_x, fom = self.objective_gradient(monitor_fom)
@@ -360,10 +351,10 @@ class Optimization(object):
         # Compute the adjoint run
         grid_x, grid_y, grid_z, lamdagger, monitor_adjoint = self.adjoint_run(sources)
 
-        if self.eme.am_master():
-            plt.figure()
-            monitor_adjoint.visualize(axes="xz")
-            plt.savefig("adjoint")
+        # if self.eme.am_master():
+        #     plt.figure()
+        #     monitor_adjoint.visualize(axes="xz")
+        #     plt.savefig("adjoint")
 
         # Compute the gradient of the constraint A_u
         A_u = self.gradient(
@@ -496,6 +487,31 @@ class Optimization(object):
             b0 = np.ones((len(design), ))
             b0[:] = (design)
 
+            # # Test ####################################################
+            # self.start()
+            # # Create forward source and monitor
+            # source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
+            # forward_monitor = self.eme.add_monitor(
+            #     axes="xyz", mesh_z=self.mesh_z, sources=[source]
+            # )
+            # # Adjoint source and monitor
+            # a_source = Source(z=2.75, mode_coeffs=[1], k=-1)  # Hard coded
+            # adjoint_monitor = self.eme.add_monitor(
+            #     axes="xyz", mesh_z=self.mesh_z, sources=[a_source]
+            # )
+            # source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
+            # fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
+            # self.eme.propagate()
+            # _, fp = self.objective_gradient(fom_monitor)
+            # if self.eme.am_master():
+            #     print("finite difference fom: ", fp)
+
+            
+            # f0, dJ_du, _= self.optimize(b0, dp)
+            # if self.eme.am_master():
+            #     print("adjoint fom: ", f0)
+            # ############################################################
+
             # assign new design vector
             b0[k] -= dp
             self.set_design(b0)
@@ -524,5 +540,8 @@ class Optimization(object):
             fd_gradient.append(
                 (fp - fm) / (2 * dp)
             )
+
+            if self.eme.am_master():
+                print("FD FOM: {}".format((fp+fm)/2))
 
         return fd_gradient, fd_gradient_idx

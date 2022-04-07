@@ -1,0 +1,275 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+*** TESTING GRADIENT ADJOINT ***
+Now performing an optimization...
+current state: start
+  0%|          | 0/16 [00:00<?, ?it/s]100%|██████████| 16/16 [00:00<00:00, 15118.01it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:43, 43.99s/it]1it [00:43, 43.99s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.02it/s]1it [00:00,  2.02it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:24, 24.82s/it]1it [00:24, 24.82s/it]
+0it [00:00, ?it/s]1it [00:24, 24.89s/it]1it [00:24, 24.89s/it]
+current state: finished
+Adjoint FOM: 7.804626531771371
+current state: start
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:47, 47.65s/it]1it [00:47, 47.65s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.95it/s]1it [00:00,  1.95it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.26s/it]1it [00:16, 16.26s/it]
+current state: finished
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:34, 34.72s/it]1it [00:34, 34.72s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.93it/s]1it [00:00,  1.93it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.30s/it]1it [00:16, 16.30s/it]
+current state: finished
+FOM: 1.9503099644117712
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:39, 39.74s/it]1it [00:39, 39.74s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.94it/s]1it [00:00,  1.94it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.25s/it]1it [00:16, 16.25s/it]
+current state: finished
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:38, 38.15s/it]1it [00:38, 38.15s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.94it/s]1it [00:00,  1.94it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.24s/it]1it [00:16, 16.24s/it]
+current state: finished
+FOM: 1.9503094709384439
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:33, 33.84s/it]1it [00:33, 33.84s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.91it/s]1it [00:00,  1.91it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.26s/it]1it [00:16, 16.26s/it]
+current state: finished
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:32, 32.14s/it]1it [00:32, 32.14s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.05it/s]1it [00:00,  2.05it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.24s/it]1it [00:16, 16.24s/it]
+current state: finished
+FOM: 1.9503097106366771
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:35, 35.84s/it]1it [00:35, 35.84s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.05it/s]1it [00:00,  2.05it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.28s/it]1it [00:16, 16.28s/it]
+current state: finished
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:41, 41.51s/it]1it [00:41, 41.51s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.93it/s]1it [00:00,  1.93it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.21s/it]1it [00:16, 16.21s/it]
+current state: finished
+FOM: 1.9503096397722288
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:41, 41.21s/it]1it [00:41, 41.21s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.92it/s]1it [00:00,  1.92it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.33s/it]1it [00:16, 16.33s/it]
+current state: finished
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:43, 43.87s/it]1it [00:43, 43.87s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.04it/s]1it [00:00,  2.04it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.33s/it]1it [00:16, 16.33s/it]
+current state: finished
+FOM: 1.9503105158157537
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:31, 31.85s/it]1it [00:31, 31.85s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.08it/s]1it [00:00,  2.07it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.38s/it]1it [00:16, 16.38s/it]
+current state: finished
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:32, 32.19s/it]1it [00:32, 32.19s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.05it/s]1it [00:00,  2.05it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.26s/it]1it [00:16, 16.26s/it]
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.640s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.613s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.486s
+
+OK
+....
+----------------------------------------------------------------------
+....
+----------------------------------------------------------------------
+Ran 2 tests in 2176.292s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.464s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2175.319s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.458s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2175.400s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.493s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2175.662s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.472s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.596s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.484s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.475s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2176.611s
+
+OK
+Ran 2 tests in 2176.424s
+
+OK
+.
+
+----------------------------------------------------------------------
+Ran 2 tests in 2176.447s
+
+OK
+.
+----------------------------------------------------------------------
+Ran 2 tests in 2176.641s
+
+OK
+----------------------------------------------------------------------
+Ran 2 tests in 2176.509s
+
+OK
+current state: finished
+FOM: 1.9503097395511078
+[-0.2174738876759008, -0.34604364840262747, 0.014200464804048352, -0.43667751781217845, 0.3384141872286861, -0.088267940179243]
+[ 1298.38198964   875.6323588  -4162.76970729   187.23013018
+  -114.01339339  5040.42424022] 0.022381498680317333
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2213.512s
+
+OK

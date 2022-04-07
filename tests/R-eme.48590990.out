@@ -1,0 +1,82 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+*** TESTING GRADIENT ADJOINT ***
+current state: start
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:45, 45.72s/it]1it [00:45, 45.72s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.02it/s]1it [00:00,  2.02it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:18, 18.59s/it]1it [00:18, 18.59s/it]
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+current state: finished
+OVERLAP:  (-1.0738837708654112-0.8927835181554231j)
+finite difference fom:  1.9502887636180894
+Now performing an optimization...
+current state: start
+  0%|          | 0/16 [00:00<?, ?it/s]100%|██████████| 16/16 [00:00<00:00, 15245.08it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:45, 45.52s/it]1it [00:45, 45.52s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.00it/s]1it [00:00,  2.00it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:24, 24.76s/it]1it [00:24, 24.76s/it]
+0it [00:00, ?it/s]1it [00:24, 24.67s/it]1it [00:24, 24.67s/it]
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+OVERLAP:  0
+current state: finished
+OVERLAP:  (-2.1480122668932253-1.7862444146256036j)
+adjoint fom:  7.804625807504938
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:44, 44.40s/it]1it [00:44, 44.41s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.88it/s]1it [00:00,  1.88it/s]
+slurmstepd: error: *** JOB 48590990 ON m11-1-1 CANCELLED AT 2022-04-06T18:23:39 ***

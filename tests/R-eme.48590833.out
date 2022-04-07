@@ -1,0 +1,89 @@
+Running in parallel on 20 cores
+current state: start
+current state: start
+*** TESTING GRADIENT ADJOINT ***
+current state: start
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:44, 44.74s/it]1it [00:44, 44.74s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.02it/s]1it [00:00,  2.02it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:18, 18.87s/it]1it [00:18, 18.87s/it]
+current state: finished
+finite difference fom:  1.9502887636180894
+Now performing an optimization...
+current state: start
+  0%|          | 0/16 [00:00<?, ?it/s]100%|██████████| 16/16 [00:00<00:00, 15697.98it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:39, 39.21s/it]1it [00:39, 39.22s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.03it/s]1it [00:00,  2.03it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:25, 25.48s/it]1it [00:25, 25.48s/it]
+0it [00:00, ?it/s]1it [00:24, 24.84s/it]1it [00:24, 24.84s/it]
+current state: finished
+adjoint fom:  7.804625807504938
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:35, 35.61s/it]1it [00:35, 35.61s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.88it/s]1it [00:00,  1.88it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.23s/it]1it [00:16, 16.23s/it]
+current state: finished
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:38, 38.92s/it]1it [00:38, 38.92s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  2.09it/s]1it [00:00,  2.09it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:16, 16.28s/it]1it [00:16, 16.28s/it]
+current state: finished
+FOM: 1.9503102369391336
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:44, 44.02s/it]1it [00:44, 44.02s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.97it/s]1it [00:00,  1.97it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:18, 18.87s/it]1it [00:18, 18.87s/it]
+current state: finished
+finite difference fom:  1.9502893011714009
+Now performing an optimization...
+current state: start
+  0%|          | 0/16 [00:00<?, ?it/s]100%|██████████| 16/16 [00:00<00:00, 15895.04it/s]
+current state: start
+current state: mode_solving
+0it [00:00, ?it/s]1it [00:39, 39.31s/it]1it [00:39, 39.32s/it]
+current state: finished_modes
+current state: layer_propagating
+0it [00:00, ?it/s]1it [00:00,  1.98it/s]1it [00:00,  1.98it/s]
+current state: finished_layer
+current state: network_building
+current state: finished_network
+current state: field_propagating
+0it [00:00, ?it/s]1it [00:24, 24.85s/it]1it [00:24, 24.86s/it]
+0it [00:00, ?it/s]1it [00:24, 24.82s/it]1it [00:24, 24.82s/it]
+slurmstepd: error: *** JOB 48590833 ON m11-1-1 CANCELLED AT 2022-04-06T18:23:41 ***
