@@ -59,7 +59,7 @@ dynamic_rect = DynamicRect2D(
 geometry =  [input_waveguide, dynamic_rect, output_waveguide]
 
 # Create the EME and Optimization
-eme = EME(quiet=False, parallel=parallel, mesh_z=mesh_z)
+eme = EME(quiet=True, parallel=parallel, mesh_z=mesh_z)
 optimizer = Optimization(eme, geometry, mesh_z=mesh_z)
 
 ## ensure reproducible results
@@ -86,6 +86,9 @@ ll_z = 0.99 * design_z
 ## random design region
 design_x_i = (ul_x-ll_x)*rng.rand(design_x.shape[0]) + ll_x
 design_z_i = (ul_z-ll_z)*rng.rand(design_z.shape[0]) + ll_z
+design_i = np.zeros(design_x.shape[0]+design_z.shape[0])
+design_i[::2] = design_x_i
+design_i[1::2] = design_z_i
 
 ## random epsilon perturbation for design region
 deps = 1e-6
@@ -168,26 +171,35 @@ class TestAdjointSolver(ApproxComparisonTestCase):
             print("*** TESTING GRADIENT ADJOINT ***")
 
         ## compute gradient using adjoint solver
-        f0, dJ_du = adjoint_solver(design_x_i, design_z_i, deps)
-        if em.am_master(parallel):
-            print("Adjoint FOM: {}".format(f0))
-
-        ## finite difference gradient
         num_gradients = 6
-        optimizer.set_design_readable(design_x_i, None, design_z_i)
-        g_discrete, idx = optimizer.calculate_fd_gradient(num_gradients=num_gradients,dp=deps,rand=rng)
+        idx = None
+        design_region = design_i[:]
+        for deps in [1e-9, 1e-8, 1e-7, 1e-6, 1e-5][::-1]:
+            f0, dJ_du = adjoint_solver(design_x_i, design_z_i, deps)
+            if em.am_master(parallel):
+                print("\nstep size: {}".format(deps))
+                print("Adjoint FOM: {}".format(f0))
+                print("Adjoint gradient: {}\n".format(dJ_du))
+            g_discrete, idx, fd0 = optimizer.calculate_fd_gradient(num_gradients=num_gradients,dp=deps,rand=rng,idx=idx,design=design_region)
+            if em.am_master(parallel):
+                print("step size: {}".format(deps))
+                print("idx: {}".format(idx))
+                print("Adjoint FOM: {}".format(f0))
+                print("Adjoint gradient: {}\n".format(dJ_du[idx]))
+                print("FD FOM: {}".format(fd0))
+                print("FD gradient: {}\n".format(g_discrete))
 
-        # compare gradients
-        if em.am_master(parallel):
-            print(g_discrete)
-        if em.am_master(parallel):
-            print(dJ_du[idx], (dJ_du@dp).flatten()[0])
+        # # compare gradients
+        # if em.am_master(parallel):
+        #     print(g_discrete)
+        # if em.am_master(parallel):
+        #     print(dJ_du[idx], (dJ_du@dp).flatten()[0])
 
-        else:
-            print("nothing")
-            print("nothing")
-            print("nothing")
-            print("nothing")
+        # else:
+        #     print("nothing")
+        #     print("nothing")
+        #     print("nothing")
+        #     print("nothing")
 
         # (m, b) = np.polyfit(g_discrete, dJ_du[idx], 1)
 

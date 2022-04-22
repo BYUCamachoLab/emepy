@@ -289,93 +289,75 @@ class EME(object):
         # Start state
         self._update_state(7)
 
-        # Update all monitors
-        all_ms = [self.monitors[0]] + self.custom_monitors if len(self.monitors) else self.custom_monitors
-        for which_mtype, m in enumerate(all_ms):
-            if self.am_master():
-                # Reset monitor
-                if not which_mtype and len(self.monitors):
-                    for mm in self.monitors:
-                        mm.reset_monitor()
-                        mm.left_source = len(left_coeffs) > 0
-                        mm.right_source = len(right_coeffs) > 0
-                else:
-                    m.reset_monitor()
-                    m.left_source = len(left_coeffs) > 0
-                    m.right_source = len(right_coeffs) > 0
+        # Each layer earns a process
+        if self.am_master():
 
-                # Get full s params for all periods
-                cur_len = 0
-                full_z_list = []
-                tasks = []
-                for per, activated_layers in self.activated_layers.items():
+            # Create tasks
+            cur_len = 0
+            tasks = []
 
-                    # Forward through the device
-                    activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
-                    for i, layer in enumerate(activated_layers):
-                        z_list = m.get_z_list(cur_len, cur_len + layer.length)
-                        just_z_list = [i[1] for i in z_list]
-                        prop, checked_l = self._layer_field_propagate_part1(
-                                i * 1,
-                                make_copy_model(layer),
-                                per * 1,
-                                cur_len * 1,
-                        )
-                        # Compute field propagation
-                        task = (
-                            _prop_all_wrapper,
-                            [[make_copy_model(t,False) for t in prop if (t is not None) and not (isinstance(t, list) and not len(t))],checked_l],
-                            {},
-                        )
-                        full_z_list.append(z_list)
-                        tasks.append(task)
-                        cur_len += layer.length
-                # Get restults
-                results = self._run_parallel_functions(*tasks)
+            # Loop through all layers
+            for per, activated_layers in self.activated_layers.items():
+                activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
+                for i, layer in enumerate(activated_layers):
+                    prop, checked_l = self._layer_field_propagate_part1(
+                            i * 1,
+                            make_copy_model(layer),
+                            per * 1,
+                            cur_len * 1,
+                    )
+                    tasks.append((
+                        _prop_all_wrapper,
+                        [[make_copy_model(t,False) for t in prop if (t is not None) and not (isinstance(t, list) and not len(t))],checked_l],
+                        {},
+                    ))
+                    cur_len += layer.length                
+                
+            # Get results    
+            results = self._run_parallel_functions(*tasks)
 
-                # Assign results to monitor
-                cur_len = 0
-                for i, rr in enumerate(zip(full_z_list, results)):
-                    z_l, result = rr
-                    S, checked_l = result
-                    layer_index = i % len(self.activated_layers[0])
-                    activated_layers = self.activated_layers[i // len(self.activated_layers[0])]
-                    activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
+            # Update monitors
+            cur_len = 0
+            for i, result in enumerate(results):
+                S, checked_l = result
+                layer_index = i % len(self.activated_layers[0])
+                activated_layers = self.activated_layers[i // len(self.activated_layers[0])]
+                activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
+                
+                # Loop through all monitors
+                for m in self.monitors + self.custom_monitors:
                     layer = make_copy_model(activated_layers[layer_index])
-                    z_list = m.get_z_list(cur_len, cur_len + layer.length)
-                    just_z_list = [j[1] for j in z_list]
-                    layer2func = lambda  mmm : self._layer_field_propagate_part2(
+                    z_list = m.get_z_list(cur_len, cur_len + layer.length) # ## ## # ## fix this
+
+                    # If the monitor is in the layer
+                    if not len(z_list):
+                        continue
+
+                    # Get the field profiles
+                    just_z_list = [i[1] for i in z_list]
+                    z_index = [i[0] for i in z_list]
+                    fields = self._layer_field_propagate_part2(
                             layer_index,
                             layer,
                             left_coeffs[:],
                             right_coeffs[:],
                             cur_len * 1,
                             just_z_list[:],
-                            mmm,
+                            m,
                             S, 
                             checked_l
                     )
 
-                    # If there are default monitors, they can all be assigned at once due to similar format
-                    if not which_mtype and len(self.monitors):
-                        for mm in self.monitors:
-                            result_l2 = layer2func(mm)
-                            for z, r in zip(z_l, result_l2):
-                                self._set_monitor(mm, z[0], r)
+                    # Update the monitor
+                    for i, f in zip(z_index, fields):
+                        self._set_monitor(m, i, f)
 
-                    # Otherwise, each monitor must be assigned individually
-                    else:
-                        result_l2 = result_l2 = layer2func(m)
-                        for z, r in zip(z_l, result_l2):
-                            self._set_monitor(m, z[0], r)
-                        
-                    # Update current length
-                    cur_len = cur_len + layer.length
+                # Update current length
+                cur_len = cur_len + layer.length
 
-            
-            # Ensure the workers are there to work
-            else:
-                self._run_parallel_functions()
+        # Ensure the workers are there to work
+        else:
+            self._run_parallel_functions()
 
         # Finish state
         self._update_state(8)
@@ -548,7 +530,8 @@ class EME(object):
             )
 
         # Create monitor
-        monitor = Monitor(axes, dimensions, components, z_range, grid_x, grid_y, grid_z, location, sources=sources)
+        total_length = self._get_total_length() * self.num_periods
+        monitor = Monitor(axes, dimensions, components, z_range, grid_x, grid_y, grid_z, location, sources=sources, total_length=total_length)
 
         # Place monitor where it belongs
         if len(lengths[0]) == self.mesh_z:
@@ -558,7 +541,7 @@ class EME(object):
 
         return monitor
 
-    def draw(self, z_range: tuple = None, mesh_z: int = 200) -> "matplotlib.image.AxesImage":
+    def draw(self, z_range: tuple = None, mesh_z: int = 200, plot_sources:bool=True, plot_xy_sources=True) -> "matplotlib.image.AxesImage":
         """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. This will change in the future.
 
         Parameters
@@ -574,11 +557,21 @@ class EME(object):
             the image used to plot the index profile
         """
 
+        # Setup temp monitor
+        sources = [] if not plot_sources else self.get_sources()[0]
         temp_storage = [self.monitors, self.custom_monitors]
+        xy_monitors = [i for j in temp_storage for i in j if i.axes in ["xy", "yx"]] if plot_xy_sources else []
         self.monitors, self.custom_monitors = [[], []]
-        monitor = self.add_monitor(axes="xz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z)
+        monitor = self.add_monitor(axes="xz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z, sources=sources)
+
+        # Fix monitor
+        if plot_sources and not len(sources):
+            self._assign_monitor_sources([1], [])
+        monitor.xy_monitors = xy_monitors
+
+        # Draw
         self._propagate_n_only()
-        im = monitor.visualize(component="n")
+        im = monitor.visualize(component="n", show_xy_monitors=True)
         self.monitors, self.custom_monitors = temp_storage
         return im
 
@@ -609,6 +602,12 @@ class EME(object):
             left_coeffs = (
                 [1] if not len(right_coeffs) and not len([i for i in self.get_sources().values() if len(i)]) else []
             )
+            if len(left_coeffs) and self.am_master():
+                print("No sources defined, defaulting to left_coeffs=[1]")
+
+
+        # Assign monitor sources
+        self._assign_monitor_sources(left_coeffs, right_coeffs)
 
         # Solve for the modes
         if self.state == 0:
@@ -1067,7 +1066,7 @@ class EME(object):
             # Create field
             fields_ = modes * coeff[:, np.newaxis, np.newaxis, np.newaxis]
             results = {}
-            (results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results["Hz"]) = fields_.sum(0)
+            results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results["Hz"] = fields_.sum(0)
             results["n"] = l.modes[0].n
             result_list.append(results)
 
@@ -1111,6 +1110,12 @@ class EME(object):
                 m[key, :, i] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
             elif m.axes in ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]:
                 m[key, :, :, i] = field[:, :]
+
+    def _assign_monitor_sources(self, left_coeffs:list=[], right_coeffs:list=[]):
+        for monitor in self.monitors + self.custom_monitors:
+            monitor.left_source = True if len(left_coeffs) else False
+            monitor.right_source = True if len(right_coeffs) else False
+
 
     def _get_total_length(self) -> float:
         """Returns the total length of a single period of the device"""

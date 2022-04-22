@@ -1,0 +1,37 @@
+Running in parallel on 20 cores
+*** TESTING GRADIENT ADJOINT ***
+Now performing an optimization...
+start 0.25806451612903225
+end 1.7011116467563494 1.7011113147981636 1e-09 7 0.2580645161290322
+
+step size: 1e-09
+Adjoint FOM: 1.9521019707102925
+Adjoint gradient: [1759.97039417]
+
+FD FOM: 1.7011114807772565
+FD gradient: [165.97909291427015]
+
+Now performing an optimization...
+start 0.25806451612903225
+end 1.7011111349382146 1.701111296115642 1e-08 7 0.25806451612903225
+
+step size: 1e-08
+Adjoint FOM: 1.9521020840309693
+Adjoint gradient: [1759.96924888]
+
+FD FOM: 1.7011112155269283
+FD gradient: [-8.058871370231202]
+
+Now performing an optimization...
+start 0.25806451612903225
+end 1.7011112710380216 1.7011112420725631 1e-07 7 0.25806451612903225
+
+step size: 1e-07
+Adjoint FOM: 1.9521017250032267
+Adjoint gradient: [1759.95929662]
+
+FD FOM: 1.7011112565552924
+FD gradient: [0.1448272923809668]
+
+Now performing an optimization...
+slurmstepd: error: *** JOB 48762275 ON m11-1-3 CANCELLED AT 2022-04-18T17:08:17 ***

@@ -124,31 +124,45 @@ class Optimization(object):
             dtype=complex,
         )
 
-        # Get initial A
-        A_ii = self.get_n(grid_x, grid_y, grid_z)
-
         # Get gradients
         for i, d in enumerate(design):
 
-            # Step
+            # Step up
             design[i] = d + dp
             self.set_design(design)
-            xx, zz = self.get_design_readable()
 
-            # Compute new A
-            A_new = self.get_n(grid_x, grid_y, grid_z)
+            # Compute up A
+            A_up = self.get_n(grid_x, grid_y, grid_z) ** 2
 
-            # Revert step
-            design[i] = d
+            # Step down
+            design[i] = d - 2 * dp
             self.set_design(design)
 
+            # Compute down A
+            A_down = self.get_n(grid_x, grid_y, grid_z) ** 2
+
             # Compute gradient
-            gradient = (A_new - A_ii) / dp
+            gradient = (A_up - A_down) /  (2 * dp)  
+
+            # Revert step
+            design[i] = d + dp
+            self.set_design(design)
 
             # Assign gradient
             jacobian[0, 0, :, :, :, i] = gradient
             jacobian[1, 1, :, :, :, i] = gradient
             jacobian[2, 2, :, :, :, i] = gradient
+
+            # plt.figure()
+            # plt.imshow(gradient[:,gradient.shape[1]//2,:])
+            # plt.colorbar()
+            # plt.savefig("A_u"+str(i))
+
+        
+        # plt.figure()
+        # plt.imshow(np.real(np.sum(jacobian[0,0], axis=-1)[:,jacobian.shape[3]//2,:]))
+        # plt.colorbar()
+        # plt.savefig("A_u")
 
         return jacobian
 
@@ -173,7 +187,7 @@ class Optimization(object):
         z_start, z_end = self.get_design_region()
 
         # Create forward source and monitor
-        source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
+        source = Source(z=0.2500001, mode_coeffs=[1], k=1)  # Hard coded
         forward_monitor = self.eme.add_monitor(
             axes="xyz", mesh_z=self.mesh_z, sources=[source]
         )
@@ -183,9 +197,9 @@ class Optimization(object):
         fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
 
         # Adjoint source and monitor
-        a_source = Source(z=2.75, mode_coeffs=[1], k=-1)  # Hard coded
+        source = Source(z=2.75, mode_coeffs=[1], k=-1)
         adjoint_monitor = self.eme.add_monitor(
-            axes="xyz", mesh_z=self.mesh_z, sources=[a_source]
+            axes="xyz", mesh_z=self.mesh_z, sources=[source]
         )
 
         # Run eme
@@ -228,7 +242,8 @@ class Optimization(object):
             + field_z[:-1, :-1, :-1]
         )
         field = np.array([field_x, field_y, field_z])
-        results = (grid_x, grid_y, grid_z, field, forward_monitor, fom_monitor)
+
+        forward_results = (grid_x, grid_y, grid_z, field, forward_monitor, fom_monitor)
 
         # Save adjoint results
         a_grid_x, a_grid_y, a_grid_z, a_field_x = adjoint_monitor.get_array(
@@ -267,9 +282,10 @@ class Optimization(object):
             + a_field_z[:-1, :-1, :-1]
         )
         a_field = np.array([a_field_x, a_field_y, a_field_z])
+
         self.adjoint_results = (a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor)
 
-        return results
+        return forward_results
 
     def overlap(self, E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
         term1 = np.conj(E1x) * H2y - np.conj(E1y) * H2x
@@ -278,8 +294,6 @@ class Optimization(object):
 
     def objective_gradient(self, monitor: "Monitor"):
         """Computes the objective function gradient to the sources for the adjoint formulation"""
-
-        #### HARD CODED FOR NOW
 
         # Compute power in end
         x, y, Ex = monitor.get_array(component="Ex")
@@ -306,22 +320,73 @@ class Optimization(object):
             overlap = 0
 
         # Compute autogradient
-        print("OVERLAP: ", overlap)
-        f_x = 2 * np.pi * self.eme.wavelength * overlap
+        f_x = 2 * np.pi * self.eme.wavelength * (np.conj(overlap))
         power = np.abs(overlap) ** 2
 
         return f_x, power
 
-    def set_adjoint_sources(self, f_x: float = 0.0):
+    def set_adjoint_sources(self, f_x: complex = 0+0j):
         """Computes and places the adjoint sources for use in the adjoint formulation"""
         return [Source(z=2.75, mode_coeffs=[f_x], k=-1)]
 
     def adjoint_run(self, sources: list):
         """Performs the adjoint run for use in the adjoint formulation"""
 
+        # # Find where monitor should be in range of only the design region
+        # z_start, z_end = self.get_design_region()
+
+        # # Adjoint source and monitor
+        # adjoint_monitor = self.eme.add_monitor(
+        #     axes="xyz", mesh_z=self.mesh_z, sources=sources
+        # )
+
+        # # Run eme
+        # self.eme.propagate()
+
+        # # Save adjoint results
+        # a_grid_x, a_grid_y, a_grid_z, a_field_x = adjoint_monitor.get_array(
+        #     "Ex", z_range=(z_start, z_end)
+        # )
+        # a_field_x = 0.125 * (
+        #     a_field_x[1:, 1:, 1:]
+        #     + a_field_x[1:, :-1, 1:]
+        #     + a_field_x[:-1, 1:, 1:]
+        #     + a_field_x[:-1, :-1, 1:]
+        #     + a_field_x[1:, 1:, :-1]
+        #     + a_field_x[1:, :-1, :-1]
+        #     + a_field_x[:-1, 1:, :-1]
+        #     + a_field_x[:-1, :-1, :-1]
+        # )
+        # a_field_y = adjoint_monitor.get_array("Ey", z_range=(z_start, z_end))[3]
+        # a_field_y = 0.125 * (
+        #     a_field_y[1:, 1:, 1:]
+        #     + a_field_y[1:, :-1, 1:]
+        #     + a_field_y[:-1, 1:, 1:]
+        #     + a_field_y[:-1, :-1, 1:]
+        #     + a_field_y[1:, 1:, :-1]
+        #     + a_field_y[1:, :-1, :-1]
+        #     + a_field_y[:-1, 1:, :-1]
+        #     + a_field_y[:-1, :-1, :-1]
+        # )
+        # a_field_z = adjoint_monitor.get_array("Ez", z_range=(z_start, z_end))[3]
+        # a_field_z = 0.125 * (
+        #     a_field_z[1:, 1:, 1:]
+        #     + a_field_z[1:, :-1, 1:]
+        #     + a_field_z[:-1, 1:, 1:]
+        #     + a_field_z[:-1, :-1, 1:]
+        #     + a_field_z[1:, 1:, :-1]
+        #     + a_field_z[1:, :-1, :-1]
+        #     + a_field_z[:-1, 1:, :-1]
+        #     + a_field_z[:-1, :-1, :-1]
+        # )
+        # a_field = np.array([a_field_x, a_field_y, a_field_z])
+
+        # return a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor
         a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor = self.adjoint_results
         a_field *= sources[0].mode_coeffs[0]
+        adjoint_monitor.field *= sources[0].mode_coeffs[0]
         return a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor
+
 
     def optimize(self, design: list, dp=1e-10) -> "np.ndarray":
         """Runs a single step of shape optimization"""
@@ -332,7 +397,6 @@ class Optimization(object):
         # Update the design region
         design = design if not isinstance(design, np.ndarray) else design.tolist()
         self.set_design(design)
-
 
         # Compute the forward run
         grid_x, grid_y, grid_z, X, monitor_forward, monitor_fom = self.forward_run()
@@ -377,7 +441,7 @@ class Optimization(object):
         """Computes the final gradient using the adjoint formulation and loops to conserve memory"""
 
         # Initialize final result
-        f_u = np.zeros(A_u.shape[-1], dtype=float)
+        f_u = np.zeros(A_u.shape[-1], dtype=complex)
         # f_u_grid = np.zeros([3] + list(A_u.shape[2:-1]) + [A_u.shape[-1]], dtype=complex)
 
         # Reshape
@@ -397,7 +461,8 @@ class Optimization(object):
 
             # Compute lambda * A_u_x
             for i in range(3):
-                f_u[p] += np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
+                # f_u[p] += - 2 * np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
+                f_u[p] += np.sum(A_u_x[i] * lamdagger[..., i].T)
                 # f_u_grid[...,p] += A_u_x[i] * lamdagger[..., i].T
 
         # ppp = np.sum(f_u_grid, axis=0)
@@ -437,7 +502,9 @@ class Optimization(object):
         self,
         num_gradients:int=1,
         dp:float=1e-4,
-        rand: "np.random.RandomState" = None
+        rand: "np.random.RandomState" = None,
+        idx : list = None,
+        design : list = None,
     ):
         '''
         Estimate central difference gradients.
@@ -457,7 +524,7 @@ class Optimization(object):
         '''
 
         # Get the design
-        design = self.get_design()
+        design = self.get_design() if design is None else design
         if num_gradients > len(design):
             raise ValueError(
                 "The requested number of gradients must be less than or equal to the total number of design parameters."
@@ -470,78 +537,66 @@ class Optimization(object):
         fd_gradient = []
 
         # randomly choose indices to loop estimate
-        fd_gradient_idx = np.random.choice(
-            len(design),
-            num_gradients,
-            replace=False,
-        ) if rand is None else rand.choice(
-            len(design),
-            num_gradients,
-            replace=False,
-        )
+        if idx is None:
+            # fd_gradient_idx = np.random.choice(
+            #     len(design)//2,
+            #     num_gradients,
+            #     replace=False,
+            # ) if rand is None else rand.choice(
+            #     len(design)//2,
+            #     num_gradients,
+            #     replace=False,
+            # )
+            fd_gradient_idx = range(num_gradients)
+        else:
+            fd_gradient_idx = idx[:]
 
         # loop over indices
         for k in fd_gradient_idx:
 
             # get current design region
-            b0 = np.ones((len(design), ))
-            b0[:] = (design)
-
-            # # Test ####################################################
-            # self.start()
-            # # Create forward source and monitor
-            # source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
-            # forward_monitor = self.eme.add_monitor(
-            #     axes="xyz", mesh_z=self.mesh_z, sources=[source]
-            # )
-            # # Adjoint source and monitor
-            # a_source = Source(z=2.75, mode_coeffs=[1], k=-1)  # Hard coded
-            # adjoint_monitor = self.eme.add_monitor(
-            #     axes="xyz", mesh_z=self.mesh_z, sources=[a_source]
-            # )
-            # source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
-            # fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
-            # self.eme.propagate()
-            # _, fp = self.objective_gradient(fom_monitor)
+            b0 = np.ones(len(design))
+            b0[:] = design[:]
             # if self.eme.am_master():
-            #     print("finite difference fom: ", fp)
-
-            
-            # f0, dJ_du, _= self.optimize(b0, dp)
-            # if self.eme.am_master():
-            #     print("adjoint fom: ", f0)
-            # ############################################################
-
+            #     print("start",b0[k*2])
+ 
             # assign new design vector
-            b0[k] -= dp
+            b0[k*2] -= dp
             self.set_design(b0)
             self.start()
 
-            # run forward run
-            fom_monitor = self.eme.add_monitor(axes="xy", location=2.75)
+            # FOM monitor
+            source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
+            fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
+
+            # Adjoint source and monitor
             self.eme.propagate()
 
             # record final objective function value
             _, fm = self.objective_gradient(fom_monitor)
 
             # assign new design vector
-            b0[k] += 2 * dp  
+            b0[k*2] += 2 * dp  
             self.set_design(b0)
             self.start()
 
             # propagate
-            fom_monitor = self.eme.add_monitor(axes="xy", location=2.75)
+            source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
+            fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
             self.eme.propagate()
 
             # record final objective function value
             _, fp = self.objective_gradient(fom_monitor)
 
+            # revert design
+            b0[k*2] -= dp  
+            self.set_design(b0)
+
             # derivative
+            # if self.eme.am_master():
+            #     print("end",fp, fm, dp, k, b0[k*2])
             fd_gradient.append(
                 (fp - fm) / (2 * dp)
             )
 
-            if self.eme.am_master():
-                print("FD FOM: {}".format((fp+fm)/2))
-
-        return fd_gradient, fd_gradient_idx
+        return fd_gradient, fd_gradient_idx, (fp + fm) / 2

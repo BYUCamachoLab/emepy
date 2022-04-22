@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import matplotlib
 from copy import deepcopy
 from scipy.interpolate import griddata
+plt.rcParams.update({'figure.max_open_warning': 0})
 
 
 class Monitor(object):
@@ -21,6 +22,7 @@ class Monitor(object):
         location: float = None,
         sources: list = [],
         adjoint_n: bool = True,
+        total_length: float = 0.0,
     ) -> None:
         """Monitor class constructor0
 
@@ -91,6 +93,8 @@ class Monitor(object):
         self.grid_y = grid_y
         self.grid_z = grid_z
         self.location = location
+        self.total_length = total_length
+        self.xy_monitors = []
 
     def reset_monitor(self) -> None:
         """Resets the fields in the monitor"""
@@ -328,21 +332,33 @@ class Monitor(object):
 
         return grid_field
 
-    def get_source_visual(self, shape) -> "numpy.ndarray":
+    def get_source_visual(self, min, max) -> "numpy.ndarray":
         """Returns a mask with lines indicating where a source is"""
-        array = np.zeros(shape)
-        l = self.dimensions[-1] // 200
+        srcs = []
         if self.right_source:
-            array[:, -l:] = 1
+            srcx = [self.total_length, self.total_length]
+            srcy = [min, max]
+            srcs.append((srcx, srcy))
         if self.left_source:
-            array[:, :l] = 1
+            srcx = [0, 0]
+            srcy = [min, max]
+            srcs.append((srcx, srcy))
         for source in self.sources:
-            difference_start = lambda list_value: abs(list_value - source.z)
-            i = self.lengths.index(min(self.lengths, key=difference_start))
-            ll = l // 2 if l // 2 > 0 else 1
-            array[:, i - ll : i + ll // 2] = 1
+            srcx = [source.z, source.z]
+            srcy = [min, max]
+            srcs.append((srcx, srcy))
 
-        return array
+        return srcs
+
+    def get_xy_monitor_visual(self, min, max) -> "numpy.ndarray":
+        """Returns a mask with lines indicating where a source is"""
+        xy_monitors = []
+        for monitor in self.xy_monitors:
+            srcx = [monitor.location, monitor.location]
+            srcy = [min, max]
+            xy_monitors.append((srcx, srcy))
+
+        return xy_monitors
 
     def visualize(
         self,
@@ -353,6 +369,7 @@ class Monitor(object):
         z_range: tuple = None,
         show_geometry: bool = True,
         show_sources: bool = True,
+        show_xy_monitors: bool = False,
     ) -> "matplotlib.image.AxesImage":
         """Creates a matplotlib axis displaying the provides field component
 
@@ -415,6 +432,8 @@ class Monitor(object):
 
         # Create plots
         if axes in ["xz", "zx", "yz", "zy"]:
+
+            # Underlay the geometry
             show = ax if ax else plt
             if show_geometry:
                 show.imshow(
@@ -424,15 +443,19 @@ class Monitor(object):
                 )
             vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
             alpha = 1 if not show_geometry else 0.85
-            if show_sources and not component == "n":
-                srcs = np.real(self.get_source_visual(field.shape))
-                field = np.where(srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field)
-            elif show_sources and component == "n":
-                srcs = np.real(self.get_source_visual(field.shape))
-                im = show.imshow(
-                    np.real(srcs), extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])], cmap="Reds"
-                )
-                alpha = 0.9
+
+            # Plot sources
+            if show_sources:
+                srcs = self.get_source_visual(np.real(y[0]), np.real(y[-1]))
+                for srcx, srcy in srcs:
+                    plt.plot(srcx, srcy, color="red", linewidth=2)
+
+            # Plot xy monitors
+            if show_xy_monitors:
+                xy_monitors = self.get_xy_monitor_visual(np.real(y[0]), np.real(y[-1]))
+                for locx, locy in xy_monitors:
+                    plt.plot(locx, locy, color="blue", linewidth=2)
+                
             im = show.imshow(
                 np.real(field[::-1]),
                 extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
@@ -441,7 +464,8 @@ class Monitor(object):
                 vmin=vmin,
                 vmax=vmax,
             )
-            # plt.show()
+
+            # Assign labels
             if not ax:
                 plt.xlabel(np.real(axes[1]))
                 plt.ylabel(np.real(axes[0]))
@@ -450,6 +474,8 @@ class Monitor(object):
                 ax.set_xlabel(np.real(axes[1]))
                 ax.set_ylabel(np.real(axes[0]))
                 ax.set_title(component)
+
+        # xy fields
         else:
             if ax:
                 im = ax.imshow(
