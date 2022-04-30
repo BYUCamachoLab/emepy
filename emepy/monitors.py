@@ -49,12 +49,11 @@ class Monitor(object):
         """
 
         # Ensure z range is in proper format
-        if not (axes in ["xy", "yx"]):
+        if axes not in {"xy", "yx"}:
             try:
-                if z_range is None:
-                    self.start, self.end = [grid_z[0], grid_z[-1]]
-                else:
-                    self.start, self.end = z_range
+                self.start, self.end = (
+                    [grid_z[0], grid_z[-1]] if z_range is None else z_range
+                )
             except Exception as e:
                 raise Exception(
                     "z_range should be a tuple or list of the form (start, end)"
@@ -63,13 +62,13 @@ class Monitor(object):
                 ) from e
 
         # Check axes
-        if axes == "xz" or axes == "zx":
+        if axes in {"xz", "zx"}:
             self.axes = "xz"
-        elif axes == "yz" or axes == "zy":
+        elif axes in {"yz", "zy"}:
             self.axes = "yz"
-        elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+        elif axes in {"xyz", "yxz", "xzy", "yzx", "zxy", "zyx"}:
             self.axes = "xyz"
-        elif axes in ["xy", "yx"]:
+        elif axes in {"xy", "yx"}:
             self.axes = "xy"
         else:
             raise Exception(
@@ -262,9 +261,17 @@ class Monitor(object):
 
         # Create E and H fields
         if component == "E":
-            results["E"] = np.abs(results["Ex"]) ** 2 + np.abs(results["Ey"]) ** 2 + np.abs(results["Ez"]) ** 2
+            results["E"] = (
+                np.abs(results["Ex"]) ** 2
+                + np.abs(results["Ey"]) ** 2
+                + np.abs(results["Ez"]) ** 2
+            )
         if component == "H":
-            results["H"] = np.abs(results["Hx"]) ** 2 + np.abs(results["Hy"]) ** 2 + np.abs(results["Hz"]) ** 2
+            results["H"] = (
+                np.abs(results["Hx"]) ** 2
+                + np.abs(results["Hy"]) ** 2
+                + np.abs(results["Hz"]) ** 2
+            )
 
         # List to return
         grid_field = []
@@ -274,8 +281,12 @@ class Monitor(object):
             aa, bb = np.meshgrid(new_a, new_b)
             aa_old, bb_old = np.meshgrid(old_a, old_b)
             points = np.array((aa_old.flatten(), bb_old.flatten())).T
-            real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
-            imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
+            real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(
+                np.complex128
+            )
+            imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(
+                np.complex128
+            )
             return real + 1j * imag
 
         # Custom 3D interpolation function
@@ -283,9 +294,9 @@ class Monitor(object):
             aa, bb, cc = np.meshgrid(new_a, new_b, new_c)
             aa_old, bb_old, cc_old = np.meshgrid(old_a, old_b, old_c)
             points = np.array((aa_old.flatten(), bb_old.flatten(), cc_old.flatten())).T
-            return griddata(points, np.real(field), (aa, bb, cc)).astype(np.complex128) + 1j * griddata(
-                points, np.real(field), (aa, bb)
-            ).astype(np.complex128)
+            return griddata(points, np.real(field), (aa, bb, cc)).astype(
+                np.complex128
+            ) + 1j * griddata(points, np.real(field), (aa, bb)).astype(np.complex128)
 
         # Add to return list the grid
         if axes in ["xz", "zx"]:
@@ -294,14 +305,18 @@ class Monitor(object):
             grid_field.append(np.array(x))
             grid_field.append(np.array(z))
             if interp_x:
-                results[component] = custom_interp2d(results[component], default_grid_z, default_grid_x, z, x)
+                results[component] = custom_interp2d(
+                    results[component], default_grid_z, default_grid_x, z, x
+                )
         elif axes in ["yz", "zy"]:
             y = default_grid_y if not interp_y else grid_y
             z = default_grid_z
             grid_field.append(np.array(y))
             grid_field.append(np.array(z))
             if interp_y:
-                results[component] = custom_interp2d(results[component], default_grid_z, default_grid_y, z, y)
+                results[component] = custom_interp2d(
+                    results[component], default_grid_z, default_grid_y, z, y
+                )
         elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
             x = default_grid_x if not interp_x else grid_x
             y = default_grid_y if not interp_y else grid_y
@@ -311,7 +326,13 @@ class Monitor(object):
             grid_field.append(np.array(z))
             if interp_x or interp_y:
                 results[component] = custom_interp3d(
-                    results[component], default_grid_x, default_grid_y, default_grid_z, x, y, z
+                    results[component],
+                    default_grid_x,
+                    default_grid_y,
+                    default_grid_z,
+                    x,
+                    y,
+                    z,
                 )
         elif axes in ["xy", "yx"]:
             x = default_grid_x if not interp_x else grid_x
@@ -319,7 +340,9 @@ class Monitor(object):
             grid_field.append(np.array(x))
             grid_field.append(np.array(y))
             if interp_x or interp_y:
-                results[component] = custom_interp2d(results[component], default_grid_x, default_grid_y, x, y)
+                results[component] = custom_interp2d(
+                    results[component], default_grid_x, default_grid_y, x, y
+                )
         else:
             raise Exception("Please choose valid axes")
 
@@ -380,7 +403,7 @@ class Monitor(object):
         """
 
         # Only 2D fields can be generated
-        if axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+        if axes in {"xyz", "yxz", "xzy", "yzx", "zxy", "zyx"}:
             raise Exception(
                 "3D fields can be extracted using get_array or visualized on a 2D plane via an axes of xz or yz"
             )
@@ -397,8 +420,12 @@ class Monitor(object):
         else:
             raise Exception("Incorrect axes format")
 
-        yn, zn, n = self.get_array(component="n", axes=axes, location=location, z_range=z_range)
-        y, z, field = self.get_array(component=component, axes=axes, location=location, z_range=z_range)
+        yn, zn, n = self.get_array(
+            component="n", axes=axes, location=location, z_range=z_range
+        )
+        y, z, field = self.get_array(
+            component=component, axes=axes, location=location, z_range=z_range
+        )
 
         # Color map lookup table
         cmap_lookup = {
@@ -415,24 +442,38 @@ class Monitor(object):
 
         # Create plots
         if axes in ["xz", "zx", "yz", "zy"]:
-            show = ax if ax else plt
+            show = ax or plt
             if show_geometry:
                 show.imshow(
                     np.real(n[::-1]),
-                    extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
+                    extent=[
+                        np.real(zn[0]),
+                        np.real(zn[-1]),
+                        np.real(yn[0]),
+                        np.real(yn[-1]),
+                    ],
                     cmap=cmap_lookup["n"],
                 )
             vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
-            alpha = 1 if not show_geometry else 0.85
-            if show_sources and not component == "n":
+            alpha = 0.85 if show_geometry else 1
+            if show_sources:
                 srcs = np.real(self.get_source_visual(field.shape))
-                field = np.where(srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field)
-            elif show_sources and component == "n":
-                srcs = np.real(self.get_source_visual(field.shape))
-                im = show.imshow(
-                    np.real(srcs), extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])], cmap="Reds"
-                )
-                alpha = 0.9
+                if component != "n":
+                    field = np.where(
+                        srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field
+                    )
+                else:
+                    im = show.imshow(
+                        np.real(srcs),
+                        extent=[
+                            np.real(z[0]),
+                            np.real(z[-1]),
+                            np.real(y[0]),
+                            np.real(y[-1]),
+                        ],
+                        cmap="Reds",
+                    )
+                    alpha = 0.9
             im = show.imshow(
                 np.real(field[::-1]),
                 extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
@@ -441,33 +482,32 @@ class Monitor(object):
                 vmin=vmin,
                 vmax=vmax,
             )
-            if not ax:
-                plt.xlabel(np.real(axes[1]))
-                plt.ylabel(np.real(axes[0]))
-                plt.title(component)
-            else:
+            if ax:
                 ax.set_xlabel(np.real(axes[1]))
                 ax.set_ylabel(np.real(axes[0]))
                 ax.set_title(component)
-        else:
-            if ax:
-                im = ax.imshow(
-                    np.rot90(np.real(field)),
-                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
-                    cmap=cmap_lookup[component],
-                )
-                ax.set_xlabel(np.real(axes[0]))
-                ax.set_ylabel(np.real(axes[1]))
-                ax.set_title(component)
             else:
-                im = plt.imshow(
-                    np.rot90(np.real(field)),
-                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
-                    cmap=cmap_lookup[component],
-                )
-                plt.xlabel(np.real(axes[0]))
-                plt.ylabel(np.real(axes[1]))
+                plt.xlabel(np.real(axes[1]))
+                plt.ylabel(np.real(axes[0]))
                 plt.title(component)
+        elif ax:
+            im = ax.imshow(
+                np.rot90(np.real(field)),
+                extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
+                cmap=cmap_lookup[component],
+            )
+            ax.set_xlabel(np.real(axes[0]))
+            ax.set_ylabel(np.real(axes[1]))
+            ax.set_title(component)
+        else:
+            im = plt.imshow(
+                np.rot90(np.real(field)),
+                extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
+                cmap=cmap_lookup[component],
+            )
+            plt.xlabel(np.real(axes[0]))
+            plt.ylabel(np.real(axes[1]))
+            plt.title(component)
 
         return im
 
