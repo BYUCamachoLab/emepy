@@ -11,7 +11,9 @@ from copy import deepcopy
 class Layer(object):
     """Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures."""
 
-    def __init__(self, mode_solver: ModeSolver, num_modes: int, wavelength: float, length: float) -> None:
+    def __init__(
+        self, mode_solver: ModeSolver, num_modes: int, wavelength: float, length: float
+    ) -> None:
         """Layer class constructor
 
         Parameters
@@ -32,7 +34,9 @@ class Layer(object):
         self.length = length
         self.activated_layers = []
 
-    def activate_layer(self, sources: list = [], start: float = 0.0, period_length: float = 0.0) -> dict:
+    def activate_layer(
+        self, sources: list = [], start: float = 0.0, period_length: float = 0.0
+    ) -> dict:
         """Solves for the modes in the layer and creates an ActivatedLayer object
 
         Parameters
@@ -51,18 +55,16 @@ class Layer(object):
 
         """
 
-        modes = []
-
         # Solve for modes
         self.mode_solver.solve()
-        for mode in range(self.num_modes):
-            modes.append(self.mode_solver.get_mode(mode))
-
+        modes = [self.mode_solver.get_mode(mode) for mode in range(self.num_modes)]
         # Purge spurious mode
         modes = ModelTools.purge_spurious(modes)
 
         # Create activated layers
-        self.activated_layers = dict(zip(sources.keys(), [[] for _ in range(len(sources.keys()))]))
+        self.activated_layers = dict(
+            zip(sources.keys(), [[] for _ in range(len(sources.keys()))])
+        )
 
         # Loop through all periods
         for per, srcs in sources.items():
@@ -71,31 +73,18 @@ class Layer(object):
             start_ = start + per * period_length
             custom_sources = ModelTools.get_sources(srcs, start_, start_ + self.length)
 
-            # First period
-            if not per:
+            # If no custom sources
+            if not len(custom_sources):
+                self.activated_layers[per] += (
+                    [None]
+                    if per
+                    else [ActivatedLayer(modes, self.wavelength, self.length)]
+                )
 
-                # If no custom sources
-                if not len(custom_sources):
-                    self.activated_layers[per] += [ActivatedLayer(modes, self.wavelength, self.length)]
-
-                # Other sources
-                else:
-                    self.activated_layers[per] += ModelTools.get_source_system(
-                        modes, self.wavelength, self.length, custom_sources, start_
-                    )
-
-            # Any other period
             else:
-
-                # If no custom sources
-                if not len(custom_sources):
-                    self.activated_layers[per] += [None]
-
-                # Other sources
-                else:
-                    self.activated_layers[per] += ModelTools.get_source_system(
-                        modes, self.wavelength, self.length, custom_sources, start_
-                    )
+                self.activated_layers[per] += ModelTools.get_source_system(
+                    modes, self.wavelength, self.length, custom_sources, start_
+                )
 
         return self.activated_layers
 
@@ -133,7 +122,9 @@ class Layer(object):
 class Duplicator(Model):
     """Duplicator is used for observing scattering parameters in the middle of an arbitrary network"""
 
-    def __init__(self, wavelength: float, num_modes: int, label: str = "", **kwargs) -> None:
+    def __init__(
+        self, wavelength: float, num_modes: int, label: str = "", **kwargs
+    ) -> None:
         """Creates an instance of Duplicator which is used only for finding the scattering values inside of an arbitrary network after cascaded
 
         Parameters
@@ -148,18 +139,18 @@ class Duplicator(Model):
         self.num_modes = num_modes
         self.wavelength = wavelength
 
-        self.left_pins = ["left" + str(i) for i in range(self.num_modes)] + [
-            "left_dup{}{}".format(str(i), label) for i in range(self.num_modes)
+        self.left_pins = [f"left{str(i)}" for i in range(self.num_modes)] + [
+            f"left_dup{str(i)}{label}" for i in range(self.num_modes)
         ]
-        self.right_pins = ["right" + str(i) for i in range(self.num_modes)] + [
-            "right_dup{}{}".format(str(i), label) for i in range(self.num_modes)
+
+        self.right_pins = [f"right{str(i)}" for i in range(self.num_modes)] + [
+            f"right_dup{str(i)}{label}" for i in range(self.num_modes)
         ]
+
         self.S0 = None
 
         # create the pins for the model
-        pins = []
-        for name in self.left_pins:
-            pins.append(Pin(self, name))
+        pins = [Pin(self, name) for name in self.left_pins]
         for name in self.right_pins:
             if "dup" in name:
                 pins.append(Pin(self, name))
@@ -231,12 +222,8 @@ class Current(Model):
         self.wavelength = wavelength
 
         # create the pins for the model
-        pins = []
-        for name in self.left_pins:
-            pins.append(Pin(self, name))
-        for name in self.right_pins:
-            pins.append(Pin(self, name))
-
+        pins = [Pin(self, name) for name in self.left_pins]
+        pins.extend(Pin(self, name) for name in self.right_pins)
         super().__init__(**kwargs, pins=pins)
 
     def update_s(self, s: "np.ndarray", layer: "Layer") -> None:
@@ -256,12 +243,8 @@ class Current(Model):
         self.right_pins = layer.right_pins
 
         # create the pins for the model
-        pins = []
-        for name in self.left_pins:
-            pins.append(Pin(self, name))
-        for name in self.right_pins:
-            pins.append(Pin(self, name))
-
+        pins = [Pin(self, name) for name in self.left_pins]
+        pins.extend(Pin(self, name) for name in self.right_pins)
         super().__init__(pins=pins)
 
     def s_parameters(self, freqs: "np.ndarray" = None) -> "np.ndarray":
@@ -278,7 +261,14 @@ class Current(Model):
 class ActivatedLayer(Model):
     """ActivatedLayer is produced by the Layer class after the ModeSolvers calculate eigenmodes. This is used to create interfaces. This inherits from Simphony's Model class."""
 
-    def __init__(self, modes: list, wavelength: float, length: float, n_only: bool = False, **kwargs) -> None:
+    def __init__(
+        self,
+        modes: list,
+        wavelength: float,
+        length: float,
+        n_only: bool = False,
+        **kwargs,
+    ) -> None:
         """ActivatedLayer class constructor
 
         Parameters
@@ -297,8 +287,8 @@ class ActivatedLayer(Model):
         self.modes = modes
         self.wavelength = wavelength
         self.length = length
-        self.left_pins = ["left" + str(i) for i in range(self.num_modes)]
-        self.right_pins = ["right" + str(i) for i in range(self.num_modes)]
+        self.left_pins = [f"left{str(i)}" for i in range(self.num_modes)]
+        self.right_pins = [f"right{str(i)}" for i in range(self.num_modes)]
         self.S0 = None
         self.nk = []
         self.pk = []
@@ -307,12 +297,8 @@ class ActivatedLayer(Model):
             self.s_params = self.calculate_s_params()
 
         # create the pins for the model
-        pins = []
-        for name in self.left_pins:
-            pins.append(Pin(self, name))
-        for name in self.right_pins:
-            pins.append(Pin(self, name))
-
+        pins = [Pin(self, name) for name in self.left_pins]
+        pins.extend(Pin(self, name) for name in self.right_pins)
         super().__init__(**kwargs, pins=pins)
 
     def normalize_fields(self) -> None:
@@ -335,7 +321,11 @@ class ActivatedLayer(Model):
         s_matrix = np.zeros((1, 2 * m, 2 * m), dtype=complex)
 
         # Create eigenvalue vector
-        eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes * 2]) / (self.wavelength)
+        eigenvalues1 = (
+            (2 * np.pi)
+            * np.array([mode.neff for mode in self.modes * 2])
+            / (self.wavelength)
+        )
 
         # Create propagation diagonal matrix
         propagation_matrix1 = np.diag(np.exp(self.length * 1j * eigenvalues1))
@@ -378,15 +368,12 @@ class InterfaceSingleMode(Model):
         self.left_ports = 1
         self.right_ports = 1
         self.num_ports = self.left_ports + self.right_ports
-        self.left_pins = ["left" + str(i) for i in range(self.left_ports)]
-        self.right_pins = ["right" + str(i) for i in range(self.right_ports)]
+        self.left_pins = [f"left{str(i)}" for i in range(self.left_ports)]
+        self.right_pins = [f"right{str(i)}" for i in range(self.right_ports)]
 
         # create the pins for the model
-        pins = []
-        for name in self.left_pins:
-            pins.append(Pin(self, name))
-        for name in self.right_pins:
-            pins.append(Pin(self, name))
+        pins = [Pin(self, name) for name in self.left_pins]
+        pins.extend(Pin(self, name) for name in self.right_pins)
         super().__init__(**kwargs, pins=pins)
         self.solve()
 
@@ -451,7 +438,7 @@ class InterfaceSingleMode(Model):
         a = 0.5 * left.inner_product(right) + 0.5 * right.inner_product(left)
         b = 0.5 * left.inner_product(right) - 0.5 * right.inner_product(left)
 
-        t = (a ** 2 - b ** 2) / a
+        t = (a**2 - b**2) / a
         r = 1 - t / (a + b)
 
         return -r, t
@@ -481,16 +468,12 @@ class InterfaceMultiMode(Model):
         self.num_ports = layer1.right_ports + layer2.left_ports
         self.left_ports = layer1.right_ports
         self.right_ports = layer2.left_ports
-        self.left_pins = ["left" + str(i) for i in range(self.left_ports)]
-        self.right_pins = ["right" + str(i) for i in range(self.right_ports)]
+        self.left_pins = [f"left{str(i)}" for i in range(self.left_ports)]
+        self.right_pins = [f"right{str(i)}" for i in range(self.right_ports)]
 
         # create the pins for the model
-        pins = []
-        for name in self.left_pins:
-            pins.append(Pin(self, name))
-        for name in self.right_pins:
-            pins.append(Pin(self, name))
-
+        pins = [Pin(self, name) for name in self.left_pins]
+        pins.extend(Pin(self, name) for name in self.right_pins)
         super().__init__(**kwargs, pins=pins)
         self.solve()
 
@@ -530,7 +513,9 @@ class InterfaceMultiMode(Model):
         self.layer1 = None
         self.layer2 = None
 
-    def get_t(self, p: int, left: "EigenMode", right: "EigenMode", curr_ports: int) -> "np.ndarray":
+    def get_t(
+        self, p: int, left: "EigenMode", right: "EigenMode", curr_ports: int
+    ) -> "np.ndarray":
         """Returns the transmission coefficient based on the two modes
 
         Parameters
@@ -554,18 +539,29 @@ class InterfaceMultiMode(Model):
         A = np.array(
             [
                 [
-                    right.modes[k].inner_product(left.modes[i]) + left.modes[i].inner_product(right.modes[k])
+                    right.modes[k].inner_product(left.modes[i])
+                    + left.modes[i].inner_product(right.modes[k])
                     for k in range(self.num_ports - curr_ports)
                 ]
                 for i in range(curr_ports)
             ]
         )
-        b = np.array([0 if i != p else 2 * left.modes[p].inner_product(left.modes[p]) for i in range(curr_ports)])
-        x = np.matmul(np.linalg.pinv(A), b)
+        b = np.array(
+            [
+                0 if i != p else 2 * left.modes[p].inner_product(left.modes[p])
+                for i in range(curr_ports)
+            ]
+        )
+        return np.matmul(np.linalg.pinv(A), b)
 
-        return x
-
-    def get_r(self, p: int, x: "np.ndarray", left: EigenMode, right: EigenMode, curr_ports: int) -> "np.ndarray":
+    def get_r(
+        self,
+        p: int,
+        x: "np.ndarray",
+        left: EigenMode,
+        right: EigenMode,
+        curr_ports: int,
+    ) -> "np.ndarray":
         """Returns the transmission coefficient based on the two modes
 
         Parameters
@@ -587,11 +583,14 @@ class InterfaceMultiMode(Model):
             reflection coefficient
         """
 
-        rs = np.array(
+        return np.array(
             [
                 np.sum(
                     [
-                        (right.modes[k].inner_product(left.modes[i]) - left.modes[i].inner_product(right.modes[k]))
+                        (
+                            right.modes[k].inner_product(left.modes[i])
+                            - left.modes[i].inner_product(right.modes[k])
+                        )
                         * x[k]
                         for k in range(self.num_ports - curr_ports)
                     ]
@@ -600,8 +599,6 @@ class InterfaceMultiMode(Model):
                 for i in range(curr_ports)
             ]
         )
-
-        return rs
 
     def clear(self) -> None:
         """Clears the scattering matrix in the object"""
@@ -655,22 +652,26 @@ class SourceDuplicator(Model):
         self.normalize_fields()
 
         self.left_pins = (
-            ["left" + str(i) for i in range(self.num_modes)]
-            + ["left_dup{}{}".format(str(i), label) for i in range(len(pk) * (not len(special_left)))]
-            + special_left
-        )
+            [f"left{str(i)}" for i in range(self.num_modes)]
+            + [
+                f"left_dup{str(i)}{label}"
+                for i in range(len(pk) * (not len(special_left)))
+            ]
+        ) + special_left
+
         self.right_pins = (
-            ["right" + str(i) for i in range(self.num_modes)]
-            + ["right_dup{}{}".format(str(i), label) for i in range(len(nk) * (not len(special_right)))]
-            + special_right
-        )
+            [f"right{str(i)}" for i in range(self.num_modes)]
+            + [
+                f"right_dup{str(i)}{label}"
+                for i in range(len(nk) * (not len(special_right)))
+            ]
+        ) + special_right
+
         self.S0 = None
         self.S1 = None
 
         # create the pins for the model
-        pins = []
-        for name in self.left_pins:
-            pins.append(Pin(self, name))
+        pins = [Pin(self, name) for name in self.left_pins]
         for name in self.right_pins:
             if "dup" in name:
                 pins.append(Pin(self, name))
@@ -698,7 +699,11 @@ class SourceDuplicator(Model):
         m = self.num_modes
 
         # Create eigenvalue vector
-        eigenvalues1 = (2 * np.pi) * np.array([mode.neff for mode in self.modes * 4]) / (self.wavelength)
+        eigenvalues1 = (
+            (2 * np.pi)
+            * np.array([mode.neff for mode in self.modes * 4])
+            / (self.wavelength)
+        )
 
         # Create propagation diagonal matrix
         propagation_matrix1 = np.diag(np.exp(self.length * 1j * eigenvalues1))
@@ -735,7 +740,9 @@ class SourceDuplicator(Model):
         self.right_ports = m  # 2 * m - self.which_s * m
         self.left_ports = m  # 2 * m - (1 - self.which_s) * m
         self.num_ports = 2 * m  # 3 * m
-        s_matrix = s_matrix.reshape(1, 2 * m + len(self.pk) + len(self.nk), 2 * m + len(self.pk) + len(self.nk))
+        s_matrix = s_matrix.reshape(
+            1, 2 * m + len(self.pk) + len(self.nk), 2 * m + len(self.pk) + len(self.nk)
+        )
 
         return s_matrix
 
@@ -831,7 +838,7 @@ class ModelTools(object):
         """
 
         mm = deepcopy(modes)
-        for i, mode in enumerate(mm[::-1]):
+        for mode in mm[::-1]:
             if mode.check_spurious():
                 mm.remove(mode)
 
@@ -859,12 +866,17 @@ class ModelTools(object):
         return [
             i
             for i in sources
-            if i.z is not None and (((start <= i.z < end) and i.k) or ((start < i.z <= end) and not i.k))
+            if i.z is not None
+            and (((start <= i.z < end) and i.k) or ((start < i.z <= end) and not i.k))
         ]
 
     @staticmethod
     def get_source_system(
-        modes: list, wavelength: float, length: float, custom_sources: list, start: float = 0.0
+        modes: list,
+        wavelength: float,
+        length: float,
+        custom_sources: list,
+        start: float = 0.0,
     ) -> list:
         """Creates SourceDuplicators matching the provided source locations and modes provided. This is a replacement for creating ActivatedLayers which contain no information about sources.
 
@@ -897,18 +909,30 @@ class ModelTools(object):
 
             # Create coefficents indexes to keep in the models
             pk, nk = [[], []]
-            if (i - 1) > -1 and custom_sources[i - 1].k:
+            if i > 0 and custom_sources[i - 1].k:
                 pk = custom_sources[i - 1].mode_coeffs
             if (i) < len(custom_sources) and not custom_sources[i].k:
                 nk = custom_sources[i].mode_coeffs
 
             # Create label
-            left = custom_sources[i - 1].get_label() if (i - 1) > -1 else "n" + str(length_tracker)
-            right = custom_sources[i].get_label() if (i) < len(custom_sources) else "n" + str(length_tracker + length)
-            label = "_{}_to_{}".format(left, right)
+            left = (
+                custom_sources[i - 1].get_label()
+                if i > 0
+                else f"n{str(length_tracker)}"
+            )
+
+            right = (
+                custom_sources[i].get_label()
+                if (i) < len(custom_sources)
+                else f"n{str(length_tracker + length)}"
+            )
+
+            label = f"_{left}_to_{right}"
 
             # Create duplicators
-            dups.append(SourceDuplicator(wavelength, modes, length, pk=pk, nk=nk, label=label))
+            dups.append(
+                SourceDuplicator(wavelength, modes, length, pk=pk, nk=nk, label=label)
+            )
             length_tracker += length
 
         return dups
@@ -927,7 +951,9 @@ class ModelTools(object):
             s.disconnect()
 
             # # connect the components
-            right_pins = [i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name]
+            right_pins = [
+                i for i in temp_s.pins if "dup" not in i.name and "left" not in i.name
+            ]
             for port in range(len(right_pins)):
                 temp_s[f"right{port}"].connect(s[f"left{port}"])
 
@@ -985,7 +1011,9 @@ class ModelTools(object):
                 model.s_params = np.delete(model.s_params, i, 2)
 
         # Remove unwanted pins
-        model.pins = [i for j, i in enumerate(model.pins) if j in wanted or "dup" not in i.name]
+        model.pins = [
+            i for j, i in enumerate(model.pins) if j in wanted or "dup" not in i.name
+        ]
         pin_names = [i.name for i in model.pins]
         model.left_pins = [i for i in model.left_pins if i in pin_names]
         model.right_pins = [i for i in model.right_pins if i in pin_names]
@@ -1006,8 +1034,7 @@ class ModelTools(object):
         CopyModel
             the deepcopied model
         """
-        new_model = CopyModel(model) if model is not None else None
-        return new_model
+        return CopyModel(model) if model is not None else None
 
     @staticmethod
     def compute(model, pin_values: "dict", freq: "float") -> dict:
