@@ -1,6 +1,6 @@
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: "fe7a5361087093b5184460da13e0c56cf37154f4"
+      rev: "f5c26753e4c8a1f45b9d7edefa976fe4ea932e26"
       hooks:
           - id: check-yaml
           - id: end-of-file-fixer
@@ -12,14 +12,14 @@ repos:
     #       - id: unimport
     #         args: [--remove, --include-star-import]
     - repo: https://github.com/pycqa/isort
-      rev: "98673ff4bc158fdc79f587775b6a15abd9fdc248"
+      rev: "c6a41965247a858a0afd848fbebfca18b8983917"
       hooks:
           - id: isort
             files: "litho/.*"
             args: ["--profile", "black", "--filter-files"]
 
     - repo: https://github.com/psf/black
-      rev: "8a84bebcfcabddfd5b82a8cff0b830a745999b6c"
+      rev: "fb8dfdeec5fd76cc0c30f881d6fc75851139d80a"
       hooks:
           - id: black
 
@@ -29,7 +29,7 @@ repos:
           - id: flake8
 
     - repo: https://github.com/kynan/nbstripout
-      rev: 9e7e0380da05bd6e8c58b50c3f3a2119e7dce13a
+      rev: 8cafdcc393232045208137698dbeb42d6e0dd9e8
       hooks:
           - id: nbstripout
             files: ".ipynb"

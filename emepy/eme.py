@@ -11,7 +11,14 @@ if importlib.util.find_spec("mpi4py") is not None:
     from mpi4py import MPI
 
 from emepy.fd import MSEMpy
-from emepy.models import Duplicator, Model, ModelTools, Layer, InterfaceSingleMode, InterfaceMultiMode
+from emepy.models import (
+    Duplicator,
+    Model,
+    ModelTools,
+    Layer,
+    InterfaceSingleMode,
+    InterfaceMultiMode,
+)
 
 _prop_all = ModelTools._prop_all
 purge_spurious = ModelTools.purge_spurious
@@ -44,7 +51,7 @@ class EME(object):
         mesh_z: int = 200,
         parallel: bool = False,
         quiet: bool = False,
-        **kwargs
+        **kwargs,
     ) -> None:
         """EME class constructor
 
@@ -94,7 +101,12 @@ class EME(object):
         for layer in layers:
             self.add_layer(layer)
 
-    def reset(self, full_reset: bool = True, parallel: bool = False, configure_parallel: bool = True) -> None:
+    def reset(
+        self,
+        full_reset: bool = True,
+        parallel: bool = False,
+        configure_parallel: bool = True,
+    ) -> None:
         """Clears out the layers and s params so the user can reuse the object in memory on a new geometry
 
         Parameters
@@ -114,14 +126,11 @@ class EME(object):
             self.parallel = parallel
             if parallel and configure_parallel:
                 self._configure_parallel_resources()
-            self._update_state(0)
-
-        # Only unsolve everything and erase monitors
         else:
             for i in range(len(self.layers)):
                 self.layers[i].clear()
             self.activated_layers = []
-            self._update_state(0)
+        self._update_state(0)
 
         self.monitors = []
         self.custom_monitors = []
@@ -145,19 +154,31 @@ class EME(object):
         tasks = []
         sources = self.get_sources()
         for layer in tqdm(self.layers, disable=self.quiet):
-            tasks.append((layer.activate_layer, [sources, length, self._get_total_length()], {}))
+            tasks.append(
+                (layer.activate_layer, [sources, length, self._get_total_length()], {})
+            )
             length += layer.length
 
         # Organized solved layers
-        self.activated_layers = dict(zip(range(self.num_periods), [[] for _ in range(self.num_periods)]))
+        self.activated_layers = dict(
+            zip(range(self.num_periods), [[] for _ in range(self.num_periods)])
+        )
         results = self._run_parallel_functions(*tasks)
         if results is not None:
             for solved in results:
                 for per, layers in solved.items():
-                    if not sum([i is not None for so in results for p, s in so.items() for i in s if p == per]):
+                    if not sum(
+                        i is not None
+                        for so in results
+                        for p, s in so.items()
+                        for i in s
+                        if p == per
+                    ):
                         self.activated_layers[per] = None
                     else:
-                        self.activated_layers[per] += layers if layers[0] is not None else solved[0]
+                        self.activated_layers[per] += (
+                            layers if layers[0] is not None else solved[0]
+                        )
 
         self._update_state(2)
 
@@ -171,8 +192,12 @@ class EME(object):
             raise Exception("In the wrong place")
 
         # Create return dict
-        final_activated_layers = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
-        periodic_interfaces = dict(zip(range(self.num_periods), [None for _ in range(self.num_periods)]))
+        final_activated_layers = dict(
+            zip(range(self.num_periods), [None for _ in range(self.num_periods)])
+        )
+        periodic_interfaces = dict(
+            zip(range(self.num_periods), [None for _ in range(self.num_periods)])
+        )
 
         # Loop through all periods in case of custom sources
         for per, activated_layers in self.activated_layers.items():
@@ -186,27 +211,35 @@ class EME(object):
             if not per and activated_layers is None:
                 raise Exception("No activated layers in system")
             elif len(activated_layers) == 1:
-                periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
+                periodic_interfaces[per] = InterfaceMultiMode(
+                    activated_layers[-1], activated_layers[0]
+                )
                 final_activated_layers[per] = activated_layers[0]
                 continue
 
             # Configure interface
             num_modes = max([len(l.modes) for l in activated_layers])
-            interface_type = InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
+            interface_type = (
+                InterfaceSingleMode if num_modes == 1 else InterfaceMultiMode
+            )
 
             # Define tasks
             def task(l, r):
                 return l, _prop_all(l, interface_type(l, r))
 
             # Setup parallel layer prop tasks
-            for left, right in tqdm(zip(activated_layers[:-1], activated_layers[1:]), disable=self.quiet):
+            for left, right in tqdm(
+                zip(activated_layers[:-1], activated_layers[1:]), disable=self.quiet
+            ):
                 tasks.append((task, [left, right], {}))
 
             # Propagate
             results = self._run_parallel_functions(*tasks)
 
             # Calculate period interface in case multiple periods
-            periodic_interfaces[per] = InterfaceMultiMode(activated_layers[-1], activated_layers[0])
+            periodic_interfaces[per] = InterfaceMultiMode(
+                activated_layers[-1], activated_layers[0]
+            )
 
             # Only keep what we need
             for i, result in enumerate(results):
@@ -279,10 +312,16 @@ class EME(object):
             cur_len = 0
             full_z_list = []
             tasks = []
-            for per, activated_layers in tqdm(self.activated_layers.items(), disable=self.quiet):
+            for per, activated_layers in tqdm(
+                self.activated_layers.items(), disable=self.quiet
+            ):
 
                 # Forward through the device
-                activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
+                activated_layers = (
+                    activated_layers
+                    if activated_layers is not None
+                    else self.activated_layers[0]
+                )
                 for i, layer in enumerate(activated_layers):
                     z_list = m.get_z_list(cur_len, cur_len + layer.length)
                     just_z_list = [i[1] for i in z_list]
@@ -325,7 +364,11 @@ class EME(object):
         for per in range(self.num_periods):
             start = self._get_total_length() * per
             end = self._get_total_length() * (per + 1)
-            src = get_sources([j for i in (self.monitors + self.custom_monitors) for j in i.sources], start, end)
+            src = get_sources(
+                [j for i in (self.monitors + self.custom_monitors) for j in i.sources],
+                start,
+                end,
+            )
             src.sort(key=lambda s: s.z)
             srcs[per] = src
 
@@ -380,12 +423,21 @@ class EME(object):
         """
 
         # Establish mesh # Current workaround...not final
-        components = ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"] if components is None else components
-        if exempt and (self.layers[0].mode_solver.PML and isinstance(self.layers[0].mode_solver, MSEMpy)):
+        components = (
+            ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz", "n"]
+            if components is None
+            else components
+        )
+        if exempt and (
+            self.layers[0].mode_solver.PML
+            and isinstance(self.layers[0].mode_solver, MSEMpy)
+        ):
             x = (
                 len(
                     self.layers[0].mode_solver.x[
-                        self.layers[0].mode_solver.nlayers[1] : -self.layers[0].mode_solver.nlayers[0]
+                        self.layers[0]
+                        .mode_solver.nlayers[1] : -self.layers[0]
+                        .mode_solver.nlayers[0]
                     ]
                 )
                 + 1
@@ -393,7 +445,9 @@ class EME(object):
             y = (
                 len(
                     self.layers[0].mode_solver.y[
-                        self.layers[0].mode_solver.nlayers[3] : -self.layers[0].mode_solver.nlayers[2]
+                        self.layers[0]
+                        .mode_solver.nlayers[3] : -self.layers[0]
+                        .mode_solver.nlayers[2]
                     ]
                 )
                 + 1
@@ -410,7 +464,7 @@ class EME(object):
         mesh_z = mesh_z if mesh_z is not None else self.mesh_z
 
         # Ensure the axes is not still under development
-        if axes in ["xz", "zx", "yz", "zy", "xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+        if axes in {"xz", "zx", "yz", "zy", "xyz", "yxz", "xzy", "yzx", "zxy", "zyx"}:
 
             # Create lengths
             l = self._get_total_length()
@@ -424,7 +478,9 @@ class EME(object):
 
             # Ensure z range is in proper format
             try:
-                start, end = [lengths[0][0], lengths[0][-1]] if z_range is None else z_range
+                start, end = (
+                    [lengths[0][0], lengths[0][-1]] if z_range is None else z_range
+                )
             except Exception as e:
                 raise Exception(
                     "z_range should be a tuple or list of the form (start, end) "
@@ -441,13 +497,13 @@ class EME(object):
 
             # Create monitor dimensions
             c = len(components)
-            if axes in ["xz", "yz"]:
+            if axes in {"xz", "yz"}:
                 dimensions = (c, x, z)
-            elif axes in ["yz", "zy"]:
+            elif axes in {"yz", "zy"}:
                 dimensions = (c, y, z)
-            elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
+            elif axes in {"xyz", "yxz", "xzy", "yzx", "zxy", "zyx"}:
                 dimensions = (c, x, y, z)
-            elif axes in ["xy", "yx"]:
+            elif axes in {"xy", "yx"}:
                 dimensions = (c, x, y)
             else:
                 raise Exception("Improper axes format")
@@ -457,7 +513,7 @@ class EME(object):
             grid_y = self.layers[0].mode_solver.after_y
             grid_z = np.linspace(s, e, z)
 
-        elif axes in ["xy", "yx"]:
+        elif axes in {"xy", "yx"}:
 
             # No z_range needed
             z_range = None
@@ -477,13 +533,21 @@ class EME(object):
 
         else:
             raise Exception(
-                "Monitor setup {} has not yet been implemented. Please choose from the following implemented monitor types: ['xz', 'yz', 'xyz']".format(
-                    axes
-                )
+                f"Monitor setup {axes} has not yet been implemented. Please choose from the following implemented monitor types: ['xz', 'yz', 'xyz']"
             )
 
         # Create monitor
-        monitor = Monitor(axes, dimensions, components, z_range, grid_x, grid_y, grid_z, location, sources=sources)
+        monitor = Monitor(
+            axes,
+            dimensions,
+            components,
+            z_range,
+            grid_x,
+            grid_y,
+            grid_z,
+            location,
+            sources=sources,
+        )
 
         # Place monitor where it belongs
         if len(lengths[0]) == self.mesh_z:
@@ -493,7 +557,9 @@ class EME(object):
 
         return monitor
 
-    def draw(self, z_range: tuple = None, mesh_z: int = 200) -> "matplotlib.image.AxesImage":
+    def draw(
+        self, z_range: tuple = None, mesh_z: int = 200
+    ) -> "matplotlib.image.AxesImage":
         """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. This will change in the future.
 
         Parameters
@@ -511,13 +577,17 @@ class EME(object):
 
         temp_storage = [self.monitors, self.custom_monitors]
         self.monitors, self.custom_monitors = [[], []]
-        monitor = self.add_monitor(axes="xz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z)
+        monitor = self.add_monitor(
+            axes="xz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z
+        )
         self._propagate_n_only()
         im = monitor.visualize(component="n")
         self.monitors, self.custom_monitors = temp_storage
         return im
 
-    def propagate(self, left_coeffs: list = None, right_coeffs: list = []) -> "simphony.models.Model":
+    def propagate(
+        self, left_coeffs: list = None, right_coeffs: list = []
+    ) -> "simphony.models.Model":
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters. The defulat
 
         Parameters
@@ -542,7 +612,10 @@ class EME(object):
         # Fix defaults
         if left_coeffs is None:
             left_coeffs = (
-                [1] if not len(right_coeffs) and not len([i for i in self.get_sources().values() if len(i)]) else []
+                [1]
+                if not len(right_coeffs)
+                and not len([i for i in self.get_sources().values() if len(i)])
+                else []
             )
 
         # Solve for the modes
@@ -584,20 +657,22 @@ class EME(object):
         # Complete all tasks and tag based on initial order for either parallel or not
         if not self.parallel:
             # Linearly execute tasks
-            for i, a in enumerate(tasks):
+            for a in tasks:
                 func, arguments, kwarguments = a
                 finished_tasks.append(func(*arguments, **kwarguments))
         else:
 
             # Create data
-            solve_data = [(i, a) for i, a in enumerate(tasks)]
+            solve_data = list(enumerate(tasks))
             if self.am_master():
                 data = []
                 for j in range(self.size):
-                    subdata = []
-                    for i, a in enumerate(tasks):
-                        if self._should_compute(i, j, self.size):
-                            subdata.append(i)
+                    subdata = [
+                        i
+                        for i, a in enumerate(tasks)
+                        if self._should_compute(i, j, self.size)
+                    ]
+
                     data.append(subdata)
             else:
                 data = None
@@ -607,7 +682,7 @@ class EME(object):
             new_data = []
 
             # Compute data
-            for i, k in enumerate(data):
+            for k in data:
                 func, arguments, kwarguments = solve_data[k][1]
                 new_data.append((k, func(*arguments, **kwarguments)))
 
@@ -656,7 +731,7 @@ class EME(object):
         self.size = self.comm.Get_size()
         self.rank = self.comm.Get_rank()
         if self.am_master():
-            print("Running in parallel on {} cores".format(self.size))
+            print(f"Running in parallel on {self.size} cores")
 
     def _propagate_n_only(self) -> None:
         """Propagates all the layers but only gathers the refractive index profiles"""
@@ -664,7 +739,7 @@ class EME(object):
         # Forward through the device
         m = self.monitors[0] if len(self.monitors) else self.custom_monitors[0]
         cur_len = 0
-        for per in range(self.num_periods):
+        for _ in range(self.num_periods):
             for layer in tqdm(self.layers, disable=self.quiet):
 
                 # Get system params
@@ -688,9 +763,11 @@ class EME(object):
 
         self.state = state
         if self.am_master() and not self.quiet:
-            print("current state: {}".format(self.states[self.state]))
+            print(f"current state: {self.states[self.state]}")
 
-    def _build_input_array(self, left_coeffs: list, right_coeffs: list, model: Model, m: Monitor) -> dict:
+    def _build_input_array(
+        self, left_coeffs: list, right_coeffs: list, model: Model, m: Monitor
+    ) -> dict:
         """Builds the properly formatted input array to be used to calculate field profiles from s matrices and mode coefficients
 
         Parameters
@@ -730,19 +807,11 @@ class EME(object):
                 # Left global input
                 if "left" in n and "dup" not in n:
                     ind = int(n[4:])
-                    if ind < len(left_coeffs):
-                        mapping[n] = left_coeffs[ind]
-                    else:
-                        mapping[n] = 0.0
-
+                    mapping[n] = left_coeffs[ind] if ind < len(left_coeffs) else 0.0
                 # Right global input
                 if "right" in n and "dup" not in n:
                     ind = int(n[5:])
-                    if ind < len(right_coeffs):
-                        mapping[n] = right_coeffs[ind]
-                    else:
-                        mapping[n] = 0.0
-
+                    mapping[n] = right_coeffs[ind] if ind < len(right_coeffs) else 0.0
                 # Left monitor
                 if "left" in n and "dup" in n and "to" not in n:
                     mapping[n] = 0
@@ -821,7 +890,9 @@ class EME(object):
         # Create output
         result_list = []
         activated_layers = (
-            self.activated_layers[per] if self.activated_layers[per] is not None else self.activated_layers[0]
+            self.activated_layers[per]
+            if self.activated_layers[per] is not None
+            else self.activated_layers[0]
         )
 
         # Period length
@@ -831,9 +902,13 @@ class EME(object):
         # get SP0
         SP0 = []
         for p in range(per):
-            network = self.networks[p] if self.networks[p] is not None else self.networks[0]
+            network = (
+                self.networks[p] if self.networks[p] is not None else self.networks[0]
+            )
             interface = (
-                self.periodic_interfaces[p] if self.periodic_interfaces[p] is not None else self.periodic_interfaces[0]
+                self.periodic_interfaces[p]
+                if self.periodic_interfaces[p] is not None
+                else self.periodic_interfaces[0]
             )
             SP0.append(perf(network, p * per_length, (p + 1) * per_length))
             SP0.append(interface)
@@ -842,9 +917,13 @@ class EME(object):
         SP1 = []
         for p in range(self.num_periods - (per) - 1):
             p = per + p + 1
-            network = self.networks[p] if self.networks[p] is not None else self.networks[0]
+            network = (
+                self.networks[p] if self.networks[p] is not None else self.networks[0]
+            )
             interface = (
-                self.periodic_interfaces[p] if self.periodic_interfaces[p] is not None else self.periodic_interfaces[0]
+                self.periodic_interfaces[p]
+                if self.periodic_interfaces[p] is not None
+                else self.periodic_interfaces[0]
             )
             SP1.append(interface)
             SP1.append(perf(network, p * per_length, (p + 1) * per_length))
@@ -870,12 +949,20 @@ class EME(object):
         # create all prop layers
         prop = (
             [*SP0, *S0, checked_l, dup, *S1, *SP1]
-            if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins])
+            if sum(
+                ["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]
+            )
             else [*SP0, *S0, dup, checked_l, *S1, *SP1]
         )
 
         # Compute field propagation
-        S = _prop_all(*[t for t in prop if (t is not None) and not (isinstance(t, list) and not len(t))])
+        S = _prop_all(
+            *[
+                t
+                for t in prop
+                if (t is not None) and not (isinstance(t, list) and not len(t))
+            ]
+        )
 
         # Get input array
         input_map = self._build_input_array(left_coeffs, right_coeffs, S, m)
@@ -897,7 +984,9 @@ class EME(object):
 
         # Reverse phase if looking from right end
         diffs = [z_list[0] - cur_len] + np.diff(z_list).tolist()
-        eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
+        eig = (
+            (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
+        )
         if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]):
             coeff_left *= np.exp(1j * eig * l.length)
             coeff_right *= np.exp(-1j * eig * l.length)
@@ -915,7 +1004,14 @@ class EME(object):
             # Create field
             fields_ = modes * coeff[:, np.newaxis, np.newaxis, np.newaxis]
             results = {}
-            (results["Ex"], results["Ey"], results["Ez"], results["Hx"], results["Hy"], results["Hz"]) = fields_.sum(0)
+            (
+                results["Ex"],
+                results["Ey"],
+                results["Ez"],
+                results["Hx"],
+                results["Hy"],
+                results["Hz"],
+            ) = fields_.sum(0)
             results["n"] = l.modes[0].n
             result_list.append(results)
 
@@ -954,9 +1050,13 @@ class EME(object):
             if m.axes in ["xy", "yx"]:
                 m[key, :, :] = field[:, :]
             elif m.axes in ["xz", "zx"]:
-                m[key, :, i] = field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
+                m[key, :, i] = (
+                    field[:, int(len(field) / 2)] if field.ndim > 1 else field[:]
+                )
             elif m.axes in ["yz", "zy"]:
-                m[key, :, i] = field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
+                m[key, :, i] = (
+                    field[int(len(field) / 2), :] if field.ndim > 1 else field[:]
+                )
             elif m.axes in ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]:
                 m[key, :, :, i] = field[:, :]
 
