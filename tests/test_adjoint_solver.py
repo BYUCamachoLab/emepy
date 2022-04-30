@@ -23,23 +23,14 @@ matSiO2 = em.SiO2(1.55)
 
 # Create goemetry params
 rect_params = EMpyGeometryParameters(
-    wavelength=1.55,
-    cladding_width=5,
-    cladding_thickness=2.5,
-    core_index=matSi,
-    cladding_index=matSiO2,
-    mesh=mesh,
+    wavelength=1.55, cladding_width=5, cladding_thickness=2.5, core_index=matSi, cladding_index=matSiO2, mesh=mesh
 )
 
 # Create an input waveguide
-input_waveguide = Waveguide(
-    rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=num_modes
-)
+input_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=num_modes)
 
 # Create an output waveguide
-output_waveguide = Waveguide(
-    rect_params, width=1.75, thickness=0.22, length=0.5, center=(0, 0), num_modes=num_modes
-)
+output_waveguide = Waveguide(rect_params, width=1.75, thickness=0.22, length=0.5, center=(0, 0), num_modes=num_modes)
 
 # Create the design region geometry
 dynamic_rect = DynamicRect2D(
@@ -56,7 +47,7 @@ dynamic_rect = DynamicRect2D(
 )
 
 # Define geometry
-geometry =  [input_waveguide, dynamic_rect, output_waveguide]
+geometry = [input_waveguide, dynamic_rect, output_waveguide]
 
 # Create the EME and Optimization
 eme = EME(quiet=True, parallel=parallel, mesh_z=mesh_z)
@@ -69,12 +60,7 @@ rng = np.random.RandomState(seed)
 ## start with a linear taper
 design_x, design_z = optimizer.get_design_readable()
 design_x, design_z = np.array(design_x), np.array(design_z)
-linear_taper = (
-    np.linspace(input_waveguide.width, output_waveguide.width, len(design_x) + 2)[
-        1:-1
-    ]
-    / 2.0
-)
+linear_taper = np.linspace(input_waveguide.width, output_waveguide.width, len(design_x) + 2)[1:-1] / 2.0
 design_x[:] = linear_taper[:]
 
 ## vertex constraints
@@ -84,17 +70,17 @@ ul_z = 1.01 * design_z
 ll_z = 0.99 * design_z
 
 ## random design region
-design_x_i = (ul_x-ll_x)*rng.rand(design_x.shape[0]) + ll_x
-design_z_i = (ul_z-ll_z)*rng.rand(design_z.shape[0]) + ll_z
-design_i = np.zeros(design_x.shape[0]+design_z.shape[0])
+design_x_i = (ul_x - ll_x) * rng.rand(design_x.shape[0]) + ll_x
+design_z_i = (ul_z - ll_z) * rng.rand(design_z.shape[0]) + ll_z
+design_i = np.zeros(design_x.shape[0] + design_z.shape[0])
 design_i[::2] = design_x_i
 design_i[1::2] = design_z_i
 
 ## random epsilon perturbation for design region
 deps = 1e-6
-dp_x = deps*rng.rand(design_x.shape[0])
-dp_z = deps*rng.rand(design_z.shape[0])
-dp = np.zeros(design_x.shape[0]+design_z.shape[0])
+dp_x = deps * rng.rand(design_x.shape[0])
+dp_z = deps * rng.rand(design_z.shape[0])
+dp = np.zeros(design_x.shape[0] + design_z.shape[0])
 dp[::2] = dp_x
 dp[1::2] = dp_z
 
@@ -106,7 +92,7 @@ def forward_simulation(design_x, design_y):
     design[::2] = design_x
     design[1::2] = design_y
     dynamic_rect.set_design(design.tolist())
-    geometry =  [input_waveguide, dynamic_rect, output_waveguide]
+    geometry = [input_waveguide, dynamic_rect, output_waveguide]
     layers = [l for g in geometry for l in g]
 
     # Run the simulation
@@ -114,10 +100,10 @@ def forward_simulation(design_x, design_y):
     eme.propagate()
 
     # Get overlap
-    f0 = np.abs(em.ModelTools.compute(eme.network, {"left0":1})["right0"]) ** 2
+    f0 = np.abs(em.ModelTools.compute(eme.network, {"left0": 1})["right0"]) ** 2
 
     return f0
-    
+
 
 def adjoint_solver(design_x, design_y, dp):
 
@@ -131,7 +117,6 @@ def adjoint_solver(design_x, design_y, dp):
 
 
 class TestAdjointSolver(ApproxComparisonTestCase):
-
     def test_adjoint_solver_overlap(self):
 
         if True:
@@ -148,17 +133,17 @@ class TestAdjointSolver(ApproxComparisonTestCase):
 
         ## compare objective results
         if em.am_master(parallel):
-            print("|Ez|^2 -- adjoint solver: {}, traditional simulation: {}".format(adjsol_obj,Ez2_unperturbed))
+            print("|Ez|^2 -- adjoint solver: {}, traditional simulation: {}".format(adjsol_obj, Ez2_unperturbed))
         # self.assertClose(adjsol_obj,Ez2_unperturbed,epsilon=1e-6)
 
         ## compute perturbed Ez2
         Ez2_perturbed = forward_simulation(design_x + dp_x, design_z + dp_z)
 
         ## compare gradients
-        adj_scale = (adjsol_grad@dp).flatten()[0]
-        fd_grad = Ez2_perturbed-Ez2_unperturbed
+        adj_scale = (adjsol_grad @ dp).flatten()[0]
+        fd_grad = Ez2_perturbed - Ez2_unperturbed
         if em.am_master(parallel):
-            print("Directional derivative -- adjoint solver: {}, FD: {}".format(adj_scale,fd_grad))
+            print("Directional derivative -- adjoint solver: {}, FD: {}".format(adj_scale, fd_grad))
         tol = 0.006
         # self.assertClose(adj_scale,fd_grad,epsilon=tol)
 
@@ -180,7 +165,9 @@ class TestAdjointSolver(ApproxComparisonTestCase):
                 print("\nstep size: {}".format(deps))
                 print("Adjoint FOM: {}".format(f0))
                 print("Adjoint gradient: {}\n".format(dJ_du))
-            g_discrete, idx, fd0 = optimizer.calculate_fd_gradient(num_gradients=num_gradients,dp=deps,rand=rng,idx=idx,design=design_region)
+            g_discrete, idx, fd0 = optimizer.calculate_fd_gradient(
+                num_gradients=num_gradients, dp=deps, rand=rng, idx=idx, design=design_region
+            )
             if em.am_master(parallel):
                 print("step size: {}".format(deps))
                 print("idx: {}".format(idx))
@@ -231,8 +218,6 @@ class TestAdjointSolver(ApproxComparisonTestCase):
         # if em.am_master(parallel):
         #     plt.savefig('testing')
 
-        
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
