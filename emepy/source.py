@@ -29,7 +29,7 @@ class Source(object):
     def get_label(self) -> str:
         """Returns a string that represents the source"""
         k = "+" if self.k else "-"
-        return "{}{}".format(k, self.z)
+        return f"{k}{self.z}"
 
     def match_label(self, label: str) -> bool:
         """Sees if the provided label matches the current Source object's and returns True if so

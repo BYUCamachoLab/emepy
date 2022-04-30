@@ -220,12 +220,11 @@ def get_epsfunc(
     # Case 5: 1D n only
     def epsfunc_1D_2(x_, y_):
 
-        n = (
+        return (
             np.interp(np.real(x_), np.real(nx), profile)
             .astype(complex)
             .reshape(len(x_), 1)
         )
-        return n
 
     if (width is not None) and (thickness is not None):
         return epsfunc_2D_1
@@ -409,15 +408,14 @@ def into_chunks(location: str, name: str, chunk_size: int = 20000000) -> None:
         how big each save chunk should be
     """
     CHUNK_SIZE = chunk_size
-    f = open(location, "rb")
-    chunk = f.read(CHUNK_SIZE)
-    count = 0
-    while chunk:  # loop until the chunk is empty (the file is exhausted)
-        with open(name + "_chunk_" + str(count), "wb+") as w:
-            w.write(chunk)
-        count += 1
-        chunk = f.read(CHUNK_SIZE)  # read the next chunk
-    f.close()
+    with open(location, "rb") as f:
+        chunk = f.read(CHUNK_SIZE)
+        count = 0
+        while chunk:  # loop until the chunk is empty (the file is exhausted)
+            with open(f"{name}_chunk_{str(count)}", "wb+") as w:
+                w.write(chunk)
+            count += 1
+            chunk = f.read(CHUNK_SIZE)  # read the next chunk
 
 
 def from_chunks(location: str, name: str) -> None:
@@ -432,13 +430,12 @@ def from_chunks(location: str, name: str) -> None:
     """
     if location[-1] != "/":
         location += "/"
-    f = open(name, "wb+")
-    direc = os.listdir(location)
-    keys = [int(d[9:]) for d in direc]
-    dic = dict(zip(keys, direc))
-    for i in sorted(dic):
-        f.write(open(location + dic[i], "rb").read())
-    f.close()
+    with open(name, "wb+") as f:
+        direc = os.listdir(location)
+        keys = [int(d[9:]) for d in direc]
+        dic = dict(zip(keys, direc))
+        for i in sorted(dic):
+            f.write(open(location + dic[i], "rb").read())
 
 
 def _get_eps(
