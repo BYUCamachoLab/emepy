@@ -387,7 +387,6 @@ class Optimization(object):
         adjoint_monitor.field *= sources[0].mode_coeffs[0]
         return a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor
 
-
     def optimize(self, design: list, dp=1e-10) -> "np.ndarray":
         """Runs a single step of shape optimization"""
 
