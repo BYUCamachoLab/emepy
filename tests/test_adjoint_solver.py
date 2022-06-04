@@ -11,8 +11,8 @@ from matplotlib import pyplot as plt
 
 # Resolution
 mesh = 150
-num_layers = 15
-num_params = 30
+num_layers = 10
+num_params = 5
 num_modes = 10
 parallel = True
 mesh_z = 100
@@ -30,7 +30,7 @@ rect_params = EMpyGeometryParameters(
 input_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=num_modes)
 
 # Create an output waveguide
-output_waveguide = Waveguide(rect_params, width=1.75, thickness=0.22, length=0.5, center=(0, 0), num_modes=num_modes)
+output_waveguide = Waveguide(rect_params, width=1.0, thickness=0.22, length=0.5, center=(0, 0), num_modes=num_modes)
 
 # Create the design region geometry
 dynamic_rect = DynamicRect2D(
@@ -64,10 +64,10 @@ linear_taper = np.linspace(input_waveguide.width, output_waveguide.width, len(de
 design_x[:] = linear_taper[:]
 
 ## vertex constraints
-ul_x = 1.05 * design_x
-ll_x = 0.95 * design_x
-ul_z = 1.01 * design_z
-ll_z = 0.99 * design_z
+ul_x = 1.3 * design_x
+ll_x = 0.7 * design_x
+ul_z = 1.00 * design_z
+ll_z = 1.00 * design_z
 
 ## random design region
 design_x_i = (ul_x - ll_x) * rng.rand(design_x.shape[0]) + ll_x
@@ -147,7 +147,8 @@ class TestAdjointSolver(ApproxComparisonTestCase):
         tol = 0.006
         # self.assertClose(adj_scale,fd_grad,epsilon=tol)
 
-    def test_adjoint_solver_gradient(self):
+    @staticmethod
+    def test_adjoint_solver_gradient():
 
         if False:
             return
@@ -156,18 +157,23 @@ class TestAdjointSolver(ApproxComparisonTestCase):
             print("*** TESTING GRADIENT ADJOINT ***")
 
         ## compute gradient using adjoint solver
-        num_gradients = 6
+        num_gradients = num_params
         idx = None
         design_region = design_i[:]
-        for deps in [1e-9, 1e-8, 1e-7, 1e-6, 1e-5][::-1]:
+        for deps in [1e-5]:
             f0, dJ_du = adjoint_solver(design_x_i, design_z_i, deps)
             if em.am_master(parallel):
                 print("\nstep size: {}".format(deps))
                 print("Adjoint FOM: {}".format(f0))
                 print("Adjoint gradient: {}\n".format(dJ_du))
-            g_discrete, idx, fd0 = optimizer.calculate_fd_gradient(
+            g_discrete, idx, fd0, fom_monitor = optimizer.calculate_fd_gradient(
                 num_gradients=num_gradients, dp=deps, rand=rng, idx=idx, design=design_region
             )
+            if em.am_master(parallel):
+                plt.figure()
+                optimizer.plot_gradients(np.array([g_discrete,np.zeros(num_params)]).T.flatten(), fom_monitor)
+                plt.savefig("fd_gradient.png")
+
             if em.am_master(parallel):
                 print("step size: {}".format(deps))
                 print("idx: {}".format(idx))
@@ -220,4 +226,5 @@ class TestAdjointSolver(ApproxComparisonTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+    TestAdjointSolver.test_adjoint_solver_gradient()

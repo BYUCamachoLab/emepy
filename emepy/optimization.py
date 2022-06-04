@@ -32,7 +32,11 @@ class Optimization(object):
         design = []
         for geometry in self.geometries:
             if isinstance(geometry, DynamicPolygon):
-                design += geometry.get_design()
+                if self.eme.am_master():
+                    print(design, geometry.get_design())
+                    print(type(design), type(geometry.get_design()))
+                d = geometry.get_design() if not isinstance(geometry.get_design(), np.ndarray) else geometry.get_design().tolist()
+                design += d
 
         return design
 
@@ -384,7 +388,7 @@ class Optimization(object):
         # return a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor
         a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor = self.adjoint_results
         a_field *= sources[0].mode_coeffs[0]
-        adjoint_monitor.field *= sources[0].mode_coeffs[0]
+        adjoint_monitor.field[:-1] *= sources[0].mode_coeffs[0]
         return a_grid_x, a_grid_y, a_grid_z, a_field, adjoint_monitor
 
 
@@ -401,10 +405,10 @@ class Optimization(object):
         # Compute the forward run
         grid_x, grid_y, grid_z, X, monitor_forward, monitor_fom = self.forward_run()
 
-        # if self.eme.am_master():
-        #     plt.figure()
-        #     monitor_forward.visualize(axes="xz")
-        #     plt.savefig("forward")
+        if self.eme.am_master():
+            plt.figure()
+            monitor_forward.visualize(axes="xz")
+            plt.savefig("forward")
 
         # Compute the partial gradient of the objective function f_x
         f_x, fom = self.objective_gradient(monitor_fom)
@@ -415,10 +419,10 @@ class Optimization(object):
         # Compute the adjoint run
         grid_x, grid_y, grid_z, lamdagger, monitor_adjoint = self.adjoint_run(sources)
 
-        # if self.eme.am_master():
-        #     plt.figure()
-        #     monitor_adjoint.visualize(axes="xz")
-        #     plt.savefig("adjoint")
+        if self.eme.am_master():
+            plt.figure()
+            monitor_adjoint.visualize(axes="xz")
+            plt.savefig("adjoint")
 
         # Compute the gradient of the constraint A_u
         A_u = self.gradient(
@@ -432,6 +436,11 @@ class Optimization(object):
         # Calculate the full gradient of the objective function f_u
         f_u = self.compute_final_gradient(lamdagger, A_u, X)
 
+        plt.figure()
+        self.plot_gradients(f_u, monitor_adjoint)
+        if self.eme.am_master():
+            plt.savefig("gradients")
+
         # Return the gradient
         return fom, f_u, monitor_forward
 
@@ -441,7 +450,7 @@ class Optimization(object):
         """Computes the final gradient using the adjoint formulation and loops to conserve memory"""
 
         # Initialize final result
-        f_u = np.zeros(A_u.shape[-1], dtype=complex)
+        f_u = np.zeros(A_u.shape[-1], dtype=float)
         # f_u_grid = np.zeros([3] + list(A_u.shape[2:-1]) + [A_u.shape[-1]], dtype=complex)
 
         # Reshape
@@ -461,8 +470,8 @@ class Optimization(object):
 
             # Compute lambda * A_u_x
             for i in range(3):
-                # f_u[p] += - 2 * np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
-                f_u[p] += np.sum(A_u_x[i] * lamdagger[..., i].T)
+                f_u[p] += - 2 * np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
+                # f_u[p] += np.sum(A_u_x[i] * lamdagger[..., i].T)
                 # f_u_grid[...,p] += A_u_x[i] * lamdagger[..., i].T
 
         # ppp = np.sum(f_u_grid, axis=0)
@@ -599,4 +608,4 @@ class Optimization(object):
                 (fp - fm) / (2 * dp)
             )
 
-        return fd_gradient, fd_gradient_idx, (fp + fm) / 2
+        return fd_gradient, fd_gradient_idx, (fp + fm) / 2, fom_monitor
