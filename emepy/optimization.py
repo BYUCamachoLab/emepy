@@ -32,10 +32,14 @@ class Optimization(object):
         design = []
         for geometry in self.geometries:
             if isinstance(geometry, DynamicPolygon):
-                if self.eme.am_master():
-                    print(design, geometry.get_design())
-                    print(type(design), type(geometry.get_design()))
-                d = geometry.get_design() if not isinstance(geometry.get_design(), np.ndarray) else geometry.get_design().tolist()
+                # if self.eme.am_master():
+                #     print(design, geometry.get_design())
+                #     print(type(design), type(geometry.get_design()))
+                d = (
+                    geometry.get_design()
+                    if not isinstance(geometry.get_design(), np.ndarray)
+                    else geometry.get_design().tolist()
+                )
                 design += d
 
         return design
@@ -62,18 +66,10 @@ class Optimization(object):
                 length = len(geometry)
                 if length:
                     geometry.set_design(remaining_design[:length])
-                    remaining_design = (
-                        remaining_design[length:]
-                        if length < len(remaining_design)
-                        else []
-                    )
+                    remaining_design = remaining_design[length:] if length < len(remaining_design) else []
 
     def set_design_readable(
-        self,
-        design_x: list = [],
-        design_y: list = [],
-        design_z: list = [],
-        dimensions: int = 2,
+        self, design_x: list = [], design_y: list = [], design_z: list = [], dimensions: int = 2
     ) -> None:
         """Sets the design region provided for the entire system of design regions using readable coordinates"""
         design = []
@@ -99,17 +95,14 @@ class Optimization(object):
         """Updades the eme object with geometric changes"""
         self.start()
 
-    def get_n(
-        self, grid_x: "np.ndarray", grid_y: "np.ndarray", grid_z: "np.ndarray"
-    ) -> "np.ndarray":
+    def get_n(self, grid_x: "np.ndarray", grid_y: "np.ndarray", grid_z: "np.ndarray") -> "np.ndarray":
         """Currently returns the n for the first design region"""
         for geometry in self.geometries:
             if isinstance(geometry, DynamicPolygon):
                 return geometry.get_n(grid_x, grid_y, grid_z - grid_z[0])
 
-    def gradient(
-        self, grid_x: "np.ndarray", grid_y, grid_z: "np.ndarray", dp=1e-10
-    ) -> "np.ndarray":
+    def gradient(self, grid_x: "np.ndarray", grid_y, grid_z: "np.ndarray", dp=1e-10) -> "np.ndarray":
+
         """Computes the gradient A_u using a finite difference"""
 
         # Get initial design
@@ -117,52 +110,51 @@ class Optimization(object):
 
         # Final jacobian setup
         jacobian = np.zeros(
-            (
-                3,
-                3,
-                grid_x.shape[0] - 1,
-                grid_y.shape[0] - 1,
-                grid_z.shape[0] - 1,
-                len(design),
-            ),
-            dtype=complex,
+            (3, 3, grid_x.shape[0] - 1, grid_y.shape[0] - 1, grid_z.shape[0] - 1, len(design)), dtype=complex
         )
 
         # Get gradients
         for i, d in enumerate(design):
+            print(i, 1)
 
             # Step up
             design[i] = d + dp
             self.set_design(design)
+            print(i, 2)
 
             # Compute up A
             A_up = self.get_n(grid_x, grid_y, grid_z) ** 2
+            print(i, 3)
 
             # Step down
             design[i] = d - 2 * dp
             self.set_design(design)
+            print(i, 4)
 
             # Compute down A
             A_down = self.get_n(grid_x, grid_y, grid_z) ** 2
+            print(i, 5)
 
             # Compute gradient
-            gradient = (A_up - A_down) /  (2 * dp)  
+            gradient = (A_up - A_down) / (2 * dp)
+            print(i, 6)
 
             # Revert step
             design[i] = d + dp
             self.set_design(design)
+            print(i, 7)
 
             # Assign gradient
             jacobian[0, 0, :, :, :, i] = gradient
             jacobian[1, 1, :, :, :, i] = gradient
             jacobian[2, 2, :, :, :, i] = gradient
+            print(i, 8)
 
             # plt.figure()
             # plt.imshow(gradient[:,gradient.shape[1]//2,:])
             # plt.colorbar()
             # plt.savefig("A_u"+str(i))
 
-        
         # plt.figure()
         # plt.imshow(np.real(np.sum(jacobian[0,0], axis=-1)[:,jacobian.shape[3]//2,:]))
         # plt.colorbar()
@@ -170,7 +162,7 @@ class Optimization(object):
 
         return jacobian
 
-    def get_design_region(self) -> tuple: 
+    def get_design_region(self) -> tuple:
         z_start, z_end = (0, 0)
         for geometry in self.geometries:
             if isinstance(geometry, DynamicPolygon):
@@ -192,9 +184,7 @@ class Optimization(object):
 
         # Create forward source and monitor
         source = Source(z=0.2500001, mode_coeffs=[1], k=1)  # Hard coded
-        forward_monitor = self.eme.add_monitor(
-            axes="xyz", mesh_z=self.mesh_z, sources=[source]
-        )
+        forward_monitor = self.eme.add_monitor(axes="xyz", mesh_z=self.mesh_z, sources=[source])
 
         # FOM monitor
         source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
@@ -202,17 +192,13 @@ class Optimization(object):
 
         # Adjoint source and monitor
         source = Source(z=2.75, mode_coeffs=[1], k=-1)
-        adjoint_monitor = self.eme.add_monitor(
-            axes="xyz", mesh_z=self.mesh_z, sources=[source]
-        )
+        adjoint_monitor = self.eme.add_monitor(axes="xyz", mesh_z=self.mesh_z, sources=[source])
 
         # Run eme
         self.eme.propagate()
 
         # Get near results
-        grid_x, grid_y, grid_z, field_x = forward_monitor.get_array(
-            "Ex", z_range=(z_start, z_end)
-        )
+        grid_x, grid_y, grid_z, field_x = forward_monitor.get_array("Ex", z_range=(z_start, z_end))
         field_x = 0.125 * (
             field_x[1:, 1:, 1:]
             + field_x[1:, :-1, 1:]
@@ -250,9 +236,7 @@ class Optimization(object):
         forward_results = (grid_x, grid_y, grid_z, field, forward_monitor, fom_monitor)
 
         # Save adjoint results
-        a_grid_x, a_grid_y, a_grid_z, a_field_x = adjoint_monitor.get_array(
-            "Ex", z_range=(z_start, z_end)
-        )
+        a_grid_x, a_grid_y, a_grid_z, a_field_x = adjoint_monitor.get_array("Ex", z_range=(z_start, z_end))
         a_field_x = 0.125 * (
             a_field_x[1:, 1:, 1:]
             + a_field_x[1:, :-1, 1:]
@@ -329,7 +313,7 @@ class Optimization(object):
 
         return f_x, power
 
-    def set_adjoint_sources(self, f_x: complex = 0+0j):
+    def set_adjoint_sources(self, f_x: complex = 0 + 0j):
         """Computes and places the adjoint sources for use in the adjoint formulation"""
         return [Source(z=2.75, mode_coeffs=[f_x], k=-1)]
 
@@ -443,9 +427,7 @@ class Optimization(object):
         # Return the gradient
         return fom, f_u, monitor_forward
 
-    def compute_final_gradient(
-        self, lamdagger: "np.ndarray", A_u: "np.ndarray", X: "np.ndarray"
-    ):
+    def compute_final_gradient(self, lamdagger: "np.ndarray", A_u: "np.ndarray", X: "np.ndarray"):
         """Computes the final gradient using the adjoint formulation and loops to conserve memory"""
 
         # Initialize final result
@@ -469,7 +451,7 @@ class Optimization(object):
 
             # Compute lambda * A_u_x
             for i in range(3):
-                f_u[p] += - 2 * np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
+                f_u[p] += -2 * np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
                 # f_u[p] += np.sum(A_u_x[i] * lamdagger[..., i].T)
                 # f_u_grid[...,p] += A_u_x[i] * lamdagger[..., i].T
 
@@ -483,16 +465,12 @@ class Optimization(object):
         self.eme.draw()
 
     def plot_gradients(self, gradients, monitor) -> None:
-        
+
         # Get the gradients
         design_x, design_z = self.get_design_readable()
         z_start, z_end = self.get_design_region()
-        vertices_gradients = np.array(
-            [[z, x] for z, x in zip(gradients[1::2], gradients[::2])]
-        )
-        vertices_origins = np.array(
-            [[z + z_start, x] for z, x in zip(design_z, design_x)]
-        ).T
+        vertices_gradients = np.array([[z, x] for z, x in zip(gradients[1::2], gradients[::2])])
+        vertices_origins = np.array([[z + z_start, x] for z, x in zip(design_z, design_x)]).T
 
         # Get n
         grid_x, grid_z, n_original = monitor.get_array(axes="xz", component="n")
@@ -502,19 +480,17 @@ class Optimization(object):
         # Plot gradients
         plt.imshow(np.real(n_original[::-1]), extent=[grid_z[0], grid_z[-1], grid_x[0], grid_x[-1]], cmap="Greys")
         plt.imshow(np.real(n[::-1]), extent=[z_start, z_end, grid_x[0], grid_x[-1]], cmap="Greys")
-        plt.quiver(
-            *vertices_origins, vertices_gradients[:, 0], vertices_gradients[:, 1], color="r"
-        )
+        plt.quiver(*vertices_origins, vertices_gradients[:, 0], vertices_gradients[:, 1], color="r")
 
     def calculate_fd_gradient(
         self,
-        num_gradients:int=1,
-        dp:float=1e-4,
+        num_gradients: int = 1,
+        dp: float = 1e-4,
         rand: "np.random.RandomState" = None,
-        idx : list = None,
-        design : list = None,
+        idx: list = None,
+        design: list = None,
     ):
-        '''
+        """
         Estimate central difference gradients.
 
         Parameters
@@ -529,7 +505,7 @@ class Optimization(object):
         fd_gradient : lists
             [number of objective functions][number of gradients]
 
-        '''
+        """
 
         # Get the design
         design = self.get_design() if design is None else design
@@ -538,7 +514,7 @@ class Optimization(object):
                 "The requested number of gradients must be less than or equal to the total number of design parameters."
             )
 
-        # cleanup 
+        # cleanup
         self.start()
 
         # preallocate result vector
@@ -567,9 +543,9 @@ class Optimization(object):
             b0[:] = design[:]
             # if self.eme.am_master():
             #     print("start",b0[k*2])
- 
+
             # assign new design vector
-            b0[k*2] -= dp
+            b0[k * 2] -= dp
             self.set_design(b0)
             self.start()
 
@@ -584,7 +560,7 @@ class Optimization(object):
             _, fm = self.objective_gradient(fom_monitor)
 
             # assign new design vector
-            b0[k*2] += 2 * dp  
+            b0[k * 2] += 2 * dp
             self.set_design(b0)
             self.start()
 
@@ -597,14 +573,12 @@ class Optimization(object):
             _, fp = self.objective_gradient(fom_monitor)
 
             # revert design
-            b0[k*2] -= dp  
+            b0[k * 2] -= dp
             self.set_design(b0)
 
             # derivative
             # if self.eme.am_master():
             #     print("end",fp, fm, dp, k, b0[k*2])
-            fd_gradient.append(
-                (fp - fm) / (2 * dp)
-            )
+            fd_gradient.append((fp - fm) / (2 * dp))
 
         return fd_gradient, fd_gradient_idx, (fp + fm) / 2, fom_monitor

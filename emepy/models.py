@@ -37,9 +37,11 @@ class Layer(object):
 
     def finish_activate(self, sources: list = [], start: float = 0.0, period_length: float = 0.0, mode_solver=None):
         self.mode_solver = mode_solver
-        return self.activate_layer(sources,start,period_length,False)
+        return self.activate_layer(sources, start, period_length, False)
 
-    def activate_layer(self, sources: list = [], start: float = 0.0, period_length: float = 0.0, compute_modes=True) -> dict:
+    def activate_layer(
+        self, sources: list = [], start: float = 0.0, period_length: float = 0.0, compute_modes=True
+    ) -> dict:
         """Solves for the modes in the layer and creates an ActivatedLayer object
 
         Parameters
@@ -752,7 +754,7 @@ class SourceDuplicator(Model):
 class CopyModel(Model):
     """A simple Model that can be used to deep copy any of EMEPy's Models"""
 
-    def __init__(self, model: "Model",keep_modes:bool=True, **kwargs) -> None:
+    def __init__(self, model: "Model", keep_modes: bool = True, **kwargs) -> None:
         """Creates an instance of CopyModel by deepcopying all the attributes of model
 
         Parameters
@@ -1003,7 +1005,7 @@ class ModelTools(object):
         return model
 
     @staticmethod
-    def make_copy_model(model: Model,keep_modes=True) -> CopyModel:
+    def make_copy_model(model: Model, keep_modes=True) -> CopyModel:
         """Takes an EMEPy model (inheriting a simphony model) and deepcopies it
 
         Parameters
@@ -1016,11 +1018,11 @@ class ModelTools(object):
         CopyModel
             the deepcopied model
         """
-        new_model = CopyModel(model,keep_modes) if model is not None else None
+        new_model = CopyModel(model, keep_modes) if model is not None else None
         return new_model
 
     @staticmethod
-    def compute(model, pin_values: "dict", freq: "float"=0) -> dict:
+    def compute(model, pin_values: "dict", freq: "float" = 0) -> dict:
         """Takes a dictionary mapping each pin name to a coefficent and multiplies by the S matrix
 
         Parameters

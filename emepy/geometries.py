@@ -2,8 +2,7 @@ from distutils import core
 import numpy as np
 from emepy.fd import MSEMpy, ModeSolver
 from emepy.models import Layer
-from shapely.geometry import Polygon, Point
-from emepy.tools import vertices_to_n, circle_to_n
+from emepy.tools import vertices_to_n
 from copy import deepcopy
 
 
@@ -162,7 +161,7 @@ class DynamicRect2D(DynamicPolygon):
         self.static_vertices_left = list(zip(x, z))
 
         # Set top dynamic vertices
-        x = [width / 2] * num_params
+        x = np.linspace(input_width / 2, output_width / 2, num_params).tolist()  # [width / 2] * num_params
         z = np.linspace(0, length, num_params + 2)[1:-1].tolist()
         dynamic_vertices_top = list(zip(x, z))
 
@@ -172,7 +171,7 @@ class DynamicRect2D(DynamicPolygon):
         self.static_vertices_right = list(zip(x, z))
 
         # Set bottom dynamic vertices
-        x = [-width / 2] * num_params
+        x = np.linspace(-output_width / 2, -input_width / 2, num_params).tolist()  # [-width / 2] * num_params
         z = np.linspace(0, length, num_params + 2)[1:-1][::-1].tolist()
         dynamic_vertices_bottom = list(zip(x, z))
 
@@ -221,10 +220,14 @@ class DynamicRect2D(DynamicPolygon):
         )
 
         # Extend in 3D
-        if grid_y is not None: 
-            polygon = np.stack([polygon]*(len(grid_y)-1),axis=1)
-            x, y, z = (0.5*(grid_x[1:]+grid_x[:-1]), 0.5*(grid_y[1:]+grid_y[:-1]), 0.5*(grid_z[1:]+grid_z[:-1]))
-            x_, y_, z_ = np.meshgrid(x,y,z, indexing='ij')
+        if grid_y is not None:
+            polygon = np.stack([polygon] * (len(grid_y) - 1), axis=1)
+            x, y, z = (
+                0.5 * (grid_x[1:] + grid_x[:-1]),
+                0.5 * (grid_y[1:] + grid_y[:-1]),
+                0.5 * (grid_z[1:] + grid_z[:-1]),
+            )
+            x_, y_, z_ = np.meshgrid(x, y, z, indexing="ij")
             n = np.ones(x_.shape) * self.params.cladding_index
             n = np.where(np.abs(y_) < self.thickness / 2, polygon, n)
             return n

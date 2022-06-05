@@ -30,7 +30,7 @@ taper = DynamicRect2D(
     output_width=output_waveguide.width,
     length=2,
     num_modes=1,
-    num_params=200,
+    num_params=50,
     mesh_z=5,
 )
 
@@ -38,19 +38,12 @@ taper = DynamicRect2D(
 eme = EME(quiet=True, parallel=False, mesh_z=100)
 opt = Optimization(eme, [input_waveguide, taper, output_waveguide])
 
-# Get the EMEPy eps model
-plt.figure()
-opt.draw()
-plt.show()
-
-
 # Get the analytic model
 grid_x = np.linspace(-2.5, 2.5, 150)
-grid_z = np.linspace(0, 2, 800)
-n = opt.get_n(grid_x, None, grid_z)
+grid_z = np.linspace(0, 2, 200)
+A_u = opt.gradient(grid_x, grid_x, grid_z)
+print(A_u.shape)
 
-plt.figure()
-plt.imshow(n, cmap="Greys", extent=[0, 2, -2.5, 2.5])
-plt.xlabel("z (um)")
-plt.ylabel("x (um)")
-plt.show()
+# Plot A_u
+# plt.figure()
+
