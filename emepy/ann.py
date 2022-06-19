@@ -4,8 +4,6 @@ import pickle
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 
 from sklearn.preprocessing import PolynomialFeatures
 import sklearn
@@ -16,17 +14,10 @@ from emepy.tools import from_chunks, get_epsfunc
 from emepy.materials import Si, SiO2
 
 FIELD_WIDTH = 128
-FIELD_SIZE = FIELD_WIDTH**2
+FIELD_SIZE = FIELD_WIDTH ** 2
 
 
-def getUpConvLayer(
-    i_size: int,
-    o_size: int,
-    kernal: int,
-    channels: int,
-    first: bool = False,
-    last: bool = False,
-):
+def getUpConvLayer(i_size: int, o_size: int, kernal: int, channels: int, first: bool = False, last: bool = False):
     """Returns the right size for up convolutional sampling"""
 
     def out_size(in_size, kernal, stride, padding, output_padding):
@@ -50,42 +41,20 @@ def getUpConvLayer(
 
     if first:
         return nn.ConvTranspose2d(
-            1,
-            channels,
-            stride=stride,
-            padding=padding,
-            kernel_size=kernal,
-            output_padding=output_padding,
+            1, channels, stride=stride, padding=padding, kernel_size=kernal, output_padding=output_padding
         )
 
     if last:
         return nn.ConvTranspose2d(
-            channels,
-            1,
-            stride=stride,
-            padding=padding,
-            kernel_size=kernal,
-            output_padding=output_padding,
+            channels, 1, stride=stride, padding=padding, kernel_size=kernal, output_padding=output_padding
         )
 
     return nn.ConvTranspose2d(
-        channels,
-        channels,
-        stride=stride,
-        padding=padding,
-        kernel_size=kernal,
-        output_padding=output_padding,
+        channels, channels, stride=stride, padding=padding, kernel_size=kernal, output_padding=output_padding
     )
 
 
-def getDownConvLayer(
-    i_size: int,
-    o_size: int,
-    kernal: int,
-    channels: int,
-    first: bool = False,
-    last: bool = False,
-):
+def getDownConvLayer(i_size: int, o_size: int, kernal: int, channels: int, first: bool = False, last: bool = False):
     """Returns the right size for down convolutional sampling"""
 
     def out_size(in_size, kernal, stride, padding, dilation):
@@ -107,33 +76,12 @@ def getDownConvLayer(
         raise Exception("Choose a different kernal size")
 
     if first:
-        return nn.Conv2d(
-            1,
-            channels,
-            stride=stride,
-            padding=padding,
-            kernel_size=kernal,
-            dilation=dilation,
-        )
+        return nn.Conv2d(1, channels, stride=stride, padding=padding, kernel_size=kernal, dilation=dilation)
 
     if last:
-        return nn.Conv2d(
-            channels,
-            1,
-            stride=stride,
-            padding=padding,
-            kernel_size=kernal,
-            dilation=dilation,
-        )
+        return nn.Conv2d(channels, 1, stride=stride, padding=padding, kernel_size=kernal, dilation=dilation)
 
-    return nn.Conv2d(
-        channels,
-        channels,
-        stride=stride,
-        padding=padding,
-        kernel_size=kernal,
-        dilation=dilation,
-    )
+    return nn.Conv2d(channels, channels, stride=stride, padding=padding, kernel_size=kernal, dilation=dilation)
 
 
 class Network(nn.Module):
@@ -155,31 +103,15 @@ class Network(nn.Module):
         self.channels = channels
 
         self.linear_up_1 = nn.Linear(code_size, int(FIELD_WIDTH / 20) ** 2)
-        self.linear_up_2 = nn.Linear(
-            int(FIELD_WIDTH / 20) ** 2, int(FIELD_WIDTH / 7) ** 2
-        )
-        self.linear_up_3 = nn.Linear(
-            int(FIELD_WIDTH / 7) ** 2, int(FIELD_WIDTH / 4) ** 2
-        )
-        self.linear_up_4 = nn.Linear(
-            int(FIELD_WIDTH / 4) ** 2, int(FIELD_WIDTH / 3) ** 2
-        )
-        self.conv_up_1 = getUpConvLayer(
-            int(FIELD_WIDTH / 3), int(FIELD_WIDTH / 2), 3, channels, first=True
-        )
-        self.conv_up_2 = getUpConvLayer(
-            int(FIELD_WIDTH / 2), int(5 * FIELD_WIDTH / 8), 5, channels
-        )
-        self.conv_up_3 = getUpConvLayer(
-            int(5 * FIELD_WIDTH / 8), int(6 * FIELD_WIDTH / 8), 7, channels
-        )
-        self.conv_up_4 = getUpConvLayer(
-            int(6 * FIELD_WIDTH / 8), int(7 * FIELD_WIDTH / 8), 7, channels
-        )
-        self.conv_up_5 = getUpConvLayer(
-            int(7 * FIELD_WIDTH / 8), int(FIELD_WIDTH), 9, channels, last=True
-        )
-        self.linear_up_5 = nn.Linear(FIELD_WIDTH**2, FIELD_WIDTH**2)
+        self.linear_up_2 = nn.Linear(int(FIELD_WIDTH / 20) ** 2, int(FIELD_WIDTH / 7) ** 2)
+        self.linear_up_3 = nn.Linear(int(FIELD_WIDTH / 7) ** 2, int(FIELD_WIDTH / 4) ** 2)
+        self.linear_up_4 = nn.Linear(int(FIELD_WIDTH / 4) ** 2, int(FIELD_WIDTH / 3) ** 2)
+        self.conv_up_1 = getUpConvLayer(int(FIELD_WIDTH / 3), int(FIELD_WIDTH / 2), 3, channels, first=True)
+        self.conv_up_2 = getUpConvLayer(int(FIELD_WIDTH / 2), int(5 * FIELD_WIDTH / 8), 5, channels)
+        self.conv_up_3 = getUpConvLayer(int(5 * FIELD_WIDTH / 8), int(6 * FIELD_WIDTH / 8), 7, channels)
+        self.conv_up_4 = getUpConvLayer(int(6 * FIELD_WIDTH / 8), int(7 * FIELD_WIDTH / 8), 7, channels)
+        self.conv_up_5 = getUpConvLayer(int(7 * FIELD_WIDTH / 8), int(FIELD_WIDTH), 9, channels, last=True)
+        self.linear_up_5 = nn.Linear(FIELD_WIDTH ** 2, FIELD_WIDTH ** 2)
 
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
@@ -212,22 +144,12 @@ class Network(nn.Module):
         out = self.tanh(self.linear_up_1(field)).view(-1, 1, int(FIELD_WIDTH / 20) ** 2)
         out = self.tanh(self.linear_up_2(out)).view(-1, 1, int(FIELD_WIDTH / 7) ** 2)
         out = self.tanh(self.linear_up_3(out)).view(-1, 1, int(FIELD_WIDTH / 4) ** 2)
-        out = self.tanh(self.linear_up_4(out)).view(
-            -1, 1, int(FIELD_WIDTH / 3), int(FIELD_WIDTH / 3)
-        )
-        out = self.tanh(self.conv_up_1(out)).view(
-            -1, self.channels, int(FIELD_WIDTH / 2), int(FIELD_WIDTH / 2)
-        )
-        out = self.tanh(self.conv_up_2(out)).view(
-            -1, self.channels, int(5 * FIELD_WIDTH / 8), int(5 * FIELD_WIDTH / 8)
-        )
-        out = self.tanh(self.conv_up_3(out)).view(
-            -1, self.channels, int(6 * FIELD_WIDTH / 8), int(6 * FIELD_WIDTH / 8)
-        )
-        out = self.tanh(self.conv_up_4(out)).view(
-            -1, self.channels, int(7 * FIELD_WIDTH / 8), int(7 * FIELD_WIDTH / 8)
-        )
-        out = self.tanh(self.conv_up_5(out)).view(-1, 1, FIELD_WIDTH**2)
+        out = self.tanh(self.linear_up_4(out)).view(-1, 1, int(FIELD_WIDTH / 3), int(FIELD_WIDTH / 3))
+        out = self.tanh(self.conv_up_1(out)).view(-1, self.channels, int(FIELD_WIDTH / 2), int(FIELD_WIDTH / 2))
+        out = self.tanh(self.conv_up_2(out)).view(-1, self.channels, int(5 * FIELD_WIDTH / 8), int(5 * FIELD_WIDTH / 8))
+        out = self.tanh(self.conv_up_3(out)).view(-1, self.channels, int(6 * FIELD_WIDTH / 8), int(6 * FIELD_WIDTH / 8))
+        out = self.tanh(self.conv_up_4(out)).view(-1, self.channels, int(7 * FIELD_WIDTH / 8), int(7 * FIELD_WIDTH / 8))
+        out = self.tanh(self.conv_up_5(out)).view(-1, 1, FIELD_WIDTH ** 2)
 
         out = self.linear_up_5(out).view(-1, FIELD_WIDTH, FIELD_WIDTH)
 
@@ -239,12 +161,10 @@ class Network(nn.Module):
 class ANN(object):
     """Object that loads the neural network; Users are heavily encouraged to design their own networks and rewrite their own ANN to match their needs"""
 
-    def __init__(
-        self,
-    ) -> None:
+    def __init__(self,) -> None:
         """Constructor for Mode Object"""
-        self.x = np.linspace(0, 2.5e-6, FIELD_WIDTH)
-        self.y = np.linspace(0, 2.5e-6, FIELD_WIDTH)
+        self.x = np.linspace(0, 2.5, FIELD_WIDTH)
+        self.y = np.linspace(0, 2.5, FIELD_WIDTH)
 
         self.Hx_model = self.Hx_network()
         self.Hy_model = self.Hy_network()
@@ -253,10 +173,7 @@ class ANN(object):
     def neff_regression(self) -> "sklearn.linear_model._base.LinearRegression":
         """Return the opened regression model for the effective index"""
 
-        with open(
-            f"{os.path.dirname(os.path.abspath(__file__))}/models/neff_pickle/model.pk",
-            "rb",
-        ) as f:
+        with open(os.path.dirname(os.path.abspath(__file__)) + "/models/neff_pickle/model.pk", "rb") as f:
             model = pickle.load(f)
 
         return model
@@ -264,11 +181,7 @@ class ANN(object):
     def Hx_network(self) -> Network:
         """Return the opened network model for the Hx component"""
 
-        from_chunks(
-            f"{os.path.dirname(os.path.abspath(__file__))}/models/Hx_chunks/",
-            "hx_temp.pt",
-        )
-
+        from_chunks(os.path.dirname(os.path.abspath(__file__)) + "/models/Hx_chunks/", "hx_temp.pt")
         with open("hx_temp.pt", "rb") as f:
             model = Network(3, 1, "Hx")
 
@@ -284,11 +197,7 @@ class ANN(object):
     def Hy_network(self) -> Network:
         """Return the opened network model for the Hy component"""
 
-        from_chunks(
-            f"{os.path.dirname(os.path.abspath(__file__))}/models/Hy_chunks/",
-            "hy_temp.pt",
-        )
-
+        from_chunks(os.path.dirname(os.path.abspath(__file__)) + "/models/Hy_chunks/", "hy_temp.pt")
         with open("hy_temp.pt", "rb") as f:
             model = Network(3, 1, "Hy")
 
@@ -334,15 +243,9 @@ class MSNeuralNetwork(ModeSolver):
         self.after_y = self.y
         self.mesh = len(self.x) - 1
         self.PML = False
-        self.n = get_epsfunc(
-            self.width,
-            self.thickness,
-            2.5e-6,
-            2.5e-6,
-            Si(self.wl * 1e6),
-            SiO2(self.wl * 1e6),
-            compute=True,
-        )(self.x, self.y)
+        self.n = get_epsfunc(self.width, self.thickness, 2.5, 2.5, Si(self.wl), SiO2(self.wl), compute=True)(
+            self.x, self.y
+        )
 
     def solve(self) -> None:
         """Solves for the eigenmode using the neural networks"""
@@ -377,11 +280,7 @@ class MSNeuralNetwork(ModeSolver):
         return Hx, Hy, neff
 
     def neff_regression(
-        self,
-        width: float,
-        thickness: float,
-        wl: float,
-        model: "sklearn.linear_model._base.LinearRegression",
+        self, width: float, thickness: float, wl: float, model: "sklearn.linear_model._base.LinearRegression"
     ) -> float:
         """Calculates the effective index using a regression model
 
@@ -403,14 +302,12 @@ class MSNeuralNetwork(ModeSolver):
         """
 
         poly = PolynomialFeatures(degree=8)
-        X = poly.fit_transform([[width * 1e6, thickness * 1e6, wl * 1e6]])
+        X = poly.fit_transform([[width, thickness, wl]])
         neff = model.predict(X)
 
         return neff[0]
 
-    def Hx_network(
-        self, width: float, thickness: float, wl: float, model: Network
-    ) -> "np.ndarray":
+    def Hx_network(self, width: float, thickness: float, wl: float, model: Network) -> "np.ndarray":
         """Calculates the Hx component using a network model
 
         Parameters
@@ -431,16 +328,14 @@ class MSNeuralNetwork(ModeSolver):
         """
 
         with torch.no_grad():
-            parameters = torch.Tensor([[[width * 1e6, thickness * 1e6, wl * 1e6]]])
+            parameters = torch.Tensor([[[width, thickness, wl]]])
             output, _ = model(parameters)
             output = output.numpy()
             output = output.reshape(128, 128)
 
         return output
 
-    def Hy_network(
-        self, width: float, thickness: float, wl: float, model: Network
-    ) -> "np.ndarray":
+    def Hy_network(self, width: float, thickness: float, wl: float, model: Network) -> "np.ndarray":
         """Calculates the Hy component using a network model
 
         Parameters
@@ -461,7 +356,7 @@ class MSNeuralNetwork(ModeSolver):
         """
 
         with torch.no_grad():
-            parameters = torch.Tensor([[[width * 1e6, thickness * 1e6, wl * 1e6]]])
+            parameters = torch.Tensor([[[width, thickness, wl]]])
             output, _ = model(parameters)
             output = output.numpy()
             output = output.reshape(128, 128)
@@ -487,23 +382,8 @@ class MSNeuralNetwork(ModeSolver):
         """
         Hx, Hy, neff = self.mode
 
-        epsfunc_before = get_epsfunc(
-            self.width,
-            self.thickness,
-            2.5e-6,
-            2.5e-6,
-            Si(self.wl * 1e6),
-            SiO2(self.wl * 1e6),
-            compute=True,
-        )
-        epsfunc_after = get_epsfunc(
-            self.width,
-            self.thickness,
-            2.5e-6,
-            2.5e-6,
-            Si(self.wl * 1e6),
-            SiO2(self.wl * 1e6),
-        )
+        epsfunc_before = get_epsfunc(self.width, self.thickness, 2.5, 2.5, Si(self.wl), SiO2(self.wl), compute=True)
+        epsfunc_after = get_epsfunc(self.width, self.thickness, 2.5, 2.5, Si(self.wl), SiO2(self.wl))
         m = Mode(
             self.x,
             self.y,
