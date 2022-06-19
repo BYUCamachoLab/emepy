@@ -24,7 +24,7 @@ class EigenMode(object):
     def get_confined_power(self):
         return NotImplementedError()
 
-    def zero_phase(self):
+    # def zero_phase(self):
         return NotImplementedError()
 
     def plot_material(self):
@@ -154,7 +154,8 @@ class EigenMode(object):
 
     def normalize(self) -> None:
         """Normalizes the Mode to power 1."""
-        self.zero_phase()
+        print("norming")
+        # self.zero_phase()
         factor = self.inner_product(self)
         self /= np.sqrt(factor)
 
@@ -313,7 +314,7 @@ class Mode1D(EigenMode):
         ratio = self._inner_product(self, self, mask=mask) / self._inner_product(self, self, mask=None)
         return ratio
 
-    def zero_phase(self) -> None:
+    # def zero_phase(self) -> None:
         """Changes the phase such that the z components are all imaginary and the xy components are all real."""
 
         index = int(self.Hy.shape[0] / 2)
@@ -506,7 +507,7 @@ class Mode(EigenMode):
         ratio = self._inner_product(self, self, mask=mask) / self._inner_product(self, self, mask=None)
         return ratio
 
-    def zero_phase(self) -> None:
+    # def zero_phase(self) -> None:
         """Changes the phase such that the z components are all imaginary and the xy components are all real."""
 
         index = int(self.Hy.shape[0] / 2)
@@ -519,7 +520,7 @@ class Mode(EigenMode):
         """Plots the index of refraction profile"""
 
         plt.imshow(
-            np.real(self.n).T,
+            np.rot90(np.real(self.n)),
             extent=[
                 self.x[0],
                 self.x[-1],
