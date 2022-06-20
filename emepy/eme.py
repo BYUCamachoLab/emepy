@@ -298,6 +298,7 @@ class EME(object):
             tasks = []
 
             # Loop through all layers
+            per_li_map = {}
             for per, activated_layers in self.activated_layers.items():
                 activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
                 for i, layer in enumerate(activated_layers):
@@ -313,12 +314,13 @@ class EME(object):
                                     for t in prop
                                     if (t is not None) and not (isinstance(t, list) and not len(t))
                                 ],
-                                checked_l,
+                                checked_l.pins,
                             ],
                             {},
                         )
                     )
                     cur_len += layer.length
+                    per_li_map[len(tasks) - 1] = (per, i)
 
             # Get results
             results = self._run_parallel_functions(*tasks)
@@ -326,9 +328,11 @@ class EME(object):
             # Update monitors
             cur_len = 0
             for i, result in enumerate(results):
-                S, checked_l = result
-                layer_index = i % len(self.activated_layers[0])
-                activated_layers = self.activated_layers[i // len(self.activated_layers[0])]
+                S, checked_l_pins = result
+                per, layer_index = per_li_map[i]
+                activated_layers = self.activated_layers[per]
+                # layer_index = i % len(self.activated_layers[0])
+                # activated_layers = self.activated_layers[i // len(self.activated_layers[0])]
                 activated_layers = activated_layers if activated_layers is not None else self.activated_layers[0]
 
                 # Loop through all monitors
@@ -352,7 +356,7 @@ class EME(object):
                         just_z_list[:],
                         m,
                         S,
-                        checked_l,
+                        checked_l_pins,
                     )
 
                     # Update the monitor
@@ -1047,7 +1051,7 @@ class EME(object):
         z_list: list,
         m: "Monitor",
         S,
-        checked_l,
+        checked_l_pins,
     ) -> list:
 
         # Get input array
@@ -1072,7 +1076,7 @@ class EME(object):
         # Reverse phase if looking from right end
         diffs = [z_list[0] - cur_len] + np.diff(z_list).tolist()
         eig = (2 * np.pi) * np.array([mode.neff for mode in l.modes]) / (self.wavelength)
-        if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l.pins]):
+        if sum(["_to_" in pin.name and "left" in pin.name for pin in checked_l_pins]):
             coeff_left *= np.exp(1j * eig * l.length)
             coeff_right *= np.exp(-1j * eig * l.length)
 
