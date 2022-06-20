@@ -130,7 +130,7 @@ class EigenMode(object):
 
         return self._inner_product(self, mode2)
 
-    def check_spurious(self, threshold_power: float = 0.5, threshold_neff: float = 0.9) -> bool:
+    def check_spurious(self, threshold_power: float = 0.05, threshold_neff: float = 0.9) -> bool:
         """Takes in a mode and determine whether the mode is likely spurious based on the ratio of confined to not confined power
 
         Parameters
@@ -146,9 +146,7 @@ class EigenMode(object):
             True if likely spurious
         """
 
-        # geometry_ratio = np.sum(np.where(self.n > np.mean(self.n))) / np.sum(np.where(self.n > -1))
-        # power_bool = ((1-self.get_confined_power())*geometry_ratio) < 1-threshold_power
-        power_bool = self.get_confined_power() < threshold_power  # (1+threshold_power)*geometry_ratio
+        power_bool = self.get_confined_power() < threshold_power
         neff_bool = (np.real(self.neff) / np.abs(self.neff)) < threshold_neff
         return power_bool or neff_bool
 
@@ -313,7 +311,7 @@ class Mode1D(EigenMode):
         ratio = self._inner_product(self, self, mask=mask) / self._inner_product(self, self, mask=None)
         return ratio
 
-        # def zero_phase(self) -> None:
+    def zero_phase(self) -> None:
         """Changes the phase such that the z components are all imaginary and the xy components are all real."""
 
         index = int(self.Hy.shape[0] / 2)
@@ -433,11 +431,16 @@ class Mode(EigenMode):
             plt.subplot(2, 3, i + 1, adjustable="box", aspect=field.shape[0] / field.shape[1])
             v = max(abs(field.min()), abs(field.max()))
             plt.imshow(
-                field.T,
+                np.rot90(field),
                 cmap="RdBu",
                 vmin=-v,
                 vmax=v,
-                extent=[temp.x[0], temp.x[-1], temp.y[0], temp.y[-1]],
+                extent=[
+                    temp.x[0],
+                    temp.x[-1],
+                    temp.y[0],
+                    temp.y[-1],
+                ],
                 interpolation="none",
             )
             plt.title("{}({})".format(op_name, fields[i]))
@@ -501,7 +504,7 @@ class Mode(EigenMode):
         ratio = self._inner_product(self, self, mask=mask) / self._inner_product(self, self, mask=None)
         return ratio
 
-        # def zero_phase(self) -> None:
+    def zero_phase(self) -> None:
         """Changes the phase such that the z components are all imaginary and the xy components are all real."""
 
         index = int(self.Hy.shape[0] / 2)
@@ -514,8 +517,13 @@ class Mode(EigenMode):
         """Plots the index of refraction profile"""
 
         plt.imshow(
-            np.rot90(np.real(self.n)),
-            extent=[self.x[0], self.x[-1], self.y[0], self.y[-1]],
+            np.real(np.rot90(self.n)),
+            extent=[
+                self.x[0],
+                self.x[-1],
+                self.y[0],
+                self.y[-1],
+            ],
             cmap="Greys",
             interpolation="none",
         )
@@ -542,9 +550,14 @@ class Mode(EigenMode):
             the boundary conditions as defined by electromagneticpython
         """
 
-        (self.Hx, self.Hy, self.Hz, self.Ex, self.Ey, self.Ez) = compute_other_fields_2D(
-            self.neff, self.Hx, self.Hy, self.wl, self.x, self.y, boundary, epsfunc_1
-        )
+        (
+            self.Hx,
+            self.Hy,
+            self.Hz,
+            self.Ex,
+            self.Ey,
+            self.Ez,
+        ) = compute_other_fields_2D(self.neff, self.Hx, self.Hy, self.wl, self.x, self.y, boundary, epsfunc_1)
         x_ = (self.x[1:] + self.x[:-1]) / 2.0
         y_ = (self.y[1:] + self.y[:-1]) / 2.0
         self.Ex = interp(self.x, self.y, x_, y_, self.Ex, False)
