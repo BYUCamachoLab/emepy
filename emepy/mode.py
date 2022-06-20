@@ -154,7 +154,6 @@ class EigenMode(object):
 
     def normalize(self) -> None:
         """Normalizes the Mode to power 1."""
-        print("norming")
         self.zero_phase()
         factor = self.inner_product(self)
         self /= np.sqrt(factor)

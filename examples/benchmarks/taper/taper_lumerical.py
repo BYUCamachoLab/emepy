@@ -16,14 +16,14 @@ def taper_lumerical(print_s=True, start=0, finish=10):
     num_modes = 1
 
     # Geometric parameters
-    width1 = 0.8e-6  # Width of left waveguide
-    thickness1 = 0.3e-6  # Thickness of left waveguide
-    width2 = 0.25e-6  # Width of right waveguide
-    thickness2 = 0.15e-6  # Thickness of right waveguide
-    wavelength = 1.55e-6  # Wavelength of light (m)
-    length = 10e-6  # Length of the waveguides
+    width1 = 0.8  # Width of left waveguide
+    thickness1 = 0.3  # Thickness of left waveguide
+    width2 = 0.25  # Width of right waveguide
+    thickness2 = 0.15  # Thickness of right waveguide
+    wavelength = 1.55  # Wavelength of light (m)
+    length = 10  # Length of the waveguides
     # taper_density = 10  # How many divisions in the taper where eigenmodes will be calculated
-    taper_length = 2e-6  # The length of the taper
+    taper_length = 2  # The length of the taper
 
     wg_length = 0.5 * (length - taper_length)  # Length of each division in the taper
 

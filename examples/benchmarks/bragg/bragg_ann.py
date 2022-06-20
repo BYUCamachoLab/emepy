@@ -28,15 +28,15 @@ def bragg_ann(args):
         eme.reset()
 
         mode_solver1 = modesolver(
-            ann, wavelength * 1e-6, width1 * 1e-6, thickness * 1e-6
+            ann, wavelength, width1, thickness
         )  # First half of bragg grating
 
         mode_solver2 = modesolver(
-            ann, wavelength * 1e-6, width2 * 1e-6, thickness * 1e-6
+            ann, wavelength, width2, thickness
         )  # Second half of bragg grating
 
-        eme.add_layer(Layer(mode_solver1, num_modes, wavelength * 1e-6, length * 1e-6))  # First half of bragg grating
-        eme.add_layer(Layer(mode_solver2, num_modes, wavelength * 1e-6, length * 1e-6))  # Second half of bragg grating
+        eme.add_layer(Layer(mode_solver1, num_modes, wavelength, length))  # First half of bragg grating
+        eme.add_layer(Layer(mode_solver2, num_modes, wavelength, length))  # Second half of bragg grating
 
         eme.propagate()  # propagate at given wavelength
 
