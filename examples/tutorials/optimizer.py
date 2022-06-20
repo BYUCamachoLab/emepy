@@ -12,20 +12,20 @@ SiO2 = SiO2(1.55)
 
 # Create goemetry params
 rect_params = EMpyGeometryParameters(
-    wavelength=1.55e-6, cladding_width=4e-6, cladding_thickness=2.5e-6, core_index=Si, cladding_index=SiO2, mesh=80
+    wavelength=1.55, cladding_width=4, cladding_thickness=2.5, core_index=Si, cladding_index=SiO2, mesh=80
 )
 
 # Create an input waveguide
-input_waveguide = Waveguide(rect_params, 1.0e-6, 0.22e-6, 0.5e-6, center=(0, 0), num_modes=4)
+input_waveguide = Waveguide(rect_params, 1.0, 0.22, 0.5, center=(0, 0), num_modes=4)
 
 # Create an output waveguide
-output_waveguide = Waveguide(rect_params, width=1.7e-6, thickness=0.22e-6, length=0.5e-6, center=(0, 0), num_modes=4)
+output_waveguide = Waveguide(rect_params, width=1.7, thickness=0.22, length=0.5, center=(0, 0), num_modes=4)
 
 # Create the design region geometry
 dynamic_rect = DynamicRect2D(
     params=rect_params,
     width=input_waveguide.width,
-    length=2e-6,
+    length=2,
     num_modes=4,
     num_params=10,
     symmetry=True,
@@ -46,7 +46,7 @@ design_x[:] = linear_taper[:]
 optimizer.set_design_readable(design_x, None, design_z)
 
 
-# source = emepy.Source(z=0.25e-6, mode_coeffs=[1], k=1)  # Hard coded
+# source = emepy.Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
 # monitor = eme.add_monitor(mesh_z=5, sources=[source])
 # eme.propagate()
 # plt.figure()
@@ -56,8 +56,8 @@ optimizer.set_design_readable(design_x, None, design_z)
 
 # plt.figure()
 # optimizer.draw()
-# # n = dynamic_rect.get_n(np.linspace(-1.5e-6, 1.5e-6, 100), np.linspace(0, 2e-6, 100))
-# # plt.imshow(n, cmap="Greys", extent=[0, 2e-6, -1.5e-6, 1.5e-6], interpolation="none")
+# # n = dynamic_rect.get_n(np.linspace(-1.5, 1.5, 100), np.linspace(0, 2, 100))
+# # plt.imshow(n, cmap="Greys", extent=[0, 2, -1.5, 1.5], interpolation="none")
 # plt.show()
 # quit()
 

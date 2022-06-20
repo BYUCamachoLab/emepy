@@ -177,7 +177,7 @@ class get_epsfunc(object):
         numpy array
             2d-matrix
         """
-        xx, yy = np.meshgrid(self, x_, y_)
+        xx, yy = np.meshgrid(x_, y_)
         if self.compute:
             n = np.where(
                 (np.abs(np.real(xx.T) - self.cladding_width * 0.5) <= self.width * 0.5)
