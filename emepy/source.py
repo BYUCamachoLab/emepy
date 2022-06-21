@@ -1,11 +1,3 @@
-from abc import abstractmethod
-import numpy as np
-from tqdm import tqdm
-from simphony.models import Subcircuit
-from emepy.monitors import Monitor
-from copy import deepcopy
-
-
 class Source(object):
     """This class defines mode sources that can be created for monitors"""
 
@@ -29,7 +21,7 @@ class Source(object):
     def get_label(self) -> str:
         """Returns a string that represents the source"""
         k = "+" if self.k else "-"
-        return f"{k}{self.z}"
+        return "{}{}".format(k, self.z)
 
     def match_label(self, label: str) -> bool:
         """Sees if the provided label matches the current Source object's and returns True if so

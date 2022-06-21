@@ -2,8 +2,8 @@ import numpy as np
 import numpy
 from matplotlib import pyplot as plt
 import matplotlib
-from copy import deepcopy
 from scipy.interpolate import griddata
+plt.rcParams.update({'figure.max_open_warning': 0})
 
 
 class Monitor(object):
@@ -21,6 +21,7 @@ class Monitor(object):
         location: float = None,
         sources: list = [],
         adjoint_n: bool = True,
+        total_length: float = 0.0,
     ) -> None:
         """Monitor class constructor0
 
@@ -49,26 +50,27 @@ class Monitor(object):
         """
 
         # Ensure z range is in proper format
-        if axes not in {"xy", "yx"}:
+        if not (axes in ["xy", "yx"]):
             try:
-                self.start, self.end = (
-                    [grid_z[0], grid_z[-1]] if z_range is None else z_range
-                )
+                if z_range is None:
+                    self.start, self.end = [grid_z[0], grid_z[-1]]
+                else:
+                    self.start, self.end = z_range
             except Exception as e:
                 raise Exception(
                     "z_range should be a tuple or list of the form (start, end)"
                     " representing the range of the z values to extract where start "
-                    "and end are floats such as (0, 1e-6) for a 1 µm range"
+                    "and end are floats such as (0, 1) for a 1 µm range"
                 ) from e
 
         # Check axes
-        if axes in {"xz", "zx"}:
+        if axes == "xz" or axes == "zx":
             self.axes = "xz"
-        elif axes in {"yz", "zy"}:
+        elif axes == "yz" or axes == "zy":
             self.axes = "yz"
-        elif axes in {"xyz", "yxz", "xzy", "yzx", "zxy", "zyx"}:
+        elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
             self.axes = "xyz"
-        elif axes in {"xy", "yx"}:
+        elif axes in ["xy", "yx"]:
             self.axes = "xy"
         else:
             raise Exception(
@@ -90,6 +92,8 @@ class Monitor(object):
         self.grid_y = grid_y
         self.grid_z = grid_z
         self.location = location
+        self.total_length = total_length
+        self.xy_monitors = []
 
     def reset_monitor(self) -> None:
         """Resets the fields in the monitor"""
@@ -174,7 +178,7 @@ class Monitor(object):
                 raise Exception(
                     "z_range should be a tuple or list of the form (start, end)"
                     "representing the range of the z values to extract where start"
-                    "and end are floats such as (0, 1e-6) for a 1 µm range"
+                    "and end are floats such as (0, 1) for a 1 µm range"
                 ) from e
 
             # Get start and end
@@ -261,17 +265,9 @@ class Monitor(object):
 
         # Create E and H fields
         if component == "E":
-            results["E"] = (
-                np.abs(results["Ex"]) ** 2
-                + np.abs(results["Ey"]) ** 2
-                + np.abs(results["Ez"]) ** 2
-            )
+            results["E"] = np.abs(results["Ex"]) ** 2 + np.abs(results["Ey"]) ** 2 + np.abs(results["Ez"]) ** 2
         if component == "H":
-            results["H"] = (
-                np.abs(results["Hx"]) ** 2
-                + np.abs(results["Hy"]) ** 2
-                + np.abs(results["Hz"]) ** 2
-            )
+            results["H"] = np.abs(results["Hx"]) ** 2 + np.abs(results["Hy"]) ** 2 + np.abs(results["Hz"]) ** 2
 
         # List to return
         grid_field = []
@@ -281,12 +277,8 @@ class Monitor(object):
             aa, bb = np.meshgrid(new_a, new_b)
             aa_old, bb_old = np.meshgrid(old_a, old_b)
             points = np.array((aa_old.flatten(), bb_old.flatten())).T
-            real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(
-                np.complex128
-            )
-            imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(
-                np.complex128
-            )
+            real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
+            imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
             return real + 1j * imag
 
         # Custom 3D interpolation function
@@ -294,9 +286,9 @@ class Monitor(object):
             aa, bb, cc = np.meshgrid(new_a, new_b, new_c)
             aa_old, bb_old, cc_old = np.meshgrid(old_a, old_b, old_c)
             points = np.array((aa_old.flatten(), bb_old.flatten(), cc_old.flatten())).T
-            return griddata(points, np.real(field), (aa, bb, cc)).astype(
-                np.complex128
-            ) + 1j * griddata(points, np.real(field), (aa, bb)).astype(np.complex128)
+            return griddata(points, np.real(field), (aa, bb, cc)).astype(np.complex128) + 1j * griddata(
+                points, np.real(field), (aa, bb)
+            ).astype(np.complex128)
 
         # Add to return list the grid
         if axes in ["xz", "zx"]:
@@ -305,18 +297,14 @@ class Monitor(object):
             grid_field.append(np.array(x))
             grid_field.append(np.array(z))
             if interp_x:
-                results[component] = custom_interp2d(
-                    results[component], default_grid_z, default_grid_x, z, x
-                )
+                results[component] = custom_interp2d(results[component], default_grid_z, default_grid_x, z, x)
         elif axes in ["yz", "zy"]:
             y = default_grid_y if not interp_y else grid_y
             z = default_grid_z
             grid_field.append(np.array(y))
             grid_field.append(np.array(z))
             if interp_y:
-                results[component] = custom_interp2d(
-                    results[component], default_grid_z, default_grid_y, z, y
-                )
+                results[component] = custom_interp2d(results[component], default_grid_z, default_grid_y, z, y)
         elif axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
             x = default_grid_x if not interp_x else grid_x
             y = default_grid_y if not interp_y else grid_y
@@ -326,13 +314,7 @@ class Monitor(object):
             grid_field.append(np.array(z))
             if interp_x or interp_y:
                 results[component] = custom_interp3d(
-                    results[component],
-                    default_grid_x,
-                    default_grid_y,
-                    default_grid_z,
-                    x,
-                    y,
-                    z,
+                    results[component], default_grid_x, default_grid_y, default_grid_z, x, y, z
                 )
         elif axes in ["xy", "yx"]:
             x = default_grid_x if not interp_x else grid_x
@@ -340,9 +322,7 @@ class Monitor(object):
             grid_field.append(np.array(x))
             grid_field.append(np.array(y))
             if interp_x or interp_y:
-                results[component] = custom_interp2d(
-                    results[component], default_grid_x, default_grid_y, x, y
-                )
+                results[component] = custom_interp2d(results[component], default_grid_x, default_grid_y, x, y)
         else:
             raise Exception("Please choose valid axes")
 
@@ -351,21 +331,33 @@ class Monitor(object):
 
         return grid_field
 
-    def get_source_visual(self, shape) -> "numpy.ndarray":
+    def get_source_visual(self, min, max) -> "numpy.ndarray":
         """Returns a mask with lines indicating where a source is"""
-        array = np.zeros(shape)
-        l = self.dimensions[-1] // 200
+        srcs = []
         if self.right_source:
-            array[:, -l:] = 1
+            srcx = [self.total_length, self.total_length]
+            srcy = [min, max]
+            srcs.append((srcx, srcy))
         if self.left_source:
-            array[:, :l] = 1
+            srcx = [0, 0]
+            srcy = [min, max]
+            srcs.append((srcx, srcy))
         for source in self.sources:
-            difference_start = lambda list_value: abs(list_value - source.z)
-            i = self.lengths.index(min(self.lengths, key=difference_start))
-            ll = l // 2 if l // 2 > 0 else 1
-            array[:, i - ll : i + ll // 2] = 1
+            srcx = [source.z, source.z]
+            srcy = [min, max]
+            srcs.append((srcx, srcy))
 
-        return array
+        return srcs
+
+    def get_xy_monitor_visual(self, min, max) -> "numpy.ndarray":
+        """Returns a mask with lines indicating where a source is"""
+        xy_monitors = []
+        for monitor in self.xy_monitors:
+            srcx = [monitor.location, monitor.location]
+            srcy = [min, max]
+            xy_monitors.append((srcx, srcy))
+
+        return xy_monitors
 
     def visualize(
         self,
@@ -376,6 +368,7 @@ class Monitor(object):
         z_range: tuple = None,
         show_geometry: bool = True,
         show_sources: bool = True,
+        show_xy_monitors: bool = False,
     ) -> "matplotlib.image.AxesImage":
         """Creates a matplotlib axis displaying the provides field component
 
@@ -403,7 +396,7 @@ class Monitor(object):
         """
 
         # Only 2D fields can be generated
-        if axes in {"xyz", "yxz", "xzy", "yzx", "zxy", "zyx"}:
+        if axes in ["xyz", "yxz", "xzy", "yzx", "zxy", "zyx"]:
             raise Exception(
                 "3D fields can be extracted using get_array or visualized on a 2D plane via an axes of xz or yz"
             )
@@ -420,12 +413,8 @@ class Monitor(object):
         else:
             raise Exception("Incorrect axes format")
 
-        yn, zn, n = self.get_array(
-            component="n", axes=axes, location=location, z_range=z_range
-        )
-        y, z, field = self.get_array(
-            component=component, axes=axes, location=location, z_range=z_range
-        )
+        yn, zn, n = self.get_array(component="n", axes=axes, location=location, z_range=z_range)
+        y, z, field = self.get_array(component=component, axes=axes, location=location, z_range=z_range)
 
         # Color map lookup table
         cmap_lookup = {
@@ -442,38 +431,30 @@ class Monitor(object):
 
         # Create plots
         if axes in ["xz", "zx", "yz", "zy"]:
-            show = ax or plt
+
+            # Underlay the geometry
+            show = ax if ax else plt
             if show_geometry:
                 show.imshow(
                     np.real(n[::-1]),
-                    extent=[
-                        np.real(zn[0]),
-                        np.real(zn[-1]),
-                        np.real(yn[0]),
-                        np.real(yn[-1]),
-                    ],
+                    extent=[np.real(zn[0]), np.real(zn[-1]), np.real(yn[0]), np.real(yn[-1])],
                     cmap=cmap_lookup["n"],
                 )
             vmin, vmax = (np.real(np.min(field)), np.real(np.max(field)))
-            alpha = 0.85 if show_geometry else 1
+            alpha = 1 if not show_geometry else 0.85
+
+            # Plot sources
             if show_sources:
-                srcs = np.real(self.get_source_visual(field.shape))
-                if component != "n":
-                    field = np.where(
-                        srcs, -max(np.abs(vmax), np.abs(vmin)) * 1000, field
-                    )
-                else:
-                    im = show.imshow(
-                        np.real(srcs),
-                        extent=[
-                            np.real(z[0]),
-                            np.real(z[-1]),
-                            np.real(y[0]),
-                            np.real(y[-1]),
-                        ],
-                        cmap="Reds",
-                    )
-                    alpha = 0.9
+                srcs = self.get_source_visual(np.real(y[0]), np.real(y[-1]))
+                for srcx, srcy in srcs:
+                    plt.plot(srcx, srcy, color="red", linewidth=2)
+
+            # Plot xy monitors
+            if show_xy_monitors:
+                xy_monitors = self.get_xy_monitor_visual(np.real(y[0]), np.real(y[-1]))
+                for locx, locy in xy_monitors:
+                    plt.plot(locx, locy, color="blue", linewidth=2)
+
             im = show.imshow(
                 np.real(field[::-1]),
                 extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
@@ -482,32 +463,37 @@ class Monitor(object):
                 vmin=vmin,
                 vmax=vmax,
             )
-            if ax:
-                ax.set_xlabel(np.real(axes[1]))
-                ax.set_ylabel(np.real(axes[0]))
-                ax.set_title(component)
-            else:
+
+            # Assign labels
+            if not ax:
                 plt.xlabel(np.real(axes[1]))
                 plt.ylabel(np.real(axes[0]))
                 plt.title(component)
-        elif ax:
-            im = ax.imshow(
-                np.rot90(np.real(field)),
-                extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
-                cmap=cmap_lookup[component],
-            )
-            ax.set_xlabel(np.real(axes[0]))
-            ax.set_ylabel(np.real(axes[1]))
-            ax.set_title(component)
+            else:
+                ax.set_xlabel(np.real(axes[1]))
+                ax.set_ylabel(np.real(axes[0]))
+                ax.set_title(component)
+
+        # xy fields
         else:
-            im = plt.imshow(
-                np.rot90(np.real(field)),
-                extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
-                cmap=cmap_lookup[component],
-            )
-            plt.xlabel(np.real(axes[0]))
-            plt.ylabel(np.real(axes[1]))
-            plt.title(component)
+            if ax:
+                im = ax.imshow(
+                    np.rot90(np.real(field)),
+                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
+                    cmap=cmap_lookup[component],
+                )
+                ax.set_xlabel(np.real(axes[0]))
+                ax.set_ylabel(np.real(axes[1]))
+                ax.set_title(component)
+            else:
+                im = plt.imshow(
+                    np.rot90(np.real(field)),
+                    extent=[np.real(z[0]), np.real(z[-1]), np.real(y[0]), np.real(y[-1])],
+                    cmap=cmap_lookup[component],
+                )
+                plt.xlabel(np.real(axes[0]))
+                plt.ylabel(np.real(axes[1]))
+                plt.title(component)
 
         return im
 
