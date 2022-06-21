@@ -6,9 +6,9 @@ from emepy.optimization import Optimization
 
 # Create goemetry params
 rect_params = EMpyGeometryParameters(
-    wavelength=1.55e-6,
-    cladding_width=2.5e-6,
-    cladding_thickness=2.5e-6,
+    wavelength=1.55,
+    cladding_width=2.5,
+    cladding_thickness=2.5,
     core_index=3.4,
     cladding_index=1.4,
     mesh=50,
@@ -17,8 +17,8 @@ rect_params = EMpyGeometryParameters(
 # Create the design region geometry
 dynamic_rect = DynamicRect2D(
     params=rect_params,
-    width=0.5e-6,
-    length=2e-6,
+    width=0.5,
+    length=2,
     num_modes=1,
     num_params=300,
     symmetry=False,
@@ -27,7 +27,7 @@ dynamic_rect = DynamicRect2D(
 )
 
 # Create a normal waveguide
-waveguide = Waveguide(rect_params, 0.7e-6, 0.22e-6, 0.5e-6, center=(0, 0))
+waveguide = Waveguide(rect_params, 0.7, 0.22, 0.5, center=(0, 0))
 
 # Create the EME and Optimization
 eme = EME()
@@ -50,7 +50,7 @@ top_z, bottom_z = (
 )
 
 # Add a sin arc on the top
-top_x += np.sin(top_z / np.max(top_z) * np.pi) * 0.3e-6
+top_x += np.sin(top_z / np.max(top_z) * np.pi) * 0.3
 
 # Update design
 design_x = top_x.tolist() + bottom_x.tolist()
