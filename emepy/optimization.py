@@ -2,6 +2,7 @@ from emepy.eme import EME
 from emepy.geometries import Geometry, DynamicPolygon
 from emepy.source import Source
 from emepy.monitors import Monitor
+from emepy.interface import InterfaceSolver
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -253,9 +254,7 @@ class Optimization(object):
         return forward_results
 
     def overlap(self, E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
-        term1 = np.conj(E1x) * H2y - np.conj(E1y) * H2x
-        term2 = E2x * np.conj(H1y) - E2y * np.conj(H1x)
-        return np.trapz(np.trapz((term1 + term2), x), y)
+        return InterfaceSolver.eme_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y)
 
     def objective_gradient(self, monitor: "Monitor"):
         """Computes the objective function gradient to the sources for the adjoint formulation"""
