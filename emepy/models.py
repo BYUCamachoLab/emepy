@@ -488,13 +488,12 @@ class InterfaceMultiMode(Model):
             the right Layer object of the interface
         """
 
-        layer1 = layer1
-        layer2 = layer2
+        self.layer1 = layer1
+        self.layer2 = layer2
         self.left_ports = layer1.right_ports
         self.right_ports = layer2.left_ports
         self.left_pins = ["left" + str(i) for i in range(self.left_ports)]
         self.right_pins = ["right" + str(i) for i in range(self.right_ports)]
-        self.num_freqs = 1
 
         # create the pins for the model
         pins = []
@@ -505,23 +504,29 @@ class InterfaceMultiMode(Model):
 
         super().__init__(**kwargs, pins=pins)
         self.num_ports = layer1.right_ports + layer2.left_ports
-        self.solve(layer1, layer2)
+        self.solve()
 
     def s_parameters(self, freqs: "np.ndarray" = None) -> "np.ndarray":
 
-        return self.s_params[0]
+        return self.s_params
 
-    def solve(self, layer1, layer2) -> None:
+    def solve(self) -> None:
         """Solves for the scattering matrix based on transmission and reflection"""
 
-        # Initialize s
-        self.s_params = np.zeros((self.num_freqs, self.num_ports, self.num_ports), dtype=complex)
+        s = np.zeros((self.num_ports, self.num_ports), dtype=complex)
 
-        # Create interface solver instance
-        solver = InterfaceSolver(layer1, layer2)
+        # Keep s params and clear the layers
+        self.s_params = s.reshape((1, self.num_ports, self.num_ports))
+
+        # Create interface solver instance (now vectorized)
+        solver = InterfaceSolver(self.layer1, self.layer2)
 
         # Keep s params and clear the layers
         self.s_params[:, :, :] = solver.solve()
+
+        # Clear layers
+        self.layer1 = None
+        self.layer2 = None
 
     def clear(self) -> None:
         """Clears the scattering matrix in the object"""
