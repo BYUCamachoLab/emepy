@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class M:
     Ex = 0
     Ey = 1
@@ -9,19 +10,19 @@ class M:
     Hz = 5
     n = 6
 
-class OverlapTools:
 
+class OverlapTools:
     @staticmethod
     def mode_to_numpy(mode):
         num_freqs = 1
         np_mode = np.zeros((num_freqs, 7, mode.x.shape[0], mode.y.shape[0]), dtype=complex)
-        np_mode[:, M.Ex, :, :] = mode.Ex[:,:]
-        np_mode[:, M.Ey, :, :] = mode.Ey[:,:]
-        np_mode[:, M.Ez, :, :] = mode.Ez[:,:]
-        np_mode[:, M.Hx, :, :] = mode.Hx[:,:]
-        np_mode[:, M.Hy, :, :] = mode.Hy[:,:]
-        np_mode[:, M.Hz, :, :] = mode.Hz[:,:]
-        np_mode[:, M.n, :, :] = mode.n[:,:]
+        np_mode[:, M.Ex, :, :] = mode.Ex[:, :]
+        np_mode[:, M.Ey, :, :] = mode.Ey[:, :]
+        np_mode[:, M.Ez, :, :] = mode.Ez[:, :]
+        np_mode[:, M.Hx, :, :] = mode.Hx[:, :]
+        np_mode[:, M.Hy, :, :] = mode.Hy[:, :]
+        np_mode[:, M.Hz, :, :] = mode.Hz[:, :]
+        np_mode[:, M.n, :, :] = mode.n[:, :]
         return np.array(np_mode)
 
     @staticmethod
@@ -32,9 +33,8 @@ class OverlapTools:
 
     @staticmethod
     def eme_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
-        cross = E1x * np.conj(H2y) - E1y * np.conj(H2x)
+        cross = E1x * H2y - E1y * H2x
         return np.trapz(np.trapz(cross, x, axis=-2), y, axis=-1)
-
 
     @staticmethod
     def lumerical_complex(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
@@ -42,11 +42,7 @@ class OverlapTools:
         term21 = np.trapz(np.trapz(E2x * np.conj(H1y) - E2y * np.conj(H1x), x, axis=-2), y, axis=-1)
         term11 = np.trapz(np.trapz(E1x * np.conj(H1y) - E1y * np.conj(H1x), x, axis=-2), y, axis=-1)
         term22 = np.trapz(np.trapz(E2x * np.conj(H2y) - E2y * np.conj(H2x), x, axis=-2), y, axis=-1)
-        return (
-                term12 * term21 / term11
-            ) * 1 / (
-                term22
-            )
+        return (term12 * term21 / term11) * 1 / (term22)
 
     @staticmethod
     def lumerical_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
@@ -54,13 +50,7 @@ class OverlapTools:
         term21 = np.trapz(np.trapz(E2x * np.conj(H1y) - E2y * np.conj(H1x), x, axis=-2), y, axis=-1)
         term11 = np.trapz(np.trapz(E1x * np.conj(H1y) - E1y * np.conj(H1x), x, axis=-2), y, axis=-1)
         term22 = np.trapz(np.trapz(E2x * np.conj(H2y) - E2y * np.conj(H2x), x, axis=-2), y, axis=-1)
-        return np.abs(
-            np.real(
-                term12 * term21 / term11
-            ) * 1 / np.real(
-                term22
-            )
-        )
+        return np.abs(np.real(term12 * term21 / term11) * 1 / np.real(term22))
 
     # Class attribute - change for different overlaps
     inner_product = eme_overlap
@@ -75,16 +65,16 @@ class OverlapTools:
         inner: (f, M)
         """
         return OverlapTools.inner_product(
-            E1x = left[:,:,M.Ex],
-            E1y = left[:,:,M.Ey],
-            H1x = left[:,:,M.Hx],
-            H1y = left[:,:,M.Hy],
-            E2x = right[:,:,M.Ex],
-            E2y = right[:,:,M.Ey],
-            H2x = right[:,:,M.Hx],
-            H2y = right[:,:,M.Hy],
-            x = x,
-            y = y
+            E1x=left[:, :, M.Ex],
+            E1y=left[:, :, M.Ey],
+            H1x=left[:, :, M.Hx],
+            H1y=left[:, :, M.Hy],
+            E2x=right[:, :, M.Ex],
+            E2y=right[:, :, M.Ey],
+            H2x=right[:, :, M.Hx],
+            H2y=right[:, :, M.Hy],
+            x=x,
+            y=y,
         )
 
     @staticmethod
@@ -97,16 +87,16 @@ class OverlapTools:
         inner: (f, M2, M1)
         """
         return OverlapTools.inner_product(
-            E1x = left[:,:,:,M.Ex],
-            E1y = left[:,:,:,M.Ey],
-            H1x = left[:,:,:,M.Hx],
-            H1y = left[:,:,:,M.Hy],
-            E2x = right[:,:,:,M.Ex],
-            E2y = right[:,:,:,M.Ey],
-            H2x = right[:,:,:,M.Hx],
-            H2y = right[:,:,:,M.Hy],
-            x = x,
-            y = y
+            E1x=left[:, :, :, M.Ex],
+            E1y=left[:, :, :, M.Ey],
+            H1x=left[:, :, :, M.Hx],
+            H1y=left[:, :, :, M.Hy],
+            E2x=right[:, :, :, M.Ex],
+            E2y=right[:, :, :, M.Ey],
+            H2x=right[:, :, :, M.Hx],
+            H2y=right[:, :, :, M.Hy],
+            x=x,
+            y=y,
         )
 
 
@@ -118,26 +108,20 @@ class InterfaceSolver(object):
     """
 
     def __init__(self, left_layer, right_layer):
-        self.LM = np.stack([OverlapTools.mode_to_numpy(mode) for mode in left_layer.modes],axis=1)
-        self.RM = np.stack([OverlapTools.mode_to_numpy(mode) for mode in right_layer.modes],axis=1)
+        self.LM = np.stack([OverlapTools.mode_to_numpy(mode) for mode in left_layer.modes], axis=1)
+        self.RM = np.stack([OverlapTools.mode_to_numpy(mode) for mode in right_layer.modes], axis=1)
         self.x = left_layer.modes[0].x
         self.y = left_layer.modes[0].y
 
-        from matplotlib import pyplot as plt
-        # for mode in left_layer.modes[12:]:
-        #     plt.figure()
-        #     mode.plot()
-        #     plt.show()
-
         # Normalize LM
-        norm_LM = OverlapTools.inner(self.LM, self.LM, self.x, self.y)[:,:,np.newaxis,np.newaxis,np.newaxis]
+        norm_LM = OverlapTools.inner(self.LM, self.LM, self.x, self.y)[:, :, np.newaxis, np.newaxis, np.newaxis]
         norm_LM = np.repeat(norm_LM, 7, axis=2)
         norm_LM = np.repeat(norm_LM, self.LM.shape[3], axis=3)
         norm_LM = np.repeat(norm_LM, self.LM.shape[4], axis=4)
         self.LM /= np.sqrt(np.abs(norm_LM))
 
         # Normalize RM
-        norm_RM = OverlapTools.inner(self.RM, self.RM, self.x, self.y)[:,:,np.newaxis,np.newaxis,np.newaxis]
+        norm_RM = OverlapTools.inner(self.RM, self.RM, self.x, self.y)[:, :, np.newaxis, np.newaxis, np.newaxis]
         norm_RM = np.repeat(norm_RM, 7, axis=2)
         norm_RM = np.repeat(norm_RM, self.RM.shape[3], axis=3)
         norm_RM = np.repeat(norm_RM, self.RM.shape[4], axis=4)
@@ -152,16 +136,16 @@ class InterfaceSolver(object):
         f, M1, _, Nx, Ny = self.LM.shape
         _, M2, _, _, _ = self.RM.shape
 
-        # Initialize S in tensor form 
-        S = np.zeros((f, M1+M2, M1+M2), dtype=complex)
-    
+        # Initialize S in tensor form
+        S = np.zeros((f, M1 + M2, M1 + M2), dtype=complex)
+
         # Get T
-        T1 = self.get_T(self.LM, self.RM) # Shape (f, M1, M2)
-        T2 = self.get_T(self.RM, self.LM) # Shape (f, M2, M1)
+        T1 = self.get_T(self.LM, self.RM)  # Shape (f, M1, M2)
+        T2 = self.get_T(self.RM, self.LM)  # Shape (f, M2, M1)
 
         # Get R
-        R1 = self.get_R(T1, self.LM, self.RM) # Shape (f, M1, M1)
-        R2 = self.get_R(T2, self.RM, self.LM) # Shape (f, M2, M2)
+        R1 = self.get_R(T1, self.LM, self.RM)  # Shape (f, M1, M1)
+        R2 = self.get_R(T2, self.RM, self.LM)  # Shape (f, M2, M2)
 
         # Create meshgrids for indices
         _M1 = np.arange(M1)
@@ -191,13 +175,6 @@ class InterfaceSolver(object):
         S[:, _out_R1_, _in_R1_] = R1
         S[:, _out_R2_, _in_R2_] = R2
 
-        show_relevant = lambda: np.printoptions(formatter={'float': lambda x: f"{x:.3f}" if x > 0.5e-3 else " .   "})
-        with show_relevant():
-            print("\n\n", np.abs(S), "\n\n")
-        
-        print("\n", np.max(np.abs(S)))
-        quit()
-
         return S
 
     def get_T(self, LM, RM):
@@ -220,16 +197,10 @@ class InterfaceSolver(object):
         _i_, _j_ = np.meshgrid(_i, _j)
 
         # Define X
-        X = (
-            OverlapTools.massinner(LM[:, _i_, :, :, :], RM[:, _j_, :, :, :], x, y) + 
-            OverlapTools.massinner(RM[:, _j_, :, :, :], LM[:, _i_, :, :, :], x, y)
+        X = OverlapTools.massinner(LM[:, _i_, :, :, :], RM[:, _j_, :, :, :], x, y) + OverlapTools.massinner(
+            RM[:, _j_, :, :, :], LM[:, _i_, :, :, :], x, y
         )
-        X_inv = np.transpose(np.linalg.pinv(X), axes=(0,2,1))
-
-        # print("\n\nM1 to M2: ", OverlapTools.massinner(LM[:, _i_, :, :, :], RM[:, _j_, :, :, :], x, y).item(0))
-        # print("\nM2 to M1: ", OverlapTools.massinner(RM[:, _j_, :, :, :], LM[:, _i_, :, :, :], x, y).item(0))
-        # print("\nM1 to M1: ", OverlapTools.massinner(LM[:, _j_, :, :, :], LM[:, _i_, :, :, :], x, y).item(0))
-        # print("\nM2 to M2: ", OverlapTools.massinner(RM[:, _j_, :, :, :], RM[:, _i_, :, :, :], x, y).item(0))
+        X_inv = np.transpose(np.linalg.pinv(X), axes=(0, 2, 1))
 
         # Define Y
         Y = np.zeros((f, M1, M1), dtype=complex)
@@ -263,16 +234,17 @@ class InterfaceSolver(object):
         _i1_, _i2_ = np.meshgrid(_i, _i)
 
         # Define X
-        X = (
-            OverlapTools.massinner(RM[:, _j_, :, :, :], LM[:, _i_, :, :, :], x, y) - 
-            OverlapTools.massinner(LM[:, _i_, :, :, :], RM[:, _j_, :, :, :], x, y) 
+        X = OverlapTools.massinner(RM[:, _j_, :, :, :], LM[:, _i_, :, :, :], x, y) - OverlapTools.massinner(
+            LM[:, _i_, :, :, :], RM[:, _j_, :, :, :], x, y
         )
 
         # Define Y
         Y = np.zeros((f, M1, M1), dtype=complex)
         _in = OverlapTools.inner(LM[:, :, :, :, :], LM[:, :, :, :, :], x, y)
-        Y[:, :, :] = np.repeat(_in[:, np.newaxis, :], M1, axis=1) # Might need to swap these, but i believe row is j and column is i, should change as a function of i
-        
+        Y[:, :, :] = np.repeat(
+            _in[:, np.newaxis, :], M1, axis=1
+        )  # Might need to swap these, but i believe row is j and column is i, should change as a function of i
+
         # Assign new product to R
         R[:, _i1_, _i2_] = 1 / Y * (T @ X)
 
