@@ -279,9 +279,9 @@ class Mode1D(EigenMode):
         mask = 1 if mask is None else mask
 
         Ex = mode1.Ex * mask
-        Hy = np.conj(mode2.Hy) * mask
+        Hy = (mode2.Hy) * mask
         Ey = mode1.Ey * mask
-        Hx = np.conj(mode2.Hx) * mask
+        Hx = (mode2.Hx) * mask
 
         cross = Ex * Hy - Ey * Hx
 
@@ -472,9 +472,9 @@ class Mode(EigenMode):
         mask = 1 if mask is None else mask
 
         Ex = mode1.Ex * mask
-        Hy = np.conj(mode2.Hy) * mask
+        Hy = (mode2.Hy) * mask
         Ey = mode1.Ey * mask
-        Hx = np.conj(mode2.Hx) * mask
+        Hx = (mode2.Hx) * mask
 
         cross = Ex * Hy - Ey * Hx
 
