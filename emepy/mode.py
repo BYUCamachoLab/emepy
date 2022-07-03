@@ -148,7 +148,6 @@ class EigenMode(object):
 
         power_bool = self.get_confined_power() < threshold_power
         neff_bool = (np.real(self.neff) / np.abs(self.neff)) < threshold_neff
-        print(power_bool or neff_bool)
         
         return power_bool or neff_bool
 

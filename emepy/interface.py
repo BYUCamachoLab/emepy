@@ -206,7 +206,6 @@ class InterfaceSolver(object):
         Y = np.zeros((f, M1, M1), dtype=complex)
         Y[:, _i, _i] = 2 * OverlapTools.inner(LM[:, _i, :, :, :], LM[:, _i, :, :, :], x, y)
 
-        # print("\n\n", np.abs(X), np.abs(Y), "\n\n")
         # Solve for T
         T[:, _i_, _j_] = np.matmul(X_inv, Y)
 
@@ -240,7 +239,7 @@ class InterfaceSolver(object):
 
         # Define Y
         Y = np.zeros((f, M1, M1), dtype=complex)
-        _in = OverlapTools.inner(LM[:, :, :, :, :], LM[:, :, :, :, :], x, y)
+        _in = 2 * OverlapTools.inner(LM[:, :, :, :, :], LM[:, :, :, :, :], x, y)
         Y[:, :, :] = np.repeat(
             _in[:, np.newaxis, :], M1, axis=1
         )  # Might need to swap these, but i believe row is j and column is i, should change as a function of i
