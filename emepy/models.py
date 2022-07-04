@@ -11,24 +11,18 @@ from copy import deepcopy
 class Layer(object):
     """Layer objects form the building blocks inside of an EME or PeriodicEME. These represent geometric layers of rectangular waveguides that approximate continuous structures."""
 
-    def __init__(self, mode_solver: ModeSolver, num_modes: int, wavelength: float, length: float) -> None:
+    def __init__(self, mode_solver: ModeSolver, length: float) -> None:
         """Layer class constructor
 
         Parameters
         ----------
         mode_solver : Modesolver
             ModeSolver object used to solve for the modes
-        num_modes : int
-            Number of total modes for the layer.
-        wavelength : number
-            Wavelength of eigenmode to solve for (m).
         length : number
             Geometric length of the Layer (m). The length affects the phase of the eigenmodes inside the layer via the complex phasor $e^(jβz)$.
         """
 
-        self.num_modes = num_modes
         self.mode_solver = mode_solver
-        self.wavelength = wavelength
         self.length = length
         self.activated_layers = []
 
@@ -86,7 +80,7 @@ class Layer(object):
 
                 # If no custom sources
                 if not len(custom_sources):
-                    self.activated_layers[per] += [ActivatedLayer(modes, self.wavelength, self.length)]
+                    self.activated_layers[per] += [ActivatedLayer(modes, self.mode_solver.wavelength, self.length)]
 
                 # Other sources
                 else:
