@@ -13,6 +13,7 @@ if importlib.util.find_spec("mpi4py") is not None:
 
 from emepy.fd import MSEMpy
 from emepy.models import Duplicator, Model, ModelTools, Layer, InterfaceSingleMode, InterfaceMultiMode
+from emepy.logger import Logger
 
 _prop_all = ModelTools._prop_all
 _prop_all_wrapper = ModelTools._prop_all_wrapper
@@ -47,7 +48,7 @@ class EME(object):
         num_periods: int = 1,
         mesh_z: int = 200,
         parallel: bool = False,
-        quiet: bool = False,
+        logger: bool = None,
         **kwargs
     ) -> None:
         """EME class constructor
@@ -62,17 +63,23 @@ class EME(object):
             Number of mesh points in z per period for default monitors (default: 200)
         parallel : bool
             If true, will allocate parallelized processes for solving modes, propagating layers, and filling monitors with field data (default: False)
-        quiet : bool
-            If true, will not print current state and status of the solver (default: False)
+        logger : Logger
+            A logger object to be used for logging (default: Logger(True,False,...))
         """
 
+        # Initialize parallel flag and logger
         self.parallel = parallel
-        if parallel:
+        self.logger = Logger(True, False, enable_warnings=True) if logger is None else logger
+            
+        # Configure parallel resources
+        if parallel: 
             self._configure_parallel_resources()
-        else:
-            self.size = 1
-        self.quiet = quiet or not self.am_master()
-        self.reset(parallel=parallel, configure_parallel=False)
+            if not self.am_master(): self.logger = Logger(False, False, enable_warnings=False)
+        else: self.size = 1
+
+        self.reset(parallel=parallel, configure_parallel=False) # Fix reset in this version as well
+
+        # Attributes
         self.layers = layers[:]
         self.num_periods = num_periods
         self.mesh_z = mesh_z
@@ -101,7 +108,7 @@ class EME(object):
             self.add_layer(layer)
 
     def reset(self, full_reset: bool = True, parallel: bool = False, configure_parallel: bool = True) -> None:
-        """Clears out the layers and s params so the user can reuse the object in memory on a new geometry
+        """Correctly clears the EME attributes specified so the user does not incorrectly reset them another way
 
         Parameters
         ----------
@@ -752,11 +759,12 @@ class EME(object):
         # Complete all tasks and tag based on initial order for either parallel or not
         if not self.parallel:
             # Linearly execute tasks
-            for i, a in tqdm(enumerate(tasks), disable=self.quiet):
+            for i, a in enumerate(tasks):
+                self.logger.log("Starting task {}/{}...".format(i + 1, len(tasks)))
                 func, arguments, kwarguments = a
                 finished_tasks.append(func(*arguments, **kwarguments))
+                self.logger.log("Completed task {}/{}...".format(i + 1, len(tasks)))
         else:
-
             # Create data
             if self.am_master():
                 data = []
@@ -774,10 +782,12 @@ class EME(object):
             new_data = []
 
             # Compute data
-            for i, k in tqdm(enumerate(data), disable=self.quiet):
+            for i, k in enumerate(data):
+                self.logger.log("Starting task {}/{}...".format(i + 1, len(tasks)))
                 index, task = k
                 func, arguments, kwarguments = task
                 new_data.append((index, func(*arguments, **kwarguments)))
+                self.logger.log("Completed task {}/{}...".format(i + 1, len(tasks)))
 
             # Wait until everyone is finished
             self.comm.Barrier()
@@ -836,7 +846,7 @@ class EME(object):
         m = self.monitors[0] if len(self.monitors) else self.custom_monitors[0]
         cur_len = 0
         for per in range(self.num_periods):
-            for layer in tqdm(self.layers, disable=self.quiet):
+            for layer in self.layers:
 
                 # Get system params
                 z_list = m.get_z_list(cur_len, cur_len + layer.length)
@@ -856,10 +866,8 @@ class EME(object):
         state : int
             state to move to
         """
-
         self.state = state
-        if self.am_master() and not self.quiet:
-            print("current state: {}".format(self.states[self.state]))
+        self.logger.log("Beginning EME state: {}...".format(self.states[self.state]))
 
     def _build_input_array(self, left_coeffs: list, right_coeffs: list, model: Model, m: Monitor) -> dict:
         """Builds the properly formatted input array to be used to calculate field profiles from s matrices and mode coefficients
