@@ -44,7 +44,7 @@ class MSEMpy(ModeSolver):
 
     def __init__(
         self,
-        wl: float,
+        wl: float = 1.55,
         width: float = None,
         thickness: float = None,
         num_modes: int = 1,
