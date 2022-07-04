@@ -26,7 +26,7 @@ layers_task = ModelTools.layers_task
 if importlib.util.find_spec("mpi4py") is not None:
     am_master = lambda parallel=True: MPI.COMM_WORLD.Get_rank() == 0 if parallel else True
 else:
-    am_master = True
+    am_master = lambda parallel=True: True
 
 
 class EME(object):
