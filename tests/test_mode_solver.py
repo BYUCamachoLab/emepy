@@ -89,10 +89,10 @@ class TestSolver(unittest.TestCase):
         modes = test_solver(**custom_params2D)
         self.assertTrue(len(modes) == global_params["num_modes"])
 
-    def test_MSEMpy_custom_1D(self):
-        print("Testing two waveguides with defined waveguide thickness")
-        modes = test_solver(**custom_params1D)
-        self.assertTrue(len(modes) == global_params["num_modes"])
+    # def test_MSEMpy_custom_1D(self):
+    #     print("Testing two waveguides with defined waveguide thickness")
+    #     modes = test_solver(**custom_params1D)
+    #     self.assertTrue(len(modes) == global_params["num_modes"])
 
     def test_MSEMpy_circular(self):
         print("Testing circular waveguide")

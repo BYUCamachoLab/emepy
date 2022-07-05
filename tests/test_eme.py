@@ -109,17 +109,17 @@ class TestEME(unittest.TestCase):
         # Assert a proper result
         self.assertTrue(0 <= power < 1.1)
 
-    def test_eme_parallel(self):
-        # Setup
-        parallel = True
-        if am_master(parallel):
-            print("Running EME test single period with parallel")
+    # def test_eme_parallel(self):
+    #     # Setup
+    #     parallel = True
+    #     if am_master(parallel):
+    #         print("Running EME test single period with parallel")
 
-        # Get power from simulation
-        power = bragg_grating(parallel=parallel, num_periods=1)
+    #     # Get power from simulation
+    #     power = bragg_grating(parallel=parallel, num_periods=1)
 
-        # Assert a proper result
-        self.assertTrue(0 <= power <= 1.1)
+    #     # Assert a proper result
+    #     self.assertTrue(0 <= power <= 1.1)
 
     def test_eme_periodic(self):
         # Setup
@@ -133,17 +133,17 @@ class TestEME(unittest.TestCase):
         # Assert a proper result
         self.assertTrue(0 <= power <= 1.1)
 
-    def test_eme_periodic_parallel(self):
-        # Setup
-        parallel = True
-        if am_master(parallel):
-            print("Running EME test many periods with parallel")
+    # def test_eme_periodic_parallel(self):
+    #     # Setup
+    #     parallel = True
+    #     if am_master(parallel):
+    #         print("Running EME test many periods with parallel")
 
-        # Get power from simulation
-        power = bragg_grating(parallel=parallel, num_periods=50)
+    #     # Get power from simulation
+    #     power = bragg_grating(parallel=parallel, num_periods=50)
 
-        # Assert a proper result
-        self.assertTrue(0 <= power <= 1.1)
+    #     # Assert a proper result
+    #     self.assertTrue(0 <= power <= 1.1)
 
     def test_eme_many_layers(self):
         # Setup
@@ -157,17 +157,17 @@ class TestEME(unittest.TestCase):
         # Assert a proper result
         self.assertTrue(0 <= power <= 1.1)
 
-    def test_eme_many_layers_parallel(self):
-        # Setup
-        parallel = True
-        if am_master(parallel):
-            print("Running EME test many layers with parallel")
+    # def test_eme_many_layers_parallel(self):
+    #     # Setup
+    #     parallel = True
+    #     if am_master(parallel):
+    #         print("Running EME test many layers with parallel")
 
-        # Get power from simulation
-        power = taper(parallel=parallel)
+    #     # Get power from simulation
+    #     power = taper(parallel=parallel)
 
-        # Assert a proper result
-        self.assertTrue(0 <= power <= 1.1)
+    #     # Assert a proper result
+    #     self.assertTrue(0 <= power <= 1.1)
 
 
 if __name__ == "__main__":
