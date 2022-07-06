@@ -67,37 +67,39 @@ def plot_modes(modes):
     plt.show()
 
 
-def test_solver(**kwargs):
-    # Create a modesolver object that represents a waveguide cross section
-    fd_solver = MSEMpy(**kwargs)
-
-    # Solve for the fundamental Eigenmode
-    fd_solver.solve()
-    modes = [fd_solver.get_mode(i) for i in range(fd_solver.num_modes)]
-    # plot_modes(modes)
-    return modes
-
-
 class TestSolver(unittest.TestCase):
     def test_MSEMpy_waveguide(self):
         print("Testing waveguide")
-        modes = test_solver(**waveguide_params)
+        modes = self._method_test_solver(**waveguide_params)
         self.assertTrue(len(modes) == global_params["num_modes"])
 
     def test_MSEMpy_custom_2D(self):
         print("Testing two waveguides with no defined waveguide params")
-        modes = test_solver(**custom_params2D)
+        modes = self._method_test_solver(**custom_params2D)
         self.assertTrue(len(modes) == global_params["num_modes"])
 
     def test_MSEMpy_custom_1D(self):
         print("Testing two waveguides with defined waveguide thickness")
-        modes = test_solver(**custom_params1D)
+        modes = self._method_test_solver(**custom_params1D)
         self.assertTrue(len(modes) == global_params["num_modes"])
 
     def test_MSEMpy_circular(self):
         print("Testing circular waveguide")
-        modes = test_solver(**circular_params)
+        modes = self._method_test_solver(**circular_params)
         self.assertTrue(len(modes) == global_params["num_modes"])
+
+    def _method_test_solver(self, **kwargs):
+        # Create a modesolver object that represents a waveguide cross section
+        fd_solver = MSEMpy(**kwargs)
+
+        # Solve for the fundamental Eigenmode
+        fd_solver.solve()
+        modes = [fd_solver.get_mode(i) for i in range(fd_solver.num_modes)]
+        # plot_modes(modes)
+        return modes
+
+    def test_test(self):
+        self.assertTrue(True)
 
 
 if __name__ == "__main__":
