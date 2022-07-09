@@ -3,6 +3,7 @@ import argparse
 from emepy.geometries import EMpyGeometryParameters, DynamicRect2D
 from emepy.eme import EME
 from emepy.optimization import Optimization
+from emepy.materials import Si, SiO2
 
 def get_geometry(**kwargs):
 
@@ -11,8 +12,8 @@ def get_geometry(**kwargs):
         wavelength = kwargs["wavelength"],
         cladding_width = kwargs["cladding_width"],
         cladding_thickness = kwargs["cladding_thickness"],
-        core_index = kwargs["core_index"],
-        cladding_index = kwargs["cladding_index"],
+        core_index = kwargs["core_index"] if kwargs["core_index"] is not None else Si(kwargs["wavelength"]),
+        cladding_index = kwargs["cladding_index"] if kwargs["cladding_index"] is not None else SiO2(kwargs["wavelength"]),
         mesh = kwargs["mesh"],
     )
 
@@ -81,7 +82,7 @@ def run_finite_difference(optimization:Optimization, **kwargs):
 def main(**kwargs):
 
     # Set random seed
-    np.random.seed(kwargs["seed"])
+    np.random.seed(kwargs["random_seed"])
 
     # Get geometry
     geometry = get_geometry(**kwargs)
@@ -90,7 +91,7 @@ def main(**kwargs):
     eme = get_simulation(geometry, **kwargs)
 
     # Get optimization
-    optimization = get_optimization(geometry, eme, **kwargs)
+    optimization = get_optimization([geometry], eme, **kwargs)
 
     # Run adjoint run
     fom, f_u = run_optimization(optimization, **kwargs)
@@ -108,7 +109,7 @@ if __name__ == "__main__":
 
     # Script params
     parser.add_argument("--random_seed", type=int, default=0)
-    parser.add_argument("--random_strength", type=float, default=0.1)
+    parser.add_argument("--random_strength", type=float, default=0.5)
 
     # General params
     parser.add_argument("--wavelength", help="wavelength (µm)", type=float, default=1.55)
@@ -134,4 +135,4 @@ if __name__ == "__main__":
     parser.add_argument("--dp", help="finite difference size", type=float, default=1e-6)
 
     args = parser.parse_args()
-    main(**args)
+    main(**vars(args))
