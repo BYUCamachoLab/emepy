@@ -167,7 +167,7 @@ class Optimization(object):
         forward_monitor = self.eme.add_monitor(axes="xyz", mesh_z=self.mesh_z, sources=[source])
 
         # FOM monitor
-        # source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
+        source = Source(z=self.source_location+1e-5, mode_coeffs=[1], k=1)  # Hard coded
         fom_monitor = self.eme.add_monitor(axes="xy", location=self.fom_location, sources=[source])
 
         # Adjoint source and monitor
