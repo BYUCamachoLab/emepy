@@ -2,6 +2,7 @@ from emepy import Monitor, EME, Layer, MSEMpy
 import numpy as np
 from matplotlib import pyplot as plt
 import unittest
+import os
 
 # Params
 plot = False
@@ -43,20 +44,24 @@ def get_simulation():
 
 
 class TestMonitors(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        self.data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
+        super(TestMonitors, self).__init__(*args, **kwargs)
+
     def analyze_monitor(self, monitor: Monitor, axes=None, key=""):
 
         # Plot index
         plt.figure()
         im1 = monitor.visualize(component="n", axes=axes)
         plt.colorbar()
-        plt.show() if plot else plt.savefig("data/test_monitor_n_{}.png".format(key))
+        plt.show() if plot else plt.savefig(os.path.join(self.data_dir, "test_monitor_n_{}.png".format(key)))
         self.assertTrue(im1 is not None)
 
         # Plot field
         plt.figure()
         im2 = monitor.visualize(component="Hy", axes=axes)
         plt.colorbar()
-        plt.show() if plot else plt.savefig("data/test_monitor_Hy_{}.png".format(key))
+        plt.show() if plot else plt.savefig(os.path.join(self.data_dir, "test_monitor_Hy_{}.png".format(key)))
         self.assertTrue(im2 is not None)
 
     def test_xy(self):
@@ -141,7 +146,7 @@ class TestMonitors(unittest.TestCase):
         plt.figure()
         im = monitor_custom_z.visualize(component="Hy", axes="xz", z_range=(2 * 0.159, 4 * 0.159))
         plt.colorbar()
-        plt.show() if plot else plt.savefig("data/test_monitor_custom_z.png")
+        plt.show() if plot else plt.savefig(os.path.join(self.data_dir, "test_monitor_custom_z.png"))
         self.assertTrue(im is not None)
 
 
