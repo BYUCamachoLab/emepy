@@ -2,7 +2,7 @@ from emepy.eme import EME
 from emepy.geometries import Geometry, DynamicPolygon
 from emepy.source import Source
 from emepy.monitors import Monitor
-from emepy.interface import InterfaceSolver
+from emepy.interface import OverlapTools
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -10,11 +10,13 @@ from matplotlib import pyplot as plt
 class Optimization(object):
     """Optimizatoin objects store geometries and can manipulate design regions. Essentially, they form the methods needed for running shape optimizations"""
 
-    def __init__(self, eme: "EME", geometries: list = [], mesh_z: int = 100) -> None:
+    def __init__(self, eme: "EME", geometries: list = [], mesh_z: int = 100, fom_location: float=2.75, source_location: float=0.25) -> None:
         """Creates an instance of Optimization for running shape optimization"""
         self.eme = eme
         self.geometries = geometries
         self.mesh_z = mesh_z
+        self.fom_location = fom_location
+        self.source_location = source_location
         self.start()
 
     def add_geometry(self, geometry: "Geometry") -> None:
@@ -161,15 +163,15 @@ class Optimization(object):
         z_start, z_end = self.get_design_region()
 
         # Create forward source and monitor
-        source = Source(z=0.2500001, mode_coeffs=[1], k=1)  # Hard coded
+        source = Source(z=self.source_location, mode_coeffs=[1], k=1)  # Hard coded
         forward_monitor = self.eme.add_monitor(axes="xyz", mesh_z=self.mesh_z, sources=[source])
 
         # FOM monitor
-        source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
-        fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
+        # source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
+        fom_monitor = self.eme.add_monitor(axes="xy", location=self.fom_location, sources=[source])
 
         # Adjoint source and monitor
-        source = Source(z=2.75, mode_coeffs=[1], k=-1)
+        source = Source(z=self.fom_location, mode_coeffs=[1], k=-1)
         adjoint_monitor = self.eme.add_monitor(axes="xyz", mesh_z=self.mesh_z, sources=[source])
 
         # Run eme
@@ -254,7 +256,7 @@ class Optimization(object):
         return forward_results
 
     def overlap(self, E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
-        return InterfaceSolver.eme_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y)
+        return OverlapTools.eme_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y)
 
     def objective_gradient(self, monitor: "Monitor"):
         """Computes the objective function gradient to the sources for the adjoint formulation"""
@@ -291,7 +293,7 @@ class Optimization(object):
 
     def set_adjoint_sources(self, f_x: complex = 0 + 0j):
         """Computes and places the adjoint sources for use in the adjoint formulation"""
-        return [Source(z=2.75, mode_coeffs=[f_x], k=-1)]
+        return [Source(z=self.fom_location, mode_coeffs=[f_x], k=-1)]
 
     def adjoint_run(self, sources: list):
         """Performs the adjoint run for use in the adjoint formulation"""
@@ -372,7 +374,7 @@ class Optimization(object):
 
             # Compute lambda * A_u_x
             for i in range(3):
-                f_u[p] += -2 * np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
+                f_u[p] += 2 * np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
 
         return f_u
 
@@ -404,7 +406,7 @@ class Optimization(object):
         dp: float = 1e-4,
         rand: "np.random.RandomState" = None,
         idx: list = None,
-        design: list = None,
+        design_x: list = None,
     ):
         """
         Estimate central difference gradients.
@@ -424,8 +426,8 @@ class Optimization(object):
         """
 
         # Get the design
-        design = self.get_design() if design is None else design
-        if num_gradients > len(design):
+        design_x, design_z = self.get_design_readable() if design_x is None else design_x
+        if num_gradients > len(design_x):
             raise ValueError(
                 "The requested number of gradients must be less than or equal to the total number of design parameters."
             )
@@ -439,11 +441,11 @@ class Optimization(object):
         # randomly choose indices to loop estimate
         if idx is None:
             fd_gradient_idx = np.random.choice(
-                len(design) // 2,
+                len(design_x),
                 num_gradients,
                 replace=False,
             ) if rand is None else rand.choice(
-                len(design) // 2,
+                len(design_x),
                 num_gradients,
                 replace=False,
             )
@@ -454,17 +456,17 @@ class Optimization(object):
         for k in fd_gradient_idx:
 
             # get current design region
-            b0 = np.ones(len(design))
-            b0[:] = design[:]
+            b0 = np.ones(len(design_x))
+            b0[:] = design_x[:]
 
             # assign new design vector
-            b0[k * 2] -= dp
+            b0[k] -= dp
             self.set_design(b0)
             self.start()
 
             # FOM monitor
-            source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
-            fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
+            source = Source(z=self.source_location, mode_coeffs=[1], k=1)  # Hard coded
+            fom_monitor = self.eme.add_monitor(axes="xy", location=self.fom_location, sources=[source])
 
             # Adjoint source and monitor
             self.eme.propagate()
@@ -473,25 +475,23 @@ class Optimization(object):
             _, fm = self.objective_gradient(fom_monitor)
 
             # assign new design vector
-            b0[k * 2] += 2 * dp
+            b0[k] += 2 * dp
             self.set_design(b0)
             self.start()
 
             # propagate
-            source = Source(z=0.25, mode_coeffs=[1], k=1)  # Hard coded
-            fom_monitor = self.eme.add_monitor(axes="xy", location=2.75, sources=[source])
+            source = Source(z=self.source_location, mode_coeffs=[1], k=1)  # Hard coded
+            fom_monitor = self.eme.add_monitor(axes="xy", location=self.fom_location, sources=[source])
             self.eme.propagate()
 
             # record final objective function value
             _, fp = self.objective_gradient(fom_monitor)
 
             # revert design
-            b0[k * 2] -= dp
+            b0[k] -= dp
             self.set_design(b0)
 
             # derivative
-            # if self.eme.am_master():
-            #     print("end",fp, fm, dp, k, b0[k*2])
             fd_gradient.append((fp - fm) / (2 * dp))
 
         return fd_gradient, fd_gradient_idx, (fp + fm) / 2, fom_monitor
