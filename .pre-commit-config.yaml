@@ -6,7 +6,7 @@ repos:
           - id: end-of-file-fixer
           - id: trailing-whitespace
 
-    # - repo: https://github.com/hakancelik96/unimport
+    # - repo: https://github.com/hakancelikdev/unimport
     #   rev: 73e9054125d36a16caeffefd1049a83035ccfbf3
     #   hooks:
     #       - id: unimport
