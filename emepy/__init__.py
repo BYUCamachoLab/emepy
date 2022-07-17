@@ -18,3 +18,5 @@ from emepy.ann import *
 from emepy.monitors import *
 from emepy.lumerical import *
 from emepy.materials import *
+from emepy.geometries import *
+from emepy.optimization import *

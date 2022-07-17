@@ -85,6 +85,8 @@ class EME(object):
         self.reverse_periodic_s = []
         self.parallel = parallel
         self.network = None
+        if len(self.layers):
+            self.wavelength = self.layers[0].wavelength
 
     def add_layer(self, layer: Layer) -> None:
         """The add_layer method will add a Layer object to the EME object. The object will be geometrically added to the very right side of the structure. Using this method after propagate is useless as the solver has already been called.
@@ -567,7 +569,7 @@ class EME(object):
         return monitor
 
     def draw(
-        self, z_range: tuple = None, mesh_z: int = 200, plot_sources: bool = True, plot_xy_sources=True
+        self, z_range: tuple = None, mesh_z: int = 200, plot_sources: bool = True, plot_xy_sources=True, plot=True
     ) -> "matplotlib.image.AxesImage":
         """The draw method sketches a rough approximation for the xz geometry of the structure using pyplot where x is the width of the structure and z is the length. This will change in the future.
 
@@ -584,25 +586,45 @@ class EME(object):
             the image used to plot the index profile
         """
 
-        # Setup temp monitor
-        sources = [] if not plot_sources else self.get_sources()[0]
-        temp_storage = [self.monitors, self.custom_monitors]
-        xy_monitors = [i for j in temp_storage for i in j if i.axes in ["xy", "yx"]] if plot_xy_sources else []
-        self.monitors, self.custom_monitors = [[], []]
-        monitor = self.add_monitor(
-            axes="xz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z, sources=sources
-        )
+        if plot:
+            # Setup temp monitor
+            sources = [] if not plot_sources else self.get_sources()[0]
+            temp_storage = [self.monitors, self.custom_monitors]
+            xy_monitors = [i for j in temp_storage for i in j if i.axes in ["xy", "yx"]] if plot_xy_sources else []
+            self.monitors, self.custom_monitors = [[], []]
+            monitor = self.add_monitor(
+                axes="xz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z, sources=sources
+            )
 
-        # Fix monitor
-        if plot_sources and not len(sources):
-            self._assign_monitor_sources([1], [])
-        monitor.xy_monitors = xy_monitors
+            # Fix monitor
+            if plot_sources and not len(sources):
+                self._assign_monitor_sources([1], [])
+            monitor.xy_monitors = xy_monitors
 
-        # Draw
-        self._propagate_n_only()
-        im = monitor.visualize(component="n", show_xy_monitors=True)
-        self.monitors, self.custom_monitors = temp_storage
-        return im
+            # Draw
+            self._propagate_n_only()
+        
+            im = monitor.visualize(component="n", show_xy_monitors=True)
+            self.monitors, self.custom_monitors = temp_storage
+            return im
+        else:
+            # Setup temp monitor
+            sources = [] if not plot_sources else self.get_sources()[0]
+            temp_storage = [self.monitors, self.custom_monitors]
+            xy_monitors = [i for j in temp_storage for i in j if i.axes in ["xy", "yx"]] if plot_xy_sources else []
+            self.monitors, self.custom_monitors = [[], []]
+            monitor = self.add_monitor(
+                axes="xyz", components=["n"], z_range=z_range, exempt=False, mesh_z=mesh_z, sources=sources
+            )
+
+            # Fix monitor
+            if plot_sources and not len(sources):
+                self._assign_monitor_sources([1], [])
+            monitor.xy_monitors = xy_monitors
+
+            # Draw
+            self._propagate_n_only()
+            return monitor
 
     def propagate(self, left_coeffs: list = None, right_coeffs: list = []) -> "simphony.models.Model":
         """The propagate method should be called once all Layer objects have been added. This method will call the EME solver and produce s-parameters. The defulat

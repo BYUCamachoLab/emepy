@@ -17,6 +17,9 @@ class Optimization(object):
         self.mesh_z = mesh_z
         self.fom_location = fom_location
         self.source_location = source_location
+        self.wavelength = self.eme.wavelength
+        if self.wavelength is None:
+            raise Exception("Wavelength must be set before running optimization")
         self.start()
 
     def add_geometry(self, geometry: "Geometry") -> None:
@@ -140,7 +143,9 @@ class Optimization(object):
             jacobian[1, 1, :, :, :, i] = gradient
             jacobian[2, 2, :, :, :, i] = gradient
 
-        return jacobian
+        # Return gradient
+        omega2 = - 2j * np.pi * self.wavelength
+        return jacobian * omega2
 
     def get_design_region(self) -> tuple:
         z_start, z_end = (0, 0)
@@ -256,7 +261,7 @@ class Optimization(object):
         return forward_results
 
     def overlap(self, E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
-        return OverlapTools.eme_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y)
+        return OverlapTools.fom_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y)
 
     def objective_gradient(self, monitor: "Monitor"):
         """Computes the objective function gradient to the sources for the adjoint formulation"""
@@ -274,11 +279,8 @@ class Optimization(object):
             r_Ey = reference_mode.Ey
             r_Hx = reference_mode.Hx
             r_Hy = reference_mode.Hy
-            norm = np.sqrt(np.abs(self.overlap(r_Ex, r_Ey, r_Hx, r_Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y)))
-            r_Ex = r_Ex / norm
-            r_Ey = r_Ey / norm
-            r_Hx = r_Hx / norm
-            r_Hy = r_Hy / norm
+            c_1 = np.sqrt(np.abs(self.overlap(r_Ex, r_Ey, r_Hx, r_Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y)))
+            c_2 = np.sqrt(np.abs(self.overlap(Ex, Ey, Hx, Hy, Ex, Ey, Hx, Hy, x, y)))
 
             # Compute overlap
             overlap = self.overlap(Ex, Ey, Hx, Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y)
@@ -286,8 +288,8 @@ class Optimization(object):
             overlap = 0
 
         # Compute autogradient
-        f_x = 2 * np.pi * self.eme.wavelength * (np.conj(overlap))
-        power = np.abs(overlap) ** 2
+        f_x =  np.conj(overlap) / (c_1 * c_2)
+        power = f_x * np.conj(f_x)
 
         return f_x, power
 
@@ -358,7 +360,7 @@ class Optimization(object):
         f_u = np.zeros(A_u.shape[-1], dtype=float)
 
         # Reshape
-        lamdagger = np.transpose(np.conj(lamdagger))
+        lamdagger = np.transpose(np.conj(lamdagger), axes=(1,2,3,0))
         A_u = A_u
         X = X
 
@@ -372,9 +374,9 @@ class Optimization(object):
                 for j, mij in enumerate(mi):
                     A_u_x[i] += mij * X[j]
 
-            # Compute lambda * A_u_x
+            # Compute lambda * A_u_x matrix multiplication for the pth column
             for i in range(3):
-                f_u[p] += 2 * np.real(np.sum(A_u_x[i] * lamdagger[..., i].T))
+                f_u[p] += - 2 * np.real(np.sum(A_u_x[j] * lamdagger[..., i]))
 
         return f_u
 

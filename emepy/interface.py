@@ -37,6 +37,12 @@ class OverlapTools:
         return np.trapz(np.trapz(cross, x, axis=-2), y, axis=-1)
 
     @staticmethod
+    def fom_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
+        term1 = E1x * H2y - E1y * H2x
+        term2 = E2x * H1y - E2y * H1x
+        return np.trapz(np.trapz((term1 + term2), x, axis=-2), y, axis=-1)
+
+    @staticmethod
     def lumerical_complex(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
         term12 = np.trapz(np.trapz(E1x * np.conj(H2y) - E1y * np.conj(H2x), x, axis=-2), y, axis=-1)
         term21 = np.trapz(np.trapz(E2x * np.conj(H1y) - E2y * np.conj(H1x), x, axis=-2), y, axis=-1)
