@@ -40,7 +40,7 @@ class OverlapTools:
     def fom_overlap(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):
         term1 = E1x * H2y - E1y * H2x
         term2 = E2x * H1y - E2y * H1x
-        return np.trapz(np.trapz((term1 + term2), x, axis=-2), y, axis=-1)
+        return 0.5 * np.trapz(np.trapz((term1 + term2), x, axis=-2), y, axis=-1)
 
     @staticmethod
     def lumerical_complex(E1x, E1y, H1x, H1y, E2x, E2y, H2x, H2y, x, y):

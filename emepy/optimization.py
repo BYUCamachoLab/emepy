@@ -284,12 +284,13 @@ class Optimization(object):
 
             # Compute overlap
             overlap = self.overlap(Ex, Ey, Hx, Hy, r_Ex, r_Ey, r_Hx, r_Hy, x, y)
+
+            # Compute autogradient
+            f_x =  np.conj(overlap) / (c_1 * c_2)
+            power = f_x * np.conj(f_x)
         else:
             overlap = 0
-
-        # Compute autogradient
-        f_x =  np.conj(overlap) / (c_1 * c_2)
-        power = f_x * np.conj(f_x)
+            f_x, power = 0, 0
 
         return f_x, power
 

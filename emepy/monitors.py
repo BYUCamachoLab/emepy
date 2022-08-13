@@ -369,6 +369,7 @@ class Monitor(object):
         show_geometry: bool = True,
         show_sources: bool = True,
         show_xy_monitors: bool = False,
+        colorbar=False,
     ) -> "matplotlib.image.AxesImage":
         """Creates a matplotlib axis displaying the provides field component
 
@@ -463,6 +464,8 @@ class Monitor(object):
                 vmin=vmin,
                 vmax=vmax,
             )
+            if colorbar:
+                plt.colorbar()
 
             # Assign labels
             if not ax:
