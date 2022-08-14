@@ -6,7 +6,6 @@ from copy import deepcopy
 
 """
 Write polygon that utilizes tidy3d 
-
 """
 
 

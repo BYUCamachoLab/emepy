@@ -5,7 +5,7 @@ from collections.abc import Sequence
 
 from emepy.fd import ModeSolver
 from emepy.mode import Mode, Mode1D, EigenMode
-from emepy.tools import interp, interp1d, Si, SiO2, get_epsfunc, rectangle_to_n
+from emepy.tools import interp, interp1d, get_epsfunc, rectangle_to_n
 from emepy.materials import Si, SiO2
 from emepy.geometries import DynamicPolygon
 from emepy.eme import Layer
