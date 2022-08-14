@@ -5,7 +5,7 @@ from emepy.tools import vertices_to_n
 from copy import deepcopy
 
 """
-Write polygon that utilizes tidy3d 
+Write polygon that utilizes tidy3d
 """
 
 
