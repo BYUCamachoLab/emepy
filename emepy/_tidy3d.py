@@ -11,7 +11,7 @@ from tidy3d import PolySlab
 import tidy3d as td
 
 
-class MSFlex3D(ModeSolver):
+class MSTidy3D(ModeSolver):
     def __init__(
         self,
         wavelength=1.55,
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     num_modes = 3
 
     # Define solver
-    solver = MSFlex3D(
+    solver = MSTidy3D(
         wavelength, xz_vertices, thickness, z_loc, num_modes, n_core, n_cladding
     )
 
