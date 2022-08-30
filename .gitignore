@@ -1,6 +1,7 @@
 examples/bragg/lumerical_sims
 examples/taper/log10
 examples/benchmarks/taper/log10
+_opt/ignore
 
 # Benchmark figures
 examples/benchmarks/taper/*.eps
