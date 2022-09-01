@@ -33,9 +33,10 @@ Optionally, the user can download and use our neural networks for fundamental TE
 The neural network models can be found [here](https://byu.box.com/s/xtpp2h8vfwp4l07wdl5559j3vnip5cqj). Simply download the three folders (Hy_chunks, Hx_chunks, neff_pickle) and place them under path/to/repo/emepy/models/ 
 
 This will look like:
-.../emepy/emepy/models/Hy_chunks/
-.../emepy/emepy/models/Hx_chunks/
-.../emepy/emepy/models/neff_pickle/
+
+    .../emepy/emepy/models/Hy_chunks/
+    .../emepy/emepy/models/Hx_chunks/
+    .../emepy/emepy/models/neff_pickle/
 
 ## BibTeX citation
 ```
