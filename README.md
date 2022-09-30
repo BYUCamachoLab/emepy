@@ -10,9 +10,9 @@
 
 ## Installation
 
-Clone the repo with only the latest commit to ignore large model files from prior commits
+Clone the repo
 
-    git clone --depth 1 git@github.com:BYUCamachoLab/emepy.git
+    git clone git@github.com:BYUCamachoLab/emepy.git
 
 Install the development version of emepy using pip:
 
@@ -25,6 +25,18 @@ Or collect the most recent publication to pip
 ## Docs
 
 Read the docs [here](https://emepy.readthedocs.io/en/latest/).
+
+## ANN Models
+
+Optionally, the user can download and use our neural networks for fundamental TE generation.
+
+The neural network models can be found [here](https://byu.box.com/s/xtpp2h8vfwp4l07wdl5559j3vnip5cqj). Simply download the three folders (Hy_chunks, Hx_chunks, neff_pickle) and place them under path/to/repo/emepy/models/ 
+
+This will look like:
+
+    .../emepy/emepy/models/Hy_chunks/
+    .../emepy/emepy/models/Hx_chunks/
+    .../emepy/emepy/models/neff_pickle/
 
 ## BibTeX citation
 ```
