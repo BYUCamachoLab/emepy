@@ -5,6 +5,7 @@ import re
 from setuptools import find_packages
 from setuptools import setup
 
+__version__ = "1.2.1"
 
 def read(filename):
     filename = os.path.join(os.path.dirname(__file__), filename)
@@ -25,7 +26,7 @@ def get_install_requires():
 
 setup(
     name="emepy",
-    version="1.1.0",
+    version=__version__,
     url="https://github.com/BYUCamachoLab/emepy",
     license="MIT",
     author="Ian Hammond",
