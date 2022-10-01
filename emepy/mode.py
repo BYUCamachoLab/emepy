@@ -150,6 +150,7 @@ class EigenMode(object):
 
         power_bool = self.get_confined_power() < threshold_power
         neff_bool = (np.real(self.neff) / np.abs(self.neff)) < threshold_neff
+        
         return power_bool or neff_bool
 
     def normalize(self) -> None:
@@ -296,9 +297,9 @@ class Mode1D(EigenMode):
         mask = 1 if mask is None else mask
 
         Ex = mode1.Ex * mask
-        Hy = np.conj(mode2.Hy) * mask
+        Hy = (mode2.Hy) * mask
         Ey = mode1.Ey * mask
-        Hx = np.conj(mode2.Hx) * mask
+        Hx = (mode2.Hx) * mask
 
         cross = Ex * Hy - Ey * Hx
 
@@ -513,9 +514,9 @@ class Mode(EigenMode):
         mask = 1 if mask is None else mask
 
         Ex = mode1.Ex * mask
-        Hy = np.conj(mode2.Hy) * mask
+        Hy = (mode2.Hy) * mask
         Ey = mode1.Ey * mask
-        Hx = np.conj(mode2.Hx) * mask
+        Hx = (mode2.Hx) * mask
 
         cross = Ex * Hy - Ey * Hx
 

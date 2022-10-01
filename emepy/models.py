@@ -5,6 +5,7 @@ from simphony.pins import Pin
 from simphony.models import Subcircuit
 from emepy.mode import EigenMode
 from emepy.fd import ModeSolver
+from emepy.interface import InterfaceSolver
 from copy import deepcopy
 
 
@@ -514,105 +515,18 @@ class InterfaceMultiMode(Model):
 
         s = np.zeros((self.num_ports, self.num_ports), dtype=complex)
 
-        # Forward values
-        for p in range(self.left_ports):
-
-            ts = self.get_t(p, self.layer1, self.layer2, self.left_ports)
-            rs = self.get_r(p, ts, self.layer1, self.layer2, self.left_ports)
-
-            for t in range(len(ts)):
-                s[self.left_ports + t][p] = ts[t]
-            for r in range(len(rs)):
-                s[r][p] = rs[r]
-
-        # Reverse values
-        for p in range(self.right_ports):
-
-            ts = self.get_t(p, self.layer2, self.layer1, self.right_ports)
-            rs = self.get_r(p, ts, self.layer2, self.layer1, self.right_ports)
-
-            for t in range(len(ts)):
-                s[t][self.left_ports + p] = ts[t]
-            for r in range(len(rs)):
-                s[self.left_ports + r][self.left_ports + p] = rs[r]
-
         # Keep s params and clear the layers
         self.s_params = s.reshape((1, self.num_ports, self.num_ports))
+
+        # Create interface solver instance (now vectorized)
+        solver = InterfaceSolver(self.layer1, self.layer2)
+
+        # Keep s params and clear the layers
+        self.s_params[:, :, :] = solver.solve()
+
+        # Clear layers
         self.layer1 = None
         self.layer2 = None
-
-    def get_t(self, p: int, left: "EigenMode", right: "EigenMode", curr_ports: int) -> "np.ndarray":
-        """Returns the transmission coefficient based on the two modes
-
-        Parameters
-        ----------
-        p : int
-            port number to look at
-        left : Mode
-            leftside eigenmode
-        right : Mode
-            rightside eigenmode
-        curr_ports : int
-            total number of ports
-
-        Returns
-        -------
-        np.ndarray
-            transmission coefficients
-        """
-
-        # Ax = b
-        A = np.array(
-            [
-                [
-                    right.modes[k].inner_product(left.modes[i]) + left.modes[i].inner_product(right.modes[k])
-                    for k in range(self.num_ports - curr_ports)
-                ]
-                for i in range(curr_ports)
-            ]
-        )
-        b = np.array([0 if i != p else 2 * left.modes[p].inner_product(left.modes[p]) for i in range(curr_ports)])
-        x = np.matmul(np.linalg.pinv(A), b)
-
-        return x
-
-    def get_r(self, p: int, x: "np.ndarray", left: EigenMode, right: EigenMode, curr_ports: int) -> "np.ndarray":
-        """Returns the transmission coefficient based on the two modes
-
-        Parameters
-        ----------
-        p : int
-            port number to look at
-        x : np.ndarray
-            transmission coefficients
-        left : Mode
-            leftside eigenmode
-        right : Mode
-            rightside eigenmode
-        curr_ports : int
-            total number of ports
-
-        Returns
-        -------
-        r : number
-            reflection coefficient
-        """
-
-        rs = np.array(
-            [
-                np.sum(
-                    [
-                        (right.modes[k].inner_product(left.modes[i]) - left.modes[i].inner_product(right.modes[k]))
-                        * x[k]
-                        for k in range(self.num_ports - curr_ports)
-                    ]
-                )
-                / (2 * left.modes[i].inner_product(left.modes[i]))
-                for i in range(curr_ports)
-            ]
-        )
-
-        return rs
 
     def clear(self) -> None:
         """Clears the scattering matrix in the object"""
