@@ -23,6 +23,7 @@ def get_install_requires():
     with open("requirements.txt", "r") as f:
         return direct + [line.strip() for line in f.readlines() if not line.startswith("-")]
 
+long_description = "EMEPy - Eigenmode Expansion Python. An open-source Python package for the simulation of electromagnetic devices."
 
 setup(
     name="emepy",
@@ -32,7 +33,7 @@ setup(
     author="Ian Hammond",
     author_email="ihammond@byu.edu",
     description="Eigenmode Expansion Python",
-    # long_description=read("README.md"),
+    long_description=long_description,
     packages=find_packages(exclude=("tests",)),
     install_requires=get_install_requires(),
     python_requires=">=3.6",
