@@ -2,11 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pickle
 import random
-from scipy.signal import convolve2d, convolve
 from copy import deepcopy
 from typing import Callable
-
-from emepy.tools import compute_other_fields_2D, interp
 
 
 class EigenMode(object):
@@ -28,9 +25,6 @@ class EigenMode(object):
         return NotImplementedError()
 
     def plot_material(self):
-        return NotImplementedError()
-
-    def compute_other_fields(self):
         return NotImplementedError()
 
     def save(self, path=("./ModeObject_" + str(random.random()) + ".pk")):
@@ -324,7 +318,7 @@ class Mode1D(EigenMode):
 
         mask = np.where(self.n > np.mean(self.n), 1, 0)
         kernel = np.ones(num_pixels + 1)
-        mask = convolve(mask, kernel, "same")
+        mask = np.convolve(mask, kernel, "same")
         mask = np.where(mask > 0, 1, 0)
         ratio = self._inner_product(self, self, mask=mask) / self._inner_product(
             self, self, mask=None
@@ -527,7 +521,7 @@ class Mode(EigenMode):
         Parameters
         ----------
         num_pixels : int
-            number of pixels outside of the core to expand the mask to capture power just outside the core
+            number of pixels outside of the core to expand the mask to capture power just outside the core (mask dilation)
 
         Returns
         -------
@@ -540,8 +534,11 @@ class Mode(EigenMode):
             num_pixels = int(len(self.x) * 0.05)
 
         mask = np.where(self.n > np.mean(self.n), 1, 0)
-        kernel = np.ones((num_pixels + 1, num_pixels + 1))
-        mask = convolve2d(mask, kernel, "same")
+        kernel = np.ones(num_pixels + 1)
+        for row in range(mask.shape[0]): # This could be vectorized with scipy or just a 2D kernal, but numpy won't let this happen
+            mask[row] = np.convolve(mask[row], kernel, "same")
+        for col in range(mask.shape[1]):
+            mask[:, col] = np.convolve(mask[:, col], kernel, "same")
         mask = np.where(mask > 0, 1, 0)
         ratio = self._inner_product(self, self, mask=mask) / self._inner_product(
             self, self, mask=None
@@ -576,46 +573,3 @@ class Mode(EigenMode):
         plt.title("Index of Refraction")
         plt.xlabel("x (µm)")
         plt.ylabel("y (µm)")
-
-    def compute_other_fields(
-        self,
-        epsfunc_1: Callable[["np.ndarray", "np.ndarray"], "np.ndarray"],
-        epsfunc_2: Callable[["np.ndarray", "np.ndarray"], "np.ndarray"],
-        boundary: str = "0000",
-    ) -> None:
-        """Given the Hx and Hy fields, maxwell's curl relations can be used to calculate the remaining field; adapted from the EMpy
-
-        Parameters
-        ----------
-        epsfunc_1 : function
-            epsfunc for computing other fields
-        epsfunc_2 : function
-            epsfunc for computing final refractive index profile
-        boundary : str
-            the boundary conditions as defined by electromagneticpython
-        """
-
-        (
-            self.Hx,
-            self.Hy,
-            self.Hz,
-            self.Ex,
-            self.Ey,
-            self.Ez,
-        ) = compute_other_fields_2D(
-            self.neff, self.Hx, self.Hy, self.wl, self.x, self.y, boundary, epsfunc_1
-        )
-        x_ = (self.x[1:] + self.x[:-1]) / 2.0
-        y_ = (self.y[1:] + self.y[:-1]) / 2.0
-        self.Ex = interp(self.x, self.y, x_, y_, self.Ex, False)
-        self.Ey = interp(self.x, self.y, x_, y_, self.Ey, False)
-        self.Ez = interp(self.x, self.y, x_, y_, self.Ez, False)
-        self.x = self.x - self.x[int(len(self.x) / 2)]
-        self.y = self.y - self.y[int(len(self.y) / 2)]
-        self.H = np.sqrt(
-            np.abs(self.Hx) ** 2 + np.abs(self.Hy) ** 2 + np.abs(self.Hz) ** 2
-        )
-        self.E = np.sqrt(
-            np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2
-        )
-        self.n = np.sqrt(epsfunc_2(self.x, self.y))

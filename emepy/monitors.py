@@ -2,7 +2,7 @@ import numpy as np
 import numpy
 from matplotlib import pyplot as plt
 import matplotlib
-from scipy.interpolate import griddata
+from emepy.tools import interp2d
 plt.rcParams.update({'figure.max_open_warning': 0})
 
 
@@ -274,15 +274,18 @@ class Monitor(object):
 
         # Custom 2D interpolation function
         def custom_interp2d(field, old_a, old_b, new_a, new_b):
-            aa, bb = np.meshgrid(new_a, new_b)
-            aa_old, bb_old = np.meshgrid(old_a, old_b)
-            points = np.array((aa_old.flatten(), bb_old.flatten())).T
-            real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
-            imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
-            return real + 1j * imag
+            # from scipy.interpolate import griddata
+            # aa, bb = np.meshgrid(new_a, new_b)
+            # aa_old, bb_old = np.meshgrid(old_a, old_b)
+            # points = np.array((aa_old.flatten(), bb_old.flatten())).T
+            # real = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
+            # imag = griddata(points, np.real(field).flatten(), (aa, bb)).astype(np.complex128)
+            # return real + 1j * imag
+            return interp2d(new_a, new_b, old_a, old_b, field, sci=False)
 
         # Custom 3D interpolation function
         def custom_interp3d(field, old_a, old_b, old_c, new_a, new_b, new_c):
+            from scipy.interpolate import griddata
             aa, bb, cc = np.meshgrid(new_a, new_b, new_c)
             aa_old, bb_old, cc_old = np.meshgrid(old_a, old_b, old_c)
             points = np.array((aa_old.flatten(), bb_old.flatten(), cc_old.flatten())).T

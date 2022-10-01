@@ -1,5 +1,4 @@
 import numpy as np
-import pickle
 from matplotlib import pyplot as plt
 import EMpy_gpu
 from EMpy_gpu.modesolvers.FD import stretchmesh

@@ -1,4 +1,4 @@
-import scipy
+import numpy as np
 
 Si_lambda = [
     1.2,
@@ -299,8 +299,7 @@ def Si(wavelength: float) -> float:
         refractive index
     """
 
-    f = scipy.interpolate.interp1d(Si_lambda, Si_n)
-    return f([wavelength, wavelength])[0]
+    return np.interp(wavelength, Si_lambda, Si_n)
 
 
 def SiO2(wavelength: float) -> float:
@@ -317,5 +316,4 @@ def SiO2(wavelength: float) -> float:
         refractive index
     """
 
-    f = scipy.interpolate.interp1d(SiO2_lambda, SiO2_n)
-    return f([wavelength, wavelength])[0]
+    return np.interp(wavelength, SiO2_lambda, SiO2_n)

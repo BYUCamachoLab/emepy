@@ -1,16 +1,8 @@
-Pillow
 matplotlib
 numpy
-scipy
 simphony
-sklearn
-pandas
-torch
-torchvision
 tdqm
 ElectroMagneticPythonGpu
 shapely
 sympy
 tidy3d-beta
-# electromagneticpython @ git+git://github.com/lbolla/EMpy@4bf1b01#egg=electromagneticpython
-# electromagneticpythongpu @ git+git://github.com/hammy4815/EMpy_gpu@master#egg=electromagneticpythongpu
