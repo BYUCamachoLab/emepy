@@ -21,6 +21,9 @@ class EigenMode(object):
     def get_confined_power(self):
         return NotImplementedError()
 
+    def spurious_value(self):
+        return NotImplementedError()
+
     def zero_phase(self):
         return NotImplementedError()
 
@@ -122,19 +125,18 @@ class EigenMode(object):
             the inner product between the modes
         """
 
+        # return self.overlap(mode2)
         return self._inner_product(self, mode2)
 
     def check_spurious(
-        self, threshold_power: float = 0.05, threshold_neff: float = 0.9
+        self, spurious_threshold: float = 0.9
     ) -> bool:
         """Takes in a mode and determine whether the mode is likely spurious based on the ratio of confined to not confined power
 
         Parameters
         ----------
-        threshold_power : float
-            threshold of power percentage of Pz in the core to total
-        threshold_neff : float
-            threshold of real to abs neff percentage
+        spurious_threshold: float
+            if the calculated spurious value is higher than this threshold, the mode is considered spurious
 
         Returns
         -------
@@ -142,9 +144,7 @@ class EigenMode(object):
             True if likely spurious
         """
 
-        power_bool = self.get_confined_power() < threshold_power
-        neff_bool = (np.real(self.neff) / np.abs(self.neff)) < threshold_neff
-        return power_bool or neff_bool
+        return self.spurious_value() > spurious_threshold
 
     def normalize(self) -> None:
         """Normalizes the Mode to power 1."""
@@ -540,9 +540,9 @@ class Mode(EigenMode):
         for col in range(mask.shape[1]):
             mask[:, col] = np.convolve(mask[:, col], kernel, "same")
         mask = np.where(mask > 0, 1, 0)
-        ratio = self._inner_product(self, self, mask=mask) / self._inner_product(
+        ratio = np.abs(self._inner_product(self, self, mask=mask)) / np.abs(self._inner_product(
             self, self, mask=None
-        )
+        ))
         return ratio
 
     def zero_phase(self) -> None:
@@ -573,3 +573,60 @@ class Mode(EigenMode):
         plt.title("Index of Refraction")
         plt.xlabel("x (µm)")
         plt.ylabel("y (µm)")
+
+    def plot_power(self) -> None:
+        """Plots the power profile"""
+
+        Pz = self.Ex * self.Hy - self.Ey * self.Hx
+        plt.figure()
+        plt.imshow(
+            np.real(np.rot90(Pz)),
+            extent=[
+                self.x[0],
+                self.x[-1],
+                self.y[0],
+                self.y[-1],
+            ],
+            cmap="Blues",
+            interpolation="none",
+        )
+        plt.colorbar()
+        plt.title("Power")
+        plt.xlabel("x (µm)")
+        plt.ylabel("y (µm)")
+
+    def integrate(self, field):
+        return np.trapz(np.trapz(field, np.real(self.x)), np.real(self.y))
+
+    def TE_polarization_fraction(self):
+        """Returns the fraction of power in the TE polarization"""
+        Ex = np.abs(self.Ex) ** 2
+        Ey = np.abs(self.Ey) ** 2
+        return self.integrate(Ex) / self.integrate(Ex+Ey)
+    
+    def TM_polarization_fraction(self):
+        """Returns the fraction of power in the TE polarization"""
+        Ex = np.abs(self.Ex) ** 2
+        Ey = np.abs(self.Ey) ** 2
+        return self.integrate(Ey) / self.integrate(Ex+Ey)
+
+    def effective_area(self):
+        """Returns the effective area of the mode"""
+        E2 = np.abs(self.Ex) ** 2 + np.abs(self.Ey) ** 2 + np.abs(self.Ez) ** 2
+        return self.integrate(E2) ** 2 / self.integrate(E2 ** 2)
+
+    def effective_area_ratio(self):
+        """Returns the ratio of the effective area to the cross-sectional area"""
+        return self.effective_area() / self.integrate(np.ones(self.Ex.shape))
+
+    def spurious_value(self):
+        """Returns the spurious value of the mode"""
+        return 1 - (self.get_confined_power() * (1-self.effective_area_ratio()))
+    
+    def overlap(self, m2:EigenMode):
+        """Returns the overlap of the mode with another mode"""
+        E1H2 = self.integrate(self.Ex * m2.Hy.conj() - self.Ey * m2.Hx.conj())
+        E2H1 = self.integrate(m2.Ex * self.Hy.conj() - m2.Ey * self.Hx.conj())
+        E1H1 = self.integrate(self.Ex * self.Hy.conj() - self.Ey * self.Hx.conj())
+        E2H2 = self.integrate(m2.Ex * m2.Hy.conj() - m2.Ey * m2.Hx.conj())
+        return np.abs(np.real(E1H2 * E2H1 / E1H1) / np.real(E2H2))
